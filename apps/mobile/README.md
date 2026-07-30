@@ -1,25 +1,42 @@
 # @sharanam/mobile
 
-Expo SDK 54 student application for SHARANAM CLASSES.
+Expo SDK 54 · React Native · TypeScript student app for SHARANAM CLASSES.
+
+## Stack
+
+- React Navigation (native stack)
+- React Native Screens / Safe Area / Gesture Handler / Reanimated
+- Axios · TanStack React Query · Zustand · React Hook Form
+- ESLint · Prettier · TypeScript
+- `EXPO_PUBLIC_*` environment variables
 
 ## Structure
 
 ```
-app/                 # Expo Router screens & layouts
+App.tsx
+index.ts
+assets/
 src/
-  components/        # Reusable UI & shared components
-  features/          # Domain modules (auth, courses, payments, …)
-  hooks/             # Shared React hooks
-  services/          # API / Supabase / FCM clients
-  store/             # Client state
-  theme/             # Design tokens
-  constants/         # App constants
-  utils/             # Helpers
-assets/              # Images & fonts
+  api/           # Axios client + React Query
+  components/
+  constants/     # Includes env.ts
+  hooks/
+  navigation/
+  screens/
+  services/
+  store/         # Zustand
+  theme/
+  types/
+  utils/
 ```
 
 ## Scripts
 
-- `npm start` — Expo dev server
-- `npm run android` / `npm run ios` — platform targets
-- `npm run typecheck` — TypeScript check
+```bash
+npm start
+npm run lint
+npm run format
+npm run typecheck
+```
+
+Copy `.env.example` → `.env` before running.
