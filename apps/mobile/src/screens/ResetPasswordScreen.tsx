@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { createSessionFromUrl } from '@/auth/createSessionFromUrl';
@@ -29,6 +29,8 @@ import { useAuthStore } from '@/store/authStore';
 import type { AuthStackParamList } from '@/types/navigation';
 import { colors, spacing, typography } from '@/theme';
 import type { AuthAppError } from '@/utils/authErrors';
+
+const brandLogo = require('../assets/splash-brand.png');
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'ResetPassword'>;
 
@@ -120,13 +122,18 @@ export function ResetPasswordScreen({ navigation }: Props) {
       />
 
       <View style={styles.container}>
-        <Text style={styles.brand}>{APP_NAME}</Text>
-        <Text style={styles.title}>Set new password</Text>
-        <Text style={styles.subtitle}>
-          {isPasswordRecovery
-            ? 'Choose a new password for your account.'
-            : 'Expo Go may not open the email link automatically. Long-press the link in your email → Copy → paste below.'}
-        </Text>
+        <View style={styles.header}>
+          <View style={styles.logoRing}>
+            <Image source={brandLogo} style={styles.logo} resizeMode="cover" />
+          </View>
+          <Text style={styles.brand}>{APP_NAME}</Text>
+          <Text style={styles.title}>Set new password</Text>
+          <Text style={styles.subtitle}>
+            {isPasswordRecovery
+              ? 'Choose a new password for your account.'
+              : 'Expo Go may not open the email link automatically. Long-press the link in your email → Copy → paste below.'}
+          </Text>
+        </View>
 
         <View style={styles.card}>
           <ErrorMessage message={getErrorMessage() ?? linkError} />
@@ -220,6 +227,8 @@ export function ResetPasswordScreen({ navigation }: Props) {
   );
 }
 
+const LOGO_SIZE = 96;
+
 const styles = StyleSheet.create({
   screen: {
     justifyContent: 'center',
@@ -228,25 +237,45 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
+  header: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  logoRing: {
+    width: LOGO_SIZE,
+    height: LOGO_SIZE,
+    borderRadius: LOGO_SIZE / 2,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: colors.accent,
+    marginBottom: spacing.md,
+    backgroundColor: '#0A3D2E',
+  },
+  logo: {
+    width: LOGO_SIZE,
+    height: LOGO_SIZE,
+  },
   brand: {
     color: colors.accent,
     fontSize: typography.fontSize.sm,
     fontWeight: '700',
     letterSpacing: 1.2,
     textTransform: 'uppercase',
+    textAlign: 'center',
   },
   title: {
     marginTop: spacing.sm,
     color: colors.surface,
     fontSize: typography.fontSize.xxl,
     fontWeight: '700',
+    textAlign: 'center',
   },
   subtitle: {
     marginTop: spacing.sm,
-    marginBottom: spacing.lg,
     color: '#A8B3C5',
     fontSize: typography.fontSize.md,
     lineHeight: 20,
+    textAlign: 'center',
   },
   card: {
     gap: spacing.md,
