@@ -1,0 +1,12 @@
+{
+  "name": "@sharanam/eslint-config",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared ESLint configuration for SHARANAM CLASSES",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "react.js",
+    "node.js"
+  ]
+}

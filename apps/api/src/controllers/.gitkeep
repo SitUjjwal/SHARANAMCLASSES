@@ -1,0 +1,6 @@
+/**
+ * Controllers — HTTP adapters only.
+ * Parse request → call service → map response.
+ * Domain controllers will be added per feature (auth, courses, payments, etc.).
+ */
+export {};

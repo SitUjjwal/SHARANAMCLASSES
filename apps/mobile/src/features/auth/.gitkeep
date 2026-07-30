@@ -1,0 +1,4 @@
+/**
+ * Feature modules — colocate screens, hooks, components, and API calls per domain.
+ */
+export {};

@@ -1,0 +1,28 @@
+{
+  "name": "sharanam-classes",
+  "version": "1.0.0",
+  "private": true,
+  "description": "SHARANAM CLASSES — enterprise learning platform monorepo",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run dev --workspace=@sharanam/api",
+    "dev:mobile": "npm run start --workspace=@sharanam/mobile",
+    "dev:admin": "npm run dev --workspace=@sharanam/admin",
+    "build": "npm run build --workspaces --if-present",
+    "build:api": "npm run build --workspace=@sharanam/api",
+    "build:admin": "npm run build --workspace=@sharanam/admin",
+    "build:shared": "npm run build --workspace=@sharanam/shared",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "clean": "npm run clean --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "packageManager": "npm@10.9.0"
+}

@@ -1,0 +1,5 @@
+/**
+ * Services — application / domain business logic.
+ * No Express types here; keep framework-agnostic.
+ */
+export {};

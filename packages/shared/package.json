@@ -1,0 +1,30 @@
+{
+  "name": "@sharanam/shared",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Shared types, schemas, and constants for SHARANAM CLASSES",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "clean": "rimraf dist",
+    "lint": "eslint src --ext .ts"
+  },
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@sharanam/eslint-config": "*",
+    "@sharanam/tsconfig": "*",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "name": "sharanam-classes",
+  "slug": "sharanam-classes",
+  "version": "1.0.0",
+  "orientation": "portrait",
+  "scheme": "sharanam",
+  "userInterfaceStyle": "automatic",
+  "newArchEnabled": true,
+  "icon": "./assets/images/icon.png",
+  "splash": {
+    "image": "./assets/images/splash-icon.png",
+    "resizeMode": "contain",
+    "backgroundColor": "#0B1F3A"
+  },
+  "ios": {
+    "supportsTablet": true,
+    "bundleIdentifier": "com.sharanamclasses.app"
+  },
+  "android": {
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/images/adaptive-icon.png",
+      "backgroundColor": "#0B1F3A"
+    },
+    "package": "com.sharanamclasses.app"
+  },
+  "web": {
+    "bundler": "metro",
+    "output": "static",
+    "favicon": "./assets/images/favicon.png"
+  },
+  "plugins": [
+    "expo-router"
+  ],
+  "experiments": {
+    "typedRoutes": true
+  },
+  "extra": {
+    "eas": {
+      "projectId": "replace-with-eas-project-id"
+    }
+  }
+}

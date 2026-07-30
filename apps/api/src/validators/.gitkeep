@@ -1,0 +1,4 @@
+/**
+ * Validators — Zod request schemas for routes/controllers.
+ */
+export {};

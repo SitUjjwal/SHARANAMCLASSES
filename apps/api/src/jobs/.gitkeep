@@ -1,0 +1,4 @@
+/**
+ * Background / scheduled jobs (e.g. webhook retries, notification batches).
+ */
+export {};

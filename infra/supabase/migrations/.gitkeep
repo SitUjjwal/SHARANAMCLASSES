@@ -1,0 +1,4 @@
+-- Placeholder migration directory for Supabase PostgreSQL.
+-- Add numbered SQL files as schema evolves, e.g.:
+--   20260730120000_init.sql
+

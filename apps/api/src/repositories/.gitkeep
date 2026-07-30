@@ -1,0 +1,5 @@
+/**
+ * Repositories — data access (Supabase / SQL).
+ * Isolate persistence details from services.
+ */
+export {};
