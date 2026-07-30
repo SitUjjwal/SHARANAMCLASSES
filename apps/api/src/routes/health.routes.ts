@@ -1,14 +1,7 @@
 import { Router } from 'express';
 
+import { getHealth } from '../controllers/health.controller';
+
 export const healthRouter = Router();
 
-healthRouter.get('/', (_req, res) => {
-  res.status(200).json({
-    success: true,
-    data: {
-      status: 'ok',
-      service: 'sharanam-api',
-      timestamp: new Date().toISOString(),
-    },
-  });
-});
+healthRouter.get('/', getHealth);

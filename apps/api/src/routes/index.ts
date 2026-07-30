@@ -1,9 +1,13 @@
 import { Router } from 'express';
 
-/**
- * Domain routers will be registered here and exported for mounting in app.ts.
- * Example pattern:
- *   export const v1Router = Router();
- *   v1Router.use('/courses', coursesRouter);
- */
-export const apiRouter = Router();
+import { databaseRouter } from './database.routes';
+import { healthRouter } from './health.routes';
+
+export const routes = Router();
+
+routes.use('/health', healthRouter);
+routes.use(databaseRouter);
+
+// Future domain mounts:
+// routes.use('/api/v1/auth', authRouter);
+// routes.use('/api/v1/courses', coursesRouter);

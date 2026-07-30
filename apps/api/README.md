@@ -2,26 +2,32 @@
 
 Express + TypeScript backend for SHARANAM CLASSES.
 
-## Layering
+## Stack
+
+- Express · TypeScript · Morgan · Helmet · Compression · CORS
+- Dotenv · express-rate-limit · cookie-parser · JWT · Zod validation
+
+## Structure
 
 ```
-routes → middleware → controllers → services → repositories → integrations
+src/
+  config/
+  controllers/
+  middlewares/
+  models/
+  routes/
+  services/
+  utils/
 ```
-
-| Layer | Responsibility |
-| --- | --- |
-| `routes` | Path mounting, HTTP method binding |
-| `middleware` | Auth, admin guards, validation, errors |
-| `controllers` | Request/response mapping |
-| `services` | Business rules & orchestration |
-| `repositories` | Supabase / SQL persistence |
-| `integrations` | Supabase, R2, Razorpay, FCM, YouTube |
-| `jobs` | Async / scheduled work |
-| `config` | Env & app configuration |
 
 ## Scripts
 
-- `npm run dev` — watch mode via `tsx`
-- `npm run build` — compile to `dist/`
-- `npm start` — run compiled server
-- `npm run typecheck` — `tsc --noEmit`
+```bash
+npm run dev -w @sharanam/api
+npm run build -w @sharanam/api
+npm start -w @sharanam/api
+```
+
+## Health
+
+`GET /health` → `{ "status": "ok" }`

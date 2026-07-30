@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+
 import { AppError } from '../utils/AppError';
 
 export function errorHandler(
@@ -19,7 +20,6 @@ export function errorHandler(
     return;
   }
 
-  // eslint-disable-next-line no-console
   console.error('[api] Unhandled error', err);
 
   res.status(500).json({
