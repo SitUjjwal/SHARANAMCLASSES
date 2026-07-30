@@ -1,3 +1,8 @@
+/**
+ * Database connectivity service.
+ * Why: prove PostgreSQL is reachable through Supabase before building features.
+ * Future: same pattern — services talk to Supabase; controllers stay thin.
+ */
 import { getSupabaseAdmin } from '../config/supabase';
 import { AppError } from '../utils/AppError';
 
@@ -5,9 +10,6 @@ export type DatabaseStatusResult = {
   status: 'Database Connected';
 };
 
-/**
- * Verifies PostgreSQL connectivity via Supabase by running a lightweight SELECT.
- */
 export async function checkDatabaseStatus(): Promise<DatabaseStatusResult> {
   let supabase;
 
@@ -21,8 +23,7 @@ export async function checkDatabaseStatus(): Promise<DatabaseStatusResult> {
     );
   }
 
-  // Lightweight SELECT against Postgres through PostgREST.
-  // Uses a tiny public probe table created by infra/supabase/migrations.
+  // Lightweight SELECT via PostgREST (requires `app_meta` migration)
   const { error } = await supabase.from('app_meta').select('key').limit(1);
 
   if (error) {

@@ -9,9 +9,9 @@
     "newArchEnabled": true,
     "scheme": "sharanam",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash-brand.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0B1F3A"
+      "backgroundColor": "#0A3D2E"
     },
     "ios": {
       "supportsTablet": true,
@@ -27,6 +27,17 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-brand.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#0A3D2E"
+        }
+      ]
+    ]
   }
 }

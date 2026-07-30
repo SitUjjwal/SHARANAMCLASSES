@@ -1,6 +1,7 @@
 /**
- * Typed environment access via Expo public env vars (EXPO_PUBLIC_*).
- * Values are inlined at bundle time — see .env.example.
+ * Typed public env for the mobile app.
+ * Why: centralize EXPO_PUBLIC_* reads; fail clearly when required values are missing.
+ * Future: Razorpay public key, feature flags, etc.
  */
 function required(name: string, value: string | undefined, fallback?: string): string {
   if (value && value.length > 0) {
@@ -22,7 +23,13 @@ export const env = {
     process.env.EXPO_PUBLIC_API_BASE_URL,
     'http://localhost:4000',
   ),
-  supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL ?? '',
-  supabaseAnonKey: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
+  supabaseUrl: required(
+    'EXPO_PUBLIC_SUPABASE_URL',
+    process.env.EXPO_PUBLIC_SUPABASE_URL,
+  ),
+  supabaseAnonKey: required(
+    'EXPO_PUBLIC_SUPABASE_ANON_KEY',
+    process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+  ),
   razorpayKeyId: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID ?? '',
 } as const;

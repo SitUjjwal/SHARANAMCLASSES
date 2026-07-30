@@ -1,149 +1,101 @@
-import { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+/**
+ * Home Screen — shown after successful login (protected).
+ * Includes logout that clears Supabase + Zustand and returns to Login.
+ */
+import { StyleSheet, Text, View } from 'react-native';
 
+import { AppButton, ErrorMessage, LoadingOverlay, Screen } from '@/components/ui';
 import { APP_NAME } from '@/constants';
-import { env } from '@/constants/env';
-import { getHealth } from '@/services/health.service';
+import { useAuth } from '@/hooks/useAuth';
+import { useLogoutMutation } from '@/hooks/useAuthMutations';
 import { colors, spacing, typography } from '@/theme';
 
-type ConnectionState = 'loading' | 'success' | 'error';
-
 export function HomeScreen() {
-  const [state, setState] = useState<ConnectionState>('loading');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { user } = useAuth();
+  const logoutMutation = useLogoutMutation();
 
-  const checkBackend = useCallback(async () => {
-    setState('loading');
-    setErrorMessage(null);
+  /**
+   * onLogout
+   * 1) Clears Supabase session (SecureStore)
+   * 2) Clears Zustand auth store
+   * 3) Clears React Query cache
+   * 4) RootNavigator auto-navigates to Login (status → unauthenticated)
+   */
+  function onLogout() {
+    logoutMutation.mutate();
+  }
 
-    try {
-      const health = await getHealth();
-
-      if (health.status === 'ok') {
-        setState('success');
-        return;
-      }
-
-      setState('error');
-      setErrorMessage('Unexpected health response from backend');
-    } catch (error) {
-      setState('error');
-      setErrorMessage(
-        error instanceof Error ? error.message : 'Unable to reach backend',
-      );
-    }
-  }, []);
-
-  useEffect(() => {
-    void checkBackend();
-  }, [checkBackend]);
+  const displayName =
+    (user?.user_metadata?.full_name as string | undefined)?.trim() ||
+    user?.email ||
+    'Student';
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.container}>
-        <Text style={styles.brand}>{APP_NAME}</Text>
-        <Text style={styles.subtitle}>Home</Text>
+    <Screen style={styles.container}>
+      <LoadingOverlay visible={logoutMutation.isPending} message="Signing you out…" />
 
-        <View style={styles.statusCard}>
-          {state === 'loading' ? (
-            <>
-              <ActivityIndicator size="large" color={colors.accent} />
-              <Text style={styles.statusText}>Connecting to backend…</Text>
-            </>
-          ) : null}
+      <Text style={styles.brand}>{APP_NAME}</Text>
+      <Text style={styles.title}>Home</Text>
+      <Text style={styles.subtitle}>Welcome, {displayName}</Text>
 
-          {state === 'success' ? (
-            <Text style={[styles.statusText, styles.successText]}>Backend Connected</Text>
-          ) : null}
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>You are signed in</Text>
+        <Text style={styles.cardBody}>
+          Session is saved securely on this device. Course content will appear here in the next
+          modules.
+        </Text>
 
-          {state === 'error' ? (
-            <>
-              <Text style={[styles.statusText, styles.errorText]}>Backend Unavailable</Text>
-              {errorMessage ? <Text style={styles.errorDetail}>{errorMessage}</Text> : null}
-              <Text style={styles.hint}>API: {env.apiBaseUrl}</Text>
-              <Pressable style={styles.retryButton} onPress={() => void checkBackend()}>
-                <Text style={styles.retryLabel}>Retry</Text>
-              </Pressable>
-            </>
-          ) : null}
-        </View>
+        <ErrorMessage message={logoutMutation.error?.message} />
+
+        <AppButton
+          label="Log out"
+          loading={logoutMutation.isPending}
+          onPress={onLogout}
+        />
       </View>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.primary,
-  },
   container: {
-    flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
   },
   brand: {
+    color: colors.accent,
+    fontSize: typography.fontSize.sm,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+  },
+  title: {
+    marginTop: spacing.sm,
     color: colors.surface,
     fontSize: typography.fontSize.xxl,
     fontWeight: '700',
-    letterSpacing: 1,
-    textAlign: 'center',
   },
   subtitle: {
     marginTop: spacing.sm,
+    marginBottom: spacing.lg,
     color: '#A8B3C5',
     fontSize: typography.fontSize.lg,
-    textAlign: 'center',
   },
-  statusCard: {
-    marginTop: spacing.xl,
-    minHeight: 140,
-    alignItems: 'center',
-    justifyContent: 'center',
+  card: {
     gap: spacing.md,
     padding: spacing.lg,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.08)',
   },
-  statusText: {
+  cardTitle: {
     color: colors.surface,
     fontSize: typography.fontSize.xl,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: '700',
   },
-  successText: {
-    color: '#7DDEA5',
-  },
-  errorText: {
-    color: '#FF8A80',
-  },
-  errorDetail: {
+  cardBody: {
     color: '#A8B3C5',
     fontSize: typography.fontSize.md,
-    textAlign: 'center',
-  },
-  hint: {
-    color: '#7A8799',
-    fontSize: typography.fontSize.sm,
-    textAlign: 'center',
-  },
-  retryButton: {
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: 8,
-    backgroundColor: colors.accent,
-  },
-  retryLabel: {
-    color: colors.primary,
-    fontWeight: '700',
-    fontSize: typography.fontSize.md,
+    lineHeight: 20,
   },
 });

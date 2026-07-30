@@ -1,17 +1,66 @@
+/**
+ * Root navigator — automatic redirect based on Zustand auth status.
+ *
+ * Always shows the brand photo full-screen first (~3s), even if session
+ * restore is instant — otherwise Login appears immediately.
+ */
+import { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as Linking from 'expo-linking';
 
-import { HomeScreen } from '@/screens/HomeScreen';
-import type { RootStackParamList } from '@/types/navigation';
+import { useAuth } from '@/hooks/useAuth';
+import { AppNavigator } from '@/navigation/AppNavigator';
+import { AuthNavigator } from '@/navigation/AuthNavigator';
+import { LoadingScreen } from '@/screens/LoadingScreen';
+import { useAuthStore } from '@/store/authStore';
 
-const Stack = createNativeStackNavigator<RootStackParamList>();
+/** Minimum time the brand photo stays on screen after open */
+const MIN_BRAND_SPLASH_MS = 3000;
+
+const linking = {
+  prefixes: [Linking.createURL('/'), 'sharanam://'],
+  config: {
+    screens: {
+      Login: 'login',
+      Register: 'register',
+      ForgotPassword: 'forgot-password',
+      ResetPassword: 'reset-password',
+      Home: 'home',
+    },
+  },
+};
 
 export function RootNavigator() {
+  const { status, isLoading } = useAuth();
+  const isPasswordRecovery = useAuthStore((state) => state.isPasswordRecovery);
+  const [brandSplashDone, setBrandSplashDone] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setBrandSplashDone(true);
+    }, MIN_BRAND_SPLASH_MS);
+
+    return () => {
+      clearTimeout(timer);
+    };
+  }, []);
+
+  // Brand photo first — do not skip even when auth is already ready
+  if (!brandSplashDone || isLoading || status === 'loading') {
+    return <LoadingScreen />;
+  }
+
+  if (isPasswordRecovery) {
+    return (
+      <NavigationContainer linking={linking}>
+        <AuthNavigator initialRouteName="ResetPassword" />
+      </NavigationContainer>
+    );
+  }
+
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Home" component={HomeScreen} />
-      </Stack.Navigator>
+    <NavigationContainer linking={linking}>
+      {status === 'authenticated' ? <AppNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );
 }

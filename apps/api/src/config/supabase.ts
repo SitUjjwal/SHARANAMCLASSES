@@ -1,19 +1,22 @@
+/**
+ * Supabase admin client (server-only).
+ * Why: one secure place to create the service-role client.
+ * Future: all DB/Auth admin operations import `getSupabaseAdmin()`.
+ * Security: never send SUPABASE_SERVICE_ROLE_KEY to mobile/admin.
+ */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
 import { env } from './env';
 
 let supabaseAdmin: SupabaseClient | null = null;
 
-/**
- * Server-side Supabase client (service role).
- * Never expose SUPABASE_SERVICE_ROLE_KEY to mobile/admin clients.
- */
 export function getSupabaseAdmin(): SupabaseClient {
   if (supabaseAdmin) {
     return supabaseAdmin;
   }
 
   const url = env.SUPABASE_URL?.trim();
+  // Supports legacy JWT service_role keys and newer `sb_secret_...` keys
   const serviceRoleKey = env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 
   if (!url || !serviceRoleKey) {
@@ -30,6 +33,7 @@ export function getSupabaseAdmin(): SupabaseClient {
 
   supabaseAdmin = createClient(url, serviceRoleKey, {
     auth: {
+      // Server processes should not store browser-like sessions
       persistSession: false,
       autoRefreshToken: false,
       detectSessionInUrl: false,
