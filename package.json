@@ -8,6 +8,8 @@
     "packages/*"
   ],
   "scripts": {
+    "start": "npm run start --workspace=@sharanam/mobile",
+    "start:clear": "npm run start --workspace=@sharanam/mobile -- --clear",
     "dev:api": "npm run dev --workspace=@sharanam/api",
     "dev:mobile": "npm run start --workspace=@sharanam/mobile",
     "dev:admin": "npm run dev --workspace=@sharanam/admin",
@@ -24,5 +26,14 @@
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
   },
-  "packageManager": "npm@10.9.0"
+  "overrides": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "semver": "^7.7.2"
+  },
+  "packageManager": "npm@10.9.0",
+  "dependencies": {
+    "react": "19.1.0",
+    "react-dom": "19.1.0"
+  }
 }
