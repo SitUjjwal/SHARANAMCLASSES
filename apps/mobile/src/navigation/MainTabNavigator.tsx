@@ -58,7 +58,7 @@ export function MainTabNavigator() {
       <Tab.Screen
         name="MyLearningTab"
         component={MyLearningScreen}
-        options={{ title: 'My Learning' }}
+        options={{ title: 'My Courses' }}
       />
       <Tab.Screen
         name="ProfileTab"

@@ -11,6 +11,7 @@ import type {
   ListPdfsQuery,
   UpdatePdfInput,
 } from '../validators/pdf.validators';
+import { isMediaLocked } from './courseAccess.service';
 
 const PDF_COLUMNS =
   'id, course_id, chapter_id, title, description, file_url, storage_key, file_size, mime_type, original_filename, sort_order, is_free, is_published, created_at, updated_at';
@@ -378,7 +379,7 @@ export async function listPdfsForChapterPublic(
 
   return ((data ?? []) as Record<string, unknown>[]).map((row) => {
     const isFree = Boolean(row.is_free);
-    const is_locked = !options.enrolled && !isFree;
+    const is_locked = isMediaLocked(options.enrolled, isFree);
     return {
       id: row.id as string,
       course_id: row.course_id as string,

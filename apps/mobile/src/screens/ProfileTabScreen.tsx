@@ -1,8 +1,10 @@
 /**
- * Profile tab — account summary + logout.
- * Why: keeps account actions off the Home dashboard scroll.
+ * Profile tab — account summary, purchase history, logout.
  */
 import { StyleSheet, Text, View } from 'react-native';
+import type { CompositeNavigationProp } from '@react-navigation/native';
+import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { AppButton } from '@/components/ui/AppButton';
 import { ErrorMessage } from '@/components/ui/ErrorMessage';
@@ -11,9 +13,17 @@ import { Screen } from '@/components/ui/Screen';
 import { APP_NAME } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { useLogoutMutation } from '@/hooks/useAuthMutations';
+import type { AppStackParamList, MainTabParamList } from '@/types/navigation';
 import { colors, spacing, typography } from '@/theme';
 
-export function ProfileTabScreen() {
+type Props = {
+  navigation: CompositeNavigationProp<
+    BottomTabNavigationProp<MainTabParamList, 'ProfileTab'>,
+    NativeStackNavigationProp<AppStackParamList>
+  >;
+};
+
+export function ProfileTabScreen({ navigation }: Props) {
   const { user } = useAuth();
   const logoutMutation = useLogoutMutation();
 
@@ -32,9 +42,14 @@ export function ProfileTabScreen() {
       {user?.email ? <Text style={styles.email}>{user.email}</Text> : null}
 
       <View style={styles.card}>
+        <AppButton
+          label="Purchase History"
+          onPress={() => navigation.navigate('PurchaseHistory')}
+        />
         <ErrorMessage message={logoutMutation.error?.message} />
         <AppButton
           label="Log out"
+          variant="ghost"
           loading={logoutMutation.isPending}
           onPress={() => logoutMutation.mutate()}
         />

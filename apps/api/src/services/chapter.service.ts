@@ -12,6 +12,10 @@ import { listVideosForChapterPublic } from './video.service';
 import { listPdfsForChapterPublic } from './pdf.service';
 import { listNotesForChapterPublic } from './note.service';
 import { listLiveClassesPublic } from './liveClass.service';
+import {
+  userHasCourseAccess,
+  type CourseAccessContext,
+} from './courseAccess.service';
 
 const CHAPTER_COLUMNS =
   'id, course_id, title, description, sort_order, duration_seconds, video_count, pdf_count, notes_count, video_url, is_free_preview, is_published';
@@ -35,18 +39,7 @@ type ChapterRow = {
 };
 
 async function isUserEnrolled(userId: string, courseId: string): Promise<boolean> {
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from('enrollments')
-    .select('id')
-    .eq('user_id', userId)
-    .eq('course_id', courseId)
-    .maybeSingle();
-
-  if (error) {
-    throw new AppError(500, 'ENROLLMENT_FETCH_FAILED', error.message);
-  }
-  return Boolean(data);
+  return userHasCourseAccess(userId, courseId);
 }
 
 function toChapter(
@@ -630,38 +623,57 @@ async function resolveChapterAccess(
   return { courseId, enrolled };
 }
 
-/** GET /chapters/:chapterId/videos */
+/** GET /chapters/:chapterId/videos — prefer middleware access context */
 export async function listChapterVideosForStudent(
   chapterId: string,
-  userId: string,
+  accessOrUserId: CourseAccessContext | string,
 ) {
-  const { enrolled } = await resolveChapterAccess(chapterId, userId);
+  const enrolled =
+    typeof accessOrUserId === 'string'
+      ? (await resolveChapterAccess(chapterId, accessOrUserId)).enrolled
+      : accessOrUserId.hasFullAccess;
   return listVideosForChapterPublic(chapterId, { enrolled });
 }
 
 /** GET /chapters/:chapterId/pdfs */
 export async function listChapterPdfsForStudent(
   chapterId: string,
-  userId: string,
+  accessOrUserId: CourseAccessContext | string,
 ) {
-  const { enrolled } = await resolveChapterAccess(chapterId, userId);
+  const enrolled =
+    typeof accessOrUserId === 'string'
+      ? (await resolveChapterAccess(chapterId, accessOrUserId)).enrolled
+      : accessOrUserId.hasFullAccess;
   return listPdfsForChapterPublic(chapterId, { enrolled });
 }
 
 /** GET /chapters/:chapterId/notes */
 export async function listChapterNotesForStudent(
   chapterId: string,
-  userId: string,
+  accessOrUserId: CourseAccessContext | string,
 ) {
-  const { enrolled } = await resolveChapterAccess(chapterId, userId);
+  const enrolled =
+    typeof accessOrUserId === 'string'
+      ? (await resolveChapterAccess(chapterId, accessOrUserId)).enrolled
+      : accessOrUserId.hasFullAccess;
   return listNotesForChapterPublic(chapterId, { enrolled });
 }
 
 /**
  * GET /courses/:courseId/content — all chapters with videos/pdfs/notes + live classes.
+ * Pass CourseAccessContext from middleware to avoid a second purchase check.
  */
-export async function getCourseContent(courseId: string, userId: string) {
+export async function getCourseContent(
+  courseId: string,
+  accessOrUserId: CourseAccessContext | string,
+) {
   const supabase = getSupabaseAdmin();
+  const userId =
+    typeof accessOrUserId === 'string' ? accessOrUserId : accessOrUserId.userId;
+  const enrolled =
+    typeof accessOrUserId === 'string'
+      ? await isUserEnrolled(userId, courseId)
+      : accessOrUserId.hasFullAccess;
 
   const { data: course, error: courseError } = await supabase
     .from('courses')
@@ -681,7 +693,6 @@ export async function getCourseContent(courseId: string, userId: string) {
     publishedOnly: true,
     userId,
   });
-  const enrolled = await isUserEnrolled(userId, courseId);
 
   const chaptersWithContent = await Promise.all(
     chapters.map(async (chapter) => {
@@ -700,6 +711,7 @@ export async function getCourseContent(courseId: string, userId: string) {
     course_id: course.id as string,
     course_title: course.title as string,
     enrolled,
+    access_mode: enrolled ? ('full' as const) : ('preview' as const),
     chapters: chaptersWithContent,
     live_classes,
   };

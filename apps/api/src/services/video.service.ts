@@ -11,6 +11,7 @@ import type {
   ListVideosQuery,
   UpdateVideoInput,
 } from '../validators/video.validators';
+import { isMediaLocked } from './courseAccess.service';
 
 const VIDEO_COLUMNS =
   'id, course_id, chapter_id, title, description, youtube_url, youtube_video_id, video_type, thumbnail_url, duration_seconds, sort_order, is_free, is_published, created_at, updated_at';
@@ -435,7 +436,7 @@ export async function listVideosForChapterPublic(
 
   return ((data ?? []) as Record<string, unknown>[]).map((row) => {
     const isFree = Boolean(row.is_free);
-    const is_locked = !options.enrolled && !isFree;
+    const is_locked = isMediaLocked(options.enrolled, isFree);
     return {
       id: row.id as string,
       course_id: row.course_id as string,

@@ -47,6 +47,10 @@ import {
 } from '../controllers/chapter.controller';
 import { requireAuth } from '../middlewares/auth';
 import { requireAdmin } from '../middlewares/requireAdmin';
+import {
+  attachCourseAccessFromChapter,
+  attachCourseAccessFromCourse,
+} from '../middlewares/courseAccess';
 import { thumbnailUpload, materialUpload } from '../middlewares/upload';
 import { validate } from '../middlewares/validate';
 import {
@@ -96,12 +100,27 @@ courseRouter.put(
 );
 courseRouter.delete('/courses/:id', requireAuth, requireAdmin, removeCourse);
 
-// Student / shared detail + enroll
+// Student / shared detail + enroll (content gated by course-access middleware)
 courseRouter.get('/courses/:id', requireAuth, getCourse);
-courseRouter.get('/courses/:id/content', requireAuth, getCourseContentHandler);
+courseRouter.get(
+  '/courses/:id/content',
+  requireAuth,
+  attachCourseAccessFromCourse,
+  getCourseContentHandler,
+);
 courseRouter.post('/courses/:id/enroll', requireAuth, postEnrollCourse);
-courseRouter.get('/courses/:id/chapters', requireAuth, listChapters);
-courseRouter.get('/courses/:id/chapters/:chapterId', requireAuth, getChapter);
+courseRouter.get(
+  '/courses/:id/chapters',
+  requireAuth,
+  attachCourseAccessFromCourse,
+  listChapters,
+);
+courseRouter.get(
+  '/courses/:id/chapters/:chapterId',
+  requireAuth,
+  attachCourseAccessFromCourse,
+  getChapter,
+);
 
 // ---- Flat chapters (primary) ----
 courseRouter.get(
@@ -132,9 +151,24 @@ courseRouter.post(
   materialUpload,
   postChapterMaterial,
 );
-courseRouter.get('/chapters/:id/videos', requireAuth, listChapterVideos);
-courseRouter.get('/chapters/:id/pdfs', requireAuth, listChapterPdfs);
-courseRouter.get('/chapters/:id/notes', requireAuth, listChapterNotes);
+courseRouter.get(
+  '/chapters/:id/videos',
+  requireAuth,
+  attachCourseAccessFromChapter,
+  listChapterVideos,
+);
+courseRouter.get(
+  '/chapters/:id/pdfs',
+  requireAuth,
+  attachCourseAccessFromChapter,
+  listChapterPdfs,
+);
+courseRouter.get(
+  '/chapters/:id/notes',
+  requireAuth,
+  attachCourseAccessFromChapter,
+  listChapterNotes,
+);
 courseRouter.put(
   '/chapters/:id',
   requireAuth,

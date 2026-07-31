@@ -22,6 +22,10 @@ export type MainTabParamList = {
 export type AppStackParamList = {
   MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
   CourseDetail: { courseId: string };
+  BuyCourse: { courseId: string };
+  PaymentSuccess: { courseId: string; courseTitle?: string };
+  PaymentFailed: { courseId: string; message?: string };
+  PurchaseHistory: undefined;
   ChapterList: { courseId: string; courseTitle?: string };
   ChapterContent: { courseId: string; chapterId: string };
   VideoPlayer: { courseId: string; chapterId: string; videoId: string };

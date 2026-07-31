@@ -55,7 +55,7 @@ export async function listChapters(
 ): Promise<void> {
   try {
     const userId = assertUserId(req);
-    const courseId = courseIdParam(req);
+    const courseId = req.courseAccess?.courseId ?? courseIdParam(req);
     const data = await listChaptersForCourse(courseId, {
       publishedOnly: true,
       userId,
@@ -74,7 +74,7 @@ export async function getChapter(
 ): Promise<void> {
   try {
     const userId = assertUserId(req);
-    const courseId = courseIdParam(req);
+    const courseId = req.courseAccess?.courseId ?? courseIdParam(req);
     const chapterId = chapterIdParam(req);
     const data = await getChapterDetail(courseId, chapterId, userId);
     res.status(200).json({ success: true, data });
@@ -90,9 +90,14 @@ export async function getCourseContentHandler(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const userId = assertUserId(req);
-    const courseId = courseIdParam(req);
-    const data = await getCourseContent(courseId, userId);
+    if (!req.courseAccess) {
+      throw new AppError(
+        500,
+        'COURSE_ACCESS_MISSING',
+        'Course access middleware required',
+      );
+    }
+    const data = await getCourseContent(req.courseAccess.courseId, req.courseAccess);
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);
@@ -106,10 +111,23 @@ export async function listChapterVideos(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const userId = assertUserId(req);
+    if (!req.courseAccess) {
+      throw new AppError(
+        500,
+        'COURSE_ACCESS_MISSING',
+        'Course access middleware required',
+      );
+    }
     const chapterId = chapterIdParam(req);
-    const data = await listChapterVideosForStudent(chapterId, userId);
-    res.status(200).json({ success: true, data });
+    const data = await listChapterVideosForStudent(chapterId, req.courseAccess);
+    res.status(200).json({
+      success: true,
+      data,
+      message:
+        req.courseAccess.mode === 'full'
+          ? 'Full access'
+          : 'Preview access — free videos only unlocked',
+    });
   } catch (error) {
     next(error);
   }
@@ -122,9 +140,15 @@ export async function listChapterPdfs(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const userId = assertUserId(req);
+    if (!req.courseAccess) {
+      throw new AppError(
+        500,
+        'COURSE_ACCESS_MISSING',
+        'Course access middleware required',
+      );
+    }
     const chapterId = chapterIdParam(req);
-    const data = await listChapterPdfsForStudent(chapterId, userId);
+    const data = await listChapterPdfsForStudent(chapterId, req.courseAccess);
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);
@@ -138,9 +162,15 @@ export async function listChapterNotes(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const userId = assertUserId(req);
+    if (!req.courseAccess) {
+      throw new AppError(
+        500,
+        'COURSE_ACCESS_MISSING',
+        'Course access middleware required',
+      );
+    }
     const chapterId = chapterIdParam(req);
-    const data = await listChapterNotesForStudent(chapterId, userId);
+    const data = await listChapterNotesForStudent(chapterId, req.courseAccess);
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);

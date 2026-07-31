@@ -7,6 +7,11 @@
 | [API conventions](api/conventions.md) | Response envelope, auth, versioning |
 | [Catalog API](api/catalog.md) | Courses, chapters, categories (flat REST) |
 | [Videos API](api/videos.md) | YouTube video management (URL-only storage) |
+| [Payments API](api/payments.md) | Razorpay create order + verify signature |
+| [Payment verification](api/payment-verification.md) | Signature → store → purchased_courses → unlock |
+| [Purchase History](api/purchase-history.md) | History list + download receipt |
+| [Buy Course flow](guides/buy-course-payment-flow.md) | Mobile checkout UI + payment sequence |
+| [My Courses](guides/my-courses.md) | Owned courses, progress, Continue Learning |
 | [Local development](guides/local-development.md) | Setup steps |
 | [Module 3 — Home & courses](guides/module-3-home-courses.md) | Mobile home, course list, chapters, admin |
 | [ADRs](adr/) | Architecture decision records |

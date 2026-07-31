@@ -51,6 +51,14 @@ const envSchema = z.object({
   R2_PUBLIC_BASE_URL: z.string().default(''),
   /** Optional override; default https://{accountId}.r2.cloudflarestorage.com */
   R2_ENDPOINT: z.string().default(''),
+  /**
+   * Razorpay Payment Gateway (server-only secret).
+   * Checkout receives KEY_ID only — never ship KEY_SECRET to clients.
+   */
+  RAZORPAY_KEY_ID: z.string().default(''),
+  RAZORPAY_KEY_SECRET: z.string().default(''),
+  /** Optional — required only if webhook route is enabled */
+  RAZORPAY_WEBHOOK_SECRET: z.string().default(''),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -72,9 +80,20 @@ export function isR2Configured(): boolean {
   );
 }
 
+export function isRazorpayEnvConfigured(): boolean {
+  return Boolean(env.RAZORPAY_KEY_ID?.trim() && env.RAZORPAY_KEY_SECRET?.trim());
+}
+
 if (env.NODE_ENV === 'production' && !isR2Configured()) {
   console.error(
     '[api] Cloudflare R2 is required in production (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_BASE_URL)',
+  );
+  process.exit(1);
+}
+
+if (env.NODE_ENV === 'production' && !isRazorpayEnvConfigured()) {
+  console.error(
+    '[api] Razorpay is required in production (RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET)',
   );
   process.exit(1);
 }

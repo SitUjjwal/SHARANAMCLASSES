@@ -37,6 +37,7 @@ const linking: LinkingOptions<RootStackParamList> = {
         },
       },
       CourseDetail: 'course/:courseId',
+      BuyCourse: 'course/:courseId/buy',
       ChapterList: 'course/:courseId/chapters',
       ChapterContent: 'course/:courseId/chapters/:chapterId',
       VideoPlayer: 'course/:courseId/chapters/:chapterId/videos/:videoId',

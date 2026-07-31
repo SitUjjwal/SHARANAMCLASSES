@@ -8,12 +8,14 @@ Admin mutations require `profiles.role = admin` (or `ADMIN_EMAILS`).
 
 ## Student read APIs
 
+Protected by `requireAuth` + **course access middleware** (see [course-access-middleware.md](./course-access-middleware.md)).
+
 | Method | Path | Notes |
 |--------|------|--------|
 | `GET` | `/courses/:courseId/content` | All published chapters + videos/pdfs/notes + course live classes |
-| `GET` | `/chapters/:chapterId/videos` | Chapter videos (lock / free preview by enrollment) |
-| `GET` | `/chapters/:chapterId/pdfs` | Chapter PDFs |
-| `GET` | `/chapters/:chapterId/notes` | Chapter notes |
+| `GET` | `/chapters/:chapterId/videos` | Full URLs if purchased/enrolled; else free preview only |
+| `GET` | `/chapters/:chapterId/pdfs` | Chapter PDFs (same lock rule) |
+| `GET` | `/chapters/:chapterId/notes` | Chapter notes (same lock rule) |
 | `GET` | `/live-classes` | Published list for students (`?courseId=` optional) |
 | `GET` | `/live-classes/public` | Alias of student list (older clients) |
 
@@ -31,6 +33,7 @@ Also available (unchanged):
     "course_id": "…",
     "course_title": "…",
     "enrolled": true,
+    "access_mode": "full",
     "chapters": [
       {
         "id": "…",
@@ -46,7 +49,7 @@ Also available (unchanged):
 }
 ```
 
-Locked media still appear when free-preview; URLs may be withheld when locked (same rules as chapter detail).
+`access_mode`: `full` (purchased/enrolled) or `preview` (free `is_free` media only unlocked). Locked media may still appear in the list with URLs withheld.
 
 ---
 

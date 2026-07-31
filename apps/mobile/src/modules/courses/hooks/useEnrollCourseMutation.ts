@@ -17,6 +17,7 @@ export function useEnrollCourseMutation(courseId: string) {
         queryClient.invalidateQueries({ queryKey: queryKeys.chapters(courseId) }),
         queryClient.invalidateQueries({ queryKey: ['courses', 'list'] }),
         queryClient.invalidateQueries({ queryKey: queryKeys.dashboard }),
+        queryClient.invalidateQueries({ queryKey: ['my-courses'] }),
       ]);
     },
   });

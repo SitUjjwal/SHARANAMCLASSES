@@ -335,7 +335,8 @@ export async function getCourseDetail(
 }
 
 /**
- * Enroll / "buy" — creates an enrollment row (payment gateway can plug in later).
+ * Enroll in a free course.
+ * Paid courses must go through Razorpay (POST /payments/orders + /payments/verify).
  */
 export async function enrollInCourse(
   userId: string,
@@ -345,7 +346,7 @@ export async function enrollInCourse(
 
   const { data: course, error: courseError } = await supabase
     .from('courses')
-    .select('id, is_published')
+    .select('id, is_published, is_free, price')
     .eq('id', courseId)
     .eq('is_published', true)
     .maybeSingle();
@@ -355,6 +356,15 @@ export async function enrollInCourse(
   }
   if (!course) {
     throw new AppError(404, 'COURSE_NOT_FOUND', 'Course not found');
+  }
+
+  const isFree = Boolean(course.is_free) || Number(course.price) <= 0;
+  if (!isFree) {
+    throw new AppError(
+      402,
+      'PAYMENT_REQUIRED',
+      'This is a paid course. Create a Razorpay order via POST /payments/orders',
+    );
   }
 
   const { data: existing, error: existingError } = await supabase

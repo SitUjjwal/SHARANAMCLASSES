@@ -11,6 +11,7 @@ import type {
   ListNotesQuery,
   UpdateNoteInput,
 } from '../validators/note.validators';
+import { isMediaLocked } from './courseAccess.service';
 
 const NOTE_COLUMNS =
   'id, course_id, chapter_id, title, description, notes_url, sort_order, is_free, is_published, created_at, updated_at';
@@ -366,7 +367,7 @@ export async function listNotesForChapterPublic(
 
   return ((data ?? []) as Record<string, unknown>[]).map((row) => {
     const isFree = Boolean(row.is_free);
-    const is_locked = !options.enrolled && !isFree;
+    const is_locked = isMediaLocked(options.enrolled, isFree);
     return {
       id: row.id as string,
       course_id: row.course_id as string,

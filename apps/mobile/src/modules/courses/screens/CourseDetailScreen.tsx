@@ -63,18 +63,26 @@ export function CourseDetailScreen({ navigation, route }: Props) {
   }
 
   function onBuy() {
-    enrollMutation.mutate(undefined, {
-      onSuccess: () => {
-        Alert.alert('Enrolled', 'This course is now in My Learning.');
-      },
-      onError: (error) => {
-        Alert.alert('Could not enroll', getApiErrorMessage(error));
-      },
-    });
+    const current = detailQuery.data;
+    if (!current || current.is_purchased) {
+      return;
+    }
+    if (current.is_free) {
+      enrollMutation.mutate(undefined, {
+        onSuccess: () => {
+          Alert.alert('Enrolled', 'This course is now in My Learning.');
+        },
+        onError: (error) => {
+          Alert.alert('Could not enroll', getApiErrorMessage(error));
+        },
+      });
+      return;
+    }
+    navigation.navigate('BuyCourse', { courseId });
   }
 
-  function openRelated(course: CourseSummary) {
-    navigation.push('CourseDetail', { courseId: course.id });
+  function openRelated(courseItem: CourseSummary) {
+    navigation.push('CourseDetail', { courseId: courseItem.id });
   }
 
   function openChapterList() {

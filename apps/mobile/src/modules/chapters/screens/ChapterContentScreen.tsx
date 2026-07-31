@@ -14,9 +14,11 @@
  * Badges: Free preview · Locked (not purchased)
  */
 import type { ReactNode } from 'react';
+import { useEffect } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useChapterContentQuery } from '@/modules/chapters/hooks/useChapterContentQuery';
@@ -29,6 +31,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Screen } from '@/components/ui/Screen';
 import { SkeletonBlock } from '@/components/ui/SkeletonBlock';
+import { updateLastWatchedChapter } from '@/services/myCourse.service';
 import type { AppStackParamList } from '@/types/navigation';
 import { getApiErrorMessage } from '@/utils/apiErrors';
 import { colors, spacing, typography } from '@/theme';
@@ -54,6 +57,26 @@ export function ChapterContentScreen({ navigation, route }: Props) {
   const { courseId, chapterId } = route.params;
   const insets = useSafeAreaInsets();
   const contentQuery = useChapterContentQuery(courseId, chapterId);
+  const queryClient = useQueryClient();
+
+  // Record last watched for Continue Learning (owned courses only)
+  useEffect(() => {
+    if (!contentQuery.isSuccess) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        await updateLastWatchedChapter(courseId, chapterId);
+        if (!cancelled) {
+          await queryClient.invalidateQueries({ queryKey: ['my-courses'] });
+        }
+      } catch {
+        // Not enrolled / offline — ignore; chapter content still works
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [chapterId, contentQuery.isSuccess, courseId, queryClient]);
 
   function promptEnroll() {
     Alert.alert('Locked', 'Enroll in this course to unlock this content.', [

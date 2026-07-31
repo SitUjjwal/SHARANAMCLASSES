@@ -43,5 +43,5 @@ Breaking changes → new path segment (`/api/v2`) or carefully versioned DTOs in
 
 ## Webhooks
 
-- Razorpay: dedicated route under `/api/v1/webhooks/razorpay`
-- Raw body verification before JSON parse (to be implemented with feature work)
+- Razorpay Checkout verify: `POST /payments/verify` (HMAC + payment fetch)
+- Razorpay webhook secret helper: `verifyWebhookSignature` (route can be added under `/api/v1/webhooks/razorpay` with raw body)
