@@ -73,6 +73,25 @@ export async function listCourses(
           req.query.price === 'all'
             ? req.query.price
             : 'all',
+        classLevel:
+          typeof req.query.classLevel === 'string' ? req.query.classLevel : undefined,
+        medium:
+          req.query.medium === 'hindi' || req.query.medium === 'english'
+            ? req.query.medium
+            : undefined,
+        stream:
+          req.query.stream === 'science' ||
+          req.query.stream === 'arts' ||
+          req.query.stream === 'commerce'
+            ? req.query.stream
+            : undefined,
+        board:
+          req.query.board === 'bihar_board' || req.query.board === 'other'
+            ? req.query.board
+            : undefined,
+        academicYear:
+          typeof req.query.academicYear === 'string' ? req.query.academicYear : undefined,
+        subject: typeof req.query.subject === 'string' ? req.query.subject : undefined,
         page: Number(req.query.page) || filters.page || 1,
         pageSize: Number(req.query.pageSize) || filters.pageSize || 10,
       });

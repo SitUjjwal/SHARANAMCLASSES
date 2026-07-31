@@ -29,6 +29,12 @@ export type CourseWritePayload = {
   thumbnail_url?: string | null;
   class_level?: string | null;
   medium?: 'hindi' | 'english' | null;
+  stream?: 'science' | 'arts' | 'commerce' | null;
+  board?: 'bihar_board' | 'other' | null;
+  academic_year?: string | null;
+  subject?: string | null;
+  teacher_id?: string | null;
+  language?: 'hindi' | 'english' | null;
   teacher_name?: string | null;
   price?: number;
   is_free?: boolean;

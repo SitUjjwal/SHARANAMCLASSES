@@ -28,6 +28,18 @@ const courseBodyBase = z.object({
   thumbnail_url: z.string().url().nullable().optional(),
   class_level: classLevelEnum.nullable().optional(),
   medium: z.enum(['hindi', 'english']).nullable().optional(),
+  stream: z.enum(['science', 'arts', 'commerce']).nullable().optional(),
+  board: z.enum(['bihar_board', 'other']).nullable().optional().default('bihar_board'),
+  academic_year: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{4}$/, 'academic_year must look like 2026-2027')
+    .nullable()
+    .optional()
+    .default('2026-2027'),
+  subject: z.string().trim().min(2).max(80).nullable().optional(),
+  teacher_id: z.string().uuid().nullable().optional(),
+  language: z.enum(['hindi', 'english']).nullable().optional(),
   teacher_name: z.string().trim().max(120).nullable().optional(),
   price: z.number().min(0).optional().default(0),
   rating: z.number().min(0).max(5).optional().default(4),
@@ -39,16 +51,34 @@ const courseBodyBase = z.object({
   features: z.array(z.string().trim().min(1).max(200)).max(20).optional(),
 });
 
-function normalizePricing<T extends { is_free?: boolean; price?: number }>(data: T): T {
-  if (data.is_free) {
-    return { ...data, price: 0 };
+function normalizeCourseTaxonomy<
+  T extends {
+    is_free?: boolean;
+    price?: number;
+    medium?: 'hindi' | 'english' | null;
+    language?: 'hindi' | 'english' | null;
+    class_level?: string | null;
+    stream?: 'science' | 'arts' | 'commerce' | null;
+  },
+>(data: T): T {
+  let next = data;
+  if (next.is_free) {
+    next = { ...next, price: 0 };
   }
-  return data;
+  // Keep language in sync with medium when language omitted
+  if (next.language == null && next.medium) {
+    next = { ...next, language: next.medium };
+  }
+  // Class 9–10 typically have no stream
+  if (next.class_level === '9' || next.class_level === '10') {
+    next = { ...next, stream: null };
+  }
+  return next;
 }
 
-export const createCourseSchema = courseBodyBase.transform(normalizePricing);
+export const createCourseSchema = courseBodyBase.transform(normalizeCourseTaxonomy);
 
-export const updateCourseSchema = courseBodyBase.partial().transform(normalizePricing);
+export const updateCourseSchema = courseBodyBase.partial().transform(normalizeCourseTaxonomy);
 
 export const createChapterSchema = z.object({
   title: z.string().trim().min(2).max(160),
@@ -88,6 +118,10 @@ export const listCoursesQuerySchema = z.object({
     .transform((value) => (value === undefined ? undefined : value === 'true')),
   classLevel: z.string().trim().max(32).optional(),
   medium: z.enum(['hindi', 'english']).optional(),
+  stream: z.enum(['science', 'arts', 'commerce']).optional(),
+  board: z.enum(['bihar_board', 'other']).optional(),
+  academicYear: z.string().trim().max(16).optional(),
+  subject: z.string().trim().max(80).optional(),
   price: z.enum(['free', 'paid', 'all']).optional().default('all'),
   page: z.coerce.number().int().min(1).optional().default(1),
   pageSize: z.coerce.number().int().min(1).max(100).optional().default(10),
@@ -100,6 +134,12 @@ export const adminListCoursesQuerySchema = z.object({
   /** active = published, inactive = draft/unpublished */
   status: z.enum(['all', 'active', 'inactive']).optional().default('all'),
   price: z.enum(['free', 'paid', 'all']).optional().default('all'),
+  classLevel: z.string().trim().max(32).optional(),
+  medium: z.enum(['hindi', 'english']).optional(),
+  stream: z.enum(['science', 'arts', 'commerce']).optional(),
+  board: z.enum(['bihar_board', 'other']).optional(),
+  academicYear: z.string().trim().max(16).optional(),
+  subject: z.string().trim().max(80).optional(),
   page: z.coerce.number().int().min(1).optional().default(1),
   pageSize: z.coerce.number().int().min(1).max(100).optional().default(10),
 });
@@ -114,6 +154,10 @@ export const getCoursesQuerySchema = z.object({
     .transform((value) => (value === undefined ? undefined : value === 'true')),
   classLevel: z.string().trim().max(32).optional(),
   medium: z.enum(['hindi', 'english']).optional(),
+  stream: z.enum(['science', 'arts', 'commerce']).optional(),
+  board: z.enum(['bihar_board', 'other']).optional(),
+  academicYear: z.string().trim().max(16).optional(),
+  subject: z.string().trim().max(80).optional(),
   price: z.enum(['free', 'paid', 'all']).optional().default('all'),
   status: z.enum(['all', 'active', 'inactive']).optional().default('all'),
   page: z.coerce.number().int().min(1).optional().default(1),

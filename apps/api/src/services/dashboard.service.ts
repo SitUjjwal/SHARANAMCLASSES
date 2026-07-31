@@ -39,7 +39,7 @@ export async function getDashboardForUser(userId: string): Promise<DashboardPayl
     supabase
       .from('courses')
       .select(
-        'id, category_id, title, slug, description, thumbnail_url, class_level, medium, teacher_name, price, rating, is_free, is_featured, is_published, sort_order',
+        'id, category_id, title, slug, description, thumbnail_url, class_level, medium, stream, board, academic_year, subject, teacher_id, language, teacher_name, price, rating, is_free, is_featured, is_published, sort_order',
       )
       .eq('is_published', true)
       .eq('is_featured', true)
@@ -48,7 +48,7 @@ export async function getDashboardForUser(userId: string): Promise<DashboardPayl
     supabase
       .from('enrollments')
       .select(
-        'id, user_id, course_id, progress_percent, enrolled_at, course:courses(id, category_id, title, slug, description, thumbnail_url, class_level, medium, teacher_name, price, rating, is_free, is_featured, is_published, sort_order)',
+        'id, user_id, course_id, progress_percent, enrolled_at, course:courses(id, category_id, title, slug, description, thumbnail_url, class_level, medium, stream, board, academic_year, subject, teacher_id, language, teacher_name, price, rating, is_free, is_featured, is_published, sort_order)',
       )
       .eq('user_id', userId)
       .order('enrolled_at', { ascending: false })

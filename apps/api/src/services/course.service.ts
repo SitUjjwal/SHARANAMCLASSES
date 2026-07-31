@@ -12,18 +12,30 @@ import type {
 import { listChaptersForCourse } from './chapter.service';
 
 export const COURSE_COLUMNS =
-  'id, category_id, title, slug, description, thumbnail_url, class_level, medium, teacher_name, price, rating, is_free, is_featured, is_published, sort_order, features';
+  'id, category_id, title, slug, description, thumbnail_url, class_level, medium, stream, board, academic_year, subject, teacher_id, language, teacher_name, price, rating, is_free, is_featured, is_published, sort_order, features';
 
 type CourseRow = Omit<CourseSummary, 'is_purchased' | 'price' | 'rating'> & {
   price: number | string;
   rating: number | string;
   features?: string[] | null;
+  stream?: CourseSummary['stream'];
+  board?: CourseSummary['board'];
+  academic_year?: string | null;
+  subject?: string | null;
+  teacher_id?: string | null;
+  language?: CourseSummary['language'];
 };
 
 function toSummary(row: CourseRow, purchasedIds: Set<string>): CourseSummary {
   const { features: _features, ...rest } = row;
   return {
     ...rest,
+    stream: (row.stream as CourseSummary['stream']) ?? null,
+    board: (row.board as CourseSummary['board']) ?? 'bihar_board',
+    academic_year: row.academic_year ?? '2026-2027',
+    subject: row.subject ?? null,
+    teacher_id: row.teacher_id ?? null,
+    language: (row.language as CourseSummary['language']) ?? row.medium ?? null,
     price: Number(row.price) || 0,
     rating: Math.min(5, Math.max(0, Number(row.rating) || 0)),
     is_purchased: purchasedIds.has(row.id),
@@ -37,10 +49,12 @@ function defaultFeatures(row: CourseRow): string[] {
   }
   return [
     row.class_level ? `Designed for Class ${row.class_level}` : 'Structured school curriculum',
+    row.board === 'bihar_board' ? 'Bihar Board aligned' : 'Board-aligned syllabus',
+    row.subject ? `${row.subject} focused lessons` : null,
     row.medium ? `Taught in ${row.medium}` : 'Clear classroom-style teaching',
     'Chapter-wise video lessons',
     'Learn anytime on mobile',
-  ];
+  ].filter((item): item is string => Boolean(item));
 }
 
 
@@ -107,6 +121,21 @@ export async function listPublishedCourses(
   }
   if (filters.medium) {
     query = query.eq('medium', filters.medium);
+  }
+  if (filters.stream) {
+    query = query.eq('stream', filters.stream);
+  }
+  if (filters.board) {
+    query = query.eq('board', filters.board);
+  }
+  if (filters.academicYear) {
+    query = query.eq('academic_year', filters.academicYear);
+  }
+  if (filters.subject) {
+    const safeSubject = filters.subject.replace(/[%_,.()]/g, '').trim();
+    if (safeSubject) {
+      query = query.ilike('subject', `%${safeSubject}%`);
+    }
   }
   if (filters.price === 'free') {
     query = query.eq('is_free', true);
@@ -190,6 +219,27 @@ export async function listCoursesForAdmin(
     query = query.eq('is_free', true);
   } else if (filters.price === 'paid') {
     query = query.eq('is_free', false);
+  }
+  if (filters.classLevel) {
+    query = query.eq('class_level', filters.classLevel);
+  }
+  if (filters.medium) {
+    query = query.eq('medium', filters.medium);
+  }
+  if (filters.stream) {
+    query = query.eq('stream', filters.stream);
+  }
+  if (filters.board) {
+    query = query.eq('board', filters.board);
+  }
+  if (filters.academicYear) {
+    query = query.eq('academic_year', filters.academicYear);
+  }
+  if (filters.subject) {
+    const safeSubject = filters.subject.replace(/[%_,.()]/g, '').trim();
+    if (safeSubject) {
+      query = query.ilike('subject', `%${safeSubject}%`);
+    }
   }
 
   const { data, error, count } = await query;

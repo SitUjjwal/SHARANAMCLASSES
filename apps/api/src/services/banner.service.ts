@@ -42,6 +42,18 @@ export async function listAllBannersForAdmin(): Promise<Banner[]> {
 
 export async function createBanner(input: CreateBannerInput): Promise<Banner> {
   const supabase = getSupabaseAdmin();
+
+  const { count, error: countError } = await supabase
+    .from('banners')
+    .select('id', { count: 'exact', head: true });
+
+  if (countError) {
+    throw new AppError(500, 'BANNERS_FETCH_FAILED', countError.message);
+  }
+  if ((count ?? 0) >= 20) {
+    throw new AppError(400, 'BANNER_LIMIT', 'Maximum 20 banners allowed for the home slider');
+  }
+
   const { data, error } = await supabase
     .from('banners')
     .insert(input)

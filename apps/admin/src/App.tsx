@@ -8,6 +8,7 @@ import { LoginPage } from '@/features/auth/LoginPage';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import {
+  BannersPage,
   CategoriesPage,
   ChaptersPage,
   CoursesPage,
@@ -27,6 +28,7 @@ export function App() {
             <Route element={<AdminLayout />}>
               <Route index element={<DashboardPage />} />
               <Route path="courses" element={<CoursesPage />} />
+              <Route path="banners" element={<BannersPage />} />
               <Route path="categories" element={<CategoriesPage />} />
               <Route path="chapters" element={<ChaptersPage />} />
               <Route path="teachers" element={<TeachersPage />} />

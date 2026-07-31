@@ -200,6 +200,29 @@ ChapterContentScreen ← GET /courses/:courseId/chapters/:chapterId
 
 Schema: `20260731110000_chapter_list_content.sql`
 
+## Bihar Board course taxonomy
+
+Migration: `20260731140000_courses_bihar_board_fields.sql`
+
+| Column | Meaning | Example filters |
+|--------|---------|-----------------|
+| `class_level` | Class / grade | Class 10 |
+| `stream` | Science / Arts / Commerce (null for 9–10) | Class 12 → Science |
+| `medium` | Hindi / English instruction | Hindi Medium |
+| `language` | Content language (usually = medium) | Hindi |
+| `board` | Default `bihar_board` | Bihar Board |
+| `academic_year` | Batch year | `2026-2027` |
+| `subject` | Subject name | Physics |
+| `teacher_id` | FK → `profiles` | Teacher account |
+
+API query examples:
+
+```
+GET /courses?classLevel=10&medium=hindi
+GET /courses?classLevel=12&stream=science&subject=Physics
+GET /courses?board=bihar_board&academicYear=2026-2027
+```
+
 ## Admin panel (Courses + Chapters)
 
 App: `apps/admin` → `npm run dev:admin` (http://localhost:5173)

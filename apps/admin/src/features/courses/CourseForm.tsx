@@ -40,10 +40,16 @@ type FormState = {
   slug: string;
   description: string;
   category_id: string;
+  teacher_id: string;
   teacher_name: string;
   thumbnail_url: string;
   class_level: string;
   medium: string;
+  stream: string;
+  board: string;
+  academic_year: string;
+  subject: string;
+  language: string;
   price: string;
   is_free: boolean;
   is_published: boolean;
@@ -58,10 +64,16 @@ function fromCourse(course: CourseSummary | null): FormState {
       slug: '',
       description: '',
       category_id: '',
+      teacher_id: '',
       teacher_name: '',
       thumbnail_url: '',
       class_level: '10',
       medium: 'hindi',
+      stream: '',
+      board: 'bihar_board',
+      academic_year: '2026-2027',
+      subject: '',
+      language: 'hindi',
       price: '0',
       is_free: false,
       is_published: false,
@@ -75,10 +87,16 @@ function fromCourse(course: CourseSummary | null): FormState {
     slug: course.slug,
     description: course.description ?? '',
     category_id: course.category_id ?? '',
+    teacher_id: course.teacher_id ?? '',
     teacher_name: course.teacher_name ?? '',
     thumbnail_url: course.thumbnail_url ?? '',
     class_level: course.class_level ?? '',
     medium: course.medium ?? '',
+    stream: course.stream ?? '',
+    board: course.board ?? 'bihar_board',
+    academic_year: course.academic_year ?? '2026-2027',
+    subject: course.subject ?? '',
+    language: course.language ?? course.medium ?? 'hindi',
     price: String(course.price ?? 0),
     is_free: course.is_free,
     is_published: course.is_published,
@@ -157,15 +175,26 @@ export function CourseForm({
     event.preventDefault();
     if (!validate()) return;
 
+    const selectedTeacher = teachers.find((t) => t.id === form.teacher_id);
     const payload: CourseWritePayload = {
       title: form.title.trim(),
       slug: form.slug.trim(),
       description: form.description.trim(),
       category_id: form.category_id || null,
-      teacher_name: form.teacher_name.trim() || null,
+      teacher_id: form.teacher_id || null,
+      teacher_name:
+        form.teacher_name.trim() || selectedTeacher?.full_name || null,
       thumbnail_url: form.thumbnail_url.trim() || null,
       class_level: form.class_level || null,
       medium: (form.medium as 'hindi' | 'english') || null,
+      stream:
+        form.class_level === '11' || form.class_level === '12'
+          ? ((form.stream as 'science' | 'arts' | 'commerce') || null)
+          : null,
+      board: (form.board as 'bihar_board' | 'other') || 'bihar_board',
+      academic_year: form.academic_year.trim() || '2026-2027',
+      subject: form.subject.trim() || null,
+      language: (form.language as 'hindi' | 'english') || (form.medium as 'hindi' | 'english') || null,
       price: form.is_free ? 0 : Number(form.price),
       is_free: form.is_free,
       is_published: form.is_published,
@@ -250,12 +279,20 @@ export function CourseForm({
         <label>
           Teacher
           <select
-            value={form.teacher_name}
-            onChange={(e) => setField('teacher_name', e.target.value)}
+            value={form.teacher_id}
+            onChange={(e) => {
+              const id = e.target.value;
+              const teacher = teachers.find((t) => t.id === id);
+              setForm((prev) => ({
+                ...prev,
+                teacher_id: id,
+                teacher_name: teacher?.full_name ?? prev.teacher_name,
+              }));
+            }}
           >
             <option value="">— Select teacher —</option>
             {teachers.map((teacher) => (
-              <option key={teacher.id} value={teacher.full_name}>
+              <option key={teacher.id} value={teacher.id}>
                 {teacher.full_name}
               </option>
             ))}
@@ -269,10 +306,17 @@ export function CourseForm({
         </label>
 
         <label>
-          Class level
+          Class *
           <select
             value={form.class_level}
-            onChange={(e) => setField('class_level', e.target.value)}
+            onChange={(e) => {
+              const level = e.target.value;
+              setForm((prev) => ({
+                ...prev,
+                class_level: level,
+                stream: level === '11' || level === '12' ? prev.stream : '',
+              }));
+            }}
           >
             <option value="">—</option>
             {CLASS_LEVELS.map((level) => (
@@ -284,12 +328,71 @@ export function CourseForm({
         </label>
 
         <label>
+          Stream {form.class_level === '11' || form.class_level === '12' ? '*' : '(11–12)'}
+          <select
+            value={form.stream}
+            disabled={form.class_level !== '11' && form.class_level !== '12'}
+            onChange={(e) => setField('stream', e.target.value)}
+          >
+            <option value="">— None (Class 9–10) —</option>
+            <option value="science">Science</option>
+            <option value="arts">Arts</option>
+            <option value="commerce">Commerce</option>
+          </select>
+        </label>
+
+        <label>
           Medium
-          <select value={form.medium} onChange={(e) => setField('medium', e.target.value)}>
+          <select
+            value={form.medium}
+            onChange={(e) => {
+              const medium = e.target.value;
+              setForm((prev) => ({
+                ...prev,
+                medium,
+                language: medium || prev.language,
+              }));
+            }}
+          >
             <option value="">—</option>
             <option value="hindi">Hindi</option>
             <option value="english">English</option>
           </select>
+        </label>
+
+        <label>
+          Language
+          <select value={form.language} onChange={(e) => setField('language', e.target.value)}>
+            <option value="">—</option>
+            <option value="hindi">Hindi</option>
+            <option value="english">English</option>
+          </select>
+        </label>
+
+        <label>
+          Board
+          <select value={form.board} onChange={(e) => setField('board', e.target.value)}>
+            <option value="bihar_board">Bihar Board</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+
+        <label>
+          Academic year
+          <input
+            value={form.academic_year}
+            onChange={(e) => setField('academic_year', e.target.value)}
+            placeholder="2026-2027"
+          />
+        </label>
+
+        <label>
+          Subject
+          <input
+            value={form.subject}
+            onChange={(e) => setField('subject', e.target.value)}
+            placeholder="e.g. Physics, Maths"
+          />
         </label>
 
         <label>

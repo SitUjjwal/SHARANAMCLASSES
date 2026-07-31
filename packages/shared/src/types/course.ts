@@ -14,6 +14,11 @@ export type CourseClassLevel =
 
 export type CourseMedium = 'hindi' | 'english';
 
+/** Class 11–12 stream (null for 9–10) */
+export type CourseStream = 'science' | 'arts' | 'commerce';
+
+export type CourseBoard = 'bihar_board' | 'other';
+
 export type Category = {
   id: string;
   name: string;
@@ -40,8 +45,16 @@ export type CourseSummary = {
   slug: string;
   description: string;
   thumbnail_url: string | null;
+  /** Class / grade (maps to “class” in product language) */
   class_level: string | null;
   medium: CourseMedium | null;
+  stream: CourseStream | null;
+  board: CourseBoard | null;
+  academic_year: string | null;
+  subject: string | null;
+  teacher_id: string | null;
+  /** Usually mirrors medium (Hindi / English) */
+  language: CourseMedium | null;
   teacher_name: string | null;
   /** List price in INR */
   price: number;
@@ -70,6 +83,10 @@ export type CourseListFilters = {
   featured?: boolean;
   classLevel?: string;
   medium?: CourseMedium;
+  stream?: CourseStream;
+  board?: CourseBoard;
+  academicYear?: string;
+  subject?: string;
   /** free | paid | all (omit / all = no price filter) */
   price?: 'free' | 'paid' | 'all';
   page?: number;

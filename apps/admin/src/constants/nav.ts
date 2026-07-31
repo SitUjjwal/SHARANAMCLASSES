@@ -20,6 +20,11 @@ export const ADMIN_NAV: AdminNavItem[] = [
     description: 'Create and publish course catalog.',
   },
   {
+    label: 'Banners',
+    path: '/banners',
+    description: 'Home banner slider images (max 20).',
+  },
+  {
     label: 'Categories',
     path: '/categories',
     description: 'Manage subject categories and icons.',
