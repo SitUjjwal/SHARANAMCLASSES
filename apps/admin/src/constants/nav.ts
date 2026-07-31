@@ -35,6 +35,26 @@ export const ADMIN_NAV: AdminNavItem[] = [
     description: 'Syllabus, videos, PDFs, and notes.',
   },
   {
+    label: 'Videos',
+    path: '/videos',
+    description: 'YouTube videos assigned to course chapters.',
+  },
+  {
+    label: 'PDFs',
+    path: '/pdfs',
+    description: 'Upload PDFs to R2 and assign to chapters.',
+  },
+  {
+    label: 'Notes',
+    path: '/notes',
+    description: 'Paste HTTPS notes links assigned to chapters.',
+  },
+  {
+    label: 'Live Classes',
+    path: '/live-classes',
+    description: 'Schedule YouTube Live sessions and notify students.',
+  },
+  {
     label: 'Teachers',
     path: '/teachers',
     description: 'Instructor profiles linked to courses.',

@@ -28,8 +28,12 @@ import {
 } from '../controllers/course.controller';
 import {
   getChapter,
+  getCourseContentHandler,
   listAdminChapters,
+  listChapterNotes,
+  listChapterPdfs,
   listChapters,
+  listChapterVideos,
   listContents,
   patchChapter,
   patchContent,
@@ -94,6 +98,7 @@ courseRouter.delete('/courses/:id', requireAuth, requireAdmin, removeCourse);
 
 // Student / shared detail + enroll
 courseRouter.get('/courses/:id', requireAuth, getCourse);
+courseRouter.get('/courses/:id/content', requireAuth, getCourseContentHandler);
 courseRouter.post('/courses/:id/enroll', requireAuth, postEnrollCourse);
 courseRouter.get('/courses/:id/chapters', requireAuth, listChapters);
 courseRouter.get('/courses/:id/chapters/:chapterId', requireAuth, getChapter);
@@ -127,6 +132,9 @@ courseRouter.post(
   materialUpload,
   postChapterMaterial,
 );
+courseRouter.get('/chapters/:id/videos', requireAuth, listChapterVideos);
+courseRouter.get('/chapters/:id/pdfs', requireAuth, listChapterPdfs);
+courseRouter.get('/chapters/:id/notes', requireAuth, listChapterNotes);
 courseRouter.put(
   '/chapters/:id',
   requireAuth,

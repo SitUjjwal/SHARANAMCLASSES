@@ -39,6 +39,18 @@ const envSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().default(''),
   /** Optional public anon key (not used for admin client) */
   SUPABASE_ANON_KEY: z.string().default(''),
+  /**
+   * Cloudflare R2 (S3-compatible) — required in production for PDF uploads.
+   * Leave blank in local/dev to fall back to Supabase chapter-materials.
+   */
+  R2_ACCOUNT_ID: z.string().default(''),
+  R2_ACCESS_KEY_ID: z.string().default(''),
+  R2_SECRET_ACCESS_KEY: z.string().default(''),
+  R2_BUCKET: z.string().default(''),
+  /** Public base URL (custom domain or r2.dev) — no trailing slash */
+  R2_PUBLIC_BASE_URL: z.string().default(''),
+  /** Optional override; default https://{accountId}.r2.cloudflarestorage.com */
+  R2_ENDPOINT: z.string().default(''),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -49,3 +61,20 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
+
+export function isR2Configured(): boolean {
+  return Boolean(
+    env.R2_ACCOUNT_ID &&
+      env.R2_ACCESS_KEY_ID &&
+      env.R2_SECRET_ACCESS_KEY &&
+      env.R2_BUCKET &&
+      env.R2_PUBLIC_BASE_URL,
+  );
+}
+
+if (env.NODE_ENV === 'production' && !isR2Configured()) {
+  console.error(
+    '[api] Cloudflare R2 is required in production (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_BASE_URL)',
+  );
+  process.exit(1);
+}

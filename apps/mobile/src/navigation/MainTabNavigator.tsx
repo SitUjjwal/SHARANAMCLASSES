@@ -1,10 +1,10 @@
 /**
- * Main tabs after login: Home | Courses | My Learning | Profile.
- * Why: Module 3 bottom navigation — each tab has one primary job.
+ * Main tabs after login: Home | Courses | Live | My Learning | Profile.
  */
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 
+import { LiveClassesScreen } from '@/modules/live-classes';
 import { CoursesScreen } from '@/screens/CoursesScreen';
 import { HomeDashboardScreen } from '@/screens/HomeDashboardScreen';
 import { MyLearningScreen } from '@/screens/MyLearningScreen';
@@ -32,6 +32,7 @@ export function MainTabNavigator() {
           const map: Record<keyof MainTabParamList, keyof typeof Ionicons.glyphMap> = {
             HomeTab: 'home-outline',
             CoursesTab: 'grid-outline',
+            LiveTab: 'radio-outline',
             MyLearningTab: 'book-outline',
             ProfileTab: 'person-outline',
           };
@@ -48,6 +49,11 @@ export function MainTabNavigator() {
         name="CoursesTab"
         component={CoursesScreen}
         options={{ title: 'Courses' }}
+      />
+      <Tab.Screen
+        name="LiveTab"
+        component={LiveClassesScreen}
+        options={{ title: 'Live' }}
       />
       <Tab.Screen
         name="MyLearningTab"

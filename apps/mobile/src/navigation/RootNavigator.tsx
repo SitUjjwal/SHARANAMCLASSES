@@ -31,6 +31,7 @@ const linking: LinkingOptions<RootStackParamList> = {
         screens: {
           HomeTab: 'home',
           CoursesTab: 'courses',
+          LiveTab: 'live',
           MyLearningTab: 'my-learning',
           ProfileTab: 'profile',
         },
@@ -38,6 +39,9 @@ const linking: LinkingOptions<RootStackParamList> = {
       CourseDetail: 'course/:courseId',
       ChapterList: 'course/:courseId/chapters',
       ChapterContent: 'course/:courseId/chapters/:chapterId',
+      VideoPlayer: 'course/:courseId/chapters/:chapterId/videos/:videoId',
+      PdfViewer: 'course/:courseId/chapters/:chapterId/pdfs/:pdfId',
+      NoteViewer: 'course/:courseId/chapters/:chapterId/notes/:noteId',
     },
   },
 };

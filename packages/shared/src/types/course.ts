@@ -125,13 +125,169 @@ export type ChapterContentItem = {
   sort_order: number;
 };
 
+export type VideoType = 'recorded' | 'live';
+
+/** Admin / full video row (includes YouTube URL) */
+export type Video = {
+  id: string;
+  course_id: string;
+  chapter_id: string;
+  title: string;
+  description: string;
+  youtube_url: string;
+  youtube_video_id: string;
+  video_type: VideoType;
+  thumbnail_url: string | null;
+  duration_seconds: number;
+  sort_order: number;
+  is_free: boolean;
+  is_published: boolean;
+  created_at?: string;
+  updated_at?: string;
+  /** Joined display helpers */
+  course_title?: string | null;
+  chapter_title?: string | null;
+};
+
+/**
+ * Student-facing video — URL omitted when locked (paid + not enrolled).
+ */
+export type VideoPublic = {
+  id: string;
+  course_id: string;
+  chapter_id: string;
+  title: string;
+  description: string;
+  video_type: VideoType;
+  thumbnail_url: string | null;
+  duration_seconds: number;
+  sort_order: number;
+  is_free: boolean;
+  is_locked: boolean;
+  youtube_url: string | null;
+};
+
+/** Admin / full PDF row (R2 URL + storage metadata) */
+export type Pdf = {
+  id: string;
+  course_id: string;
+  chapter_id: string;
+  title: string;
+  description: string;
+  file_url: string;
+  storage_key: string;
+  file_size: number;
+  mime_type: string;
+  original_filename: string;
+  sort_order: number;
+  is_free: boolean;
+  is_published: boolean;
+  created_at?: string;
+  updated_at?: string;
+  course_title?: string | null;
+  chapter_title?: string | null;
+};
+
+/**
+ * Student-facing PDF — file_url omitted when locked (paid + not enrolled).
+ */
+export type PdfPublic = {
+  id: string;
+  course_id: string;
+  chapter_id: string;
+  title: string;
+  description: string;
+  file_size: number;
+  original_filename: string;
+  sort_order: number;
+  is_free: boolean;
+  is_locked: boolean;
+  file_url: string | null;
+};
+
+/** Admin / full note row (HTTPS URL only) */
+export type Note = {
+  id: string;
+  course_id: string;
+  chapter_id: string;
+  title: string;
+  description: string;
+  notes_url: string;
+  sort_order: number;
+  is_free: boolean;
+  is_published: boolean;
+  created_at?: string;
+  updated_at?: string;
+  course_title?: string | null;
+  chapter_title?: string | null;
+};
+
+/**
+ * Student-facing note — notes_url omitted when locked (paid + not enrolled).
+ */
+export type NotePublic = {
+  id: string;
+  course_id: string;
+  chapter_id: string;
+  title: string;
+  description: string;
+  sort_order: number;
+  is_free: boolean;
+  is_locked: boolean;
+  notes_url: string | null;
+};
+
 /** Full chapter for content screen */
 export type ChapterDetail = Chapter & {
   course_id: string;
   course_title: string;
   contents: ChapterContentItem[];
+  /** Dedicated video catalog (preferred over legacy chapter_contents videos) */
+  videos: VideoPublic[];
+  /** Dedicated PDF catalog (preferred over legacy chapter_contents pdfs) */
+  pdfs: PdfPublic[];
+  /** Dedicated notes catalog (preferred over legacy chapter_contents notes) */
+  notes: NotePublic[];
+  /** Course-level live classes shown under this chapter syllabus */
+  live_classes: LiveClassPublic[];
 };
 
+/** Admin / full live class row */
+export type LiveClassStatus = 'upcoming' | 'live' | 'ended';
+
+export type LiveClass = {
+  id: string;
+  course_id: string | null;
+  title: string;
+  description: string;
+  youtube_url: string;
+  youtube_video_id: string;
+  thumbnail_url: string | null;
+  start_time: string;
+  end_time: string;
+  is_published: boolean;
+  notification_sent_at: string | null;
+  created_at?: string;
+  updated_at?: string;
+  course_title?: string | null;
+  /** Derived from start/end vs now */
+  status?: LiveClassStatus;
+};
+
+/** Student-facing live class */
+export type LiveClassPublic = {
+  id: string;
+  course_id: string | null;
+  course_title: string | null;
+  teacher_name: string | null;
+  title: string;
+  description: string;
+  thumbnail_url: string | null;
+  start_time: string;
+  end_time: string;
+  status: LiveClassStatus;
+  youtube_url: string | null;
+};
 
 export type Enrollment = {
   id: string;

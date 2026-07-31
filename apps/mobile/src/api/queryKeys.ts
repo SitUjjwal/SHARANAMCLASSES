@@ -11,5 +11,6 @@ export const queryKeys = {
   chapters: (courseId: string) => ['courses', courseId, 'chapters'] as const,
   chapterDetail: (courseId: string, chapterId: string) =>
     ['courses', courseId, 'chapters', chapterId] as const,
+  liveClasses: () => ['live-classes', 'public'] as const,
   profile: ['profile'] as const,
 };

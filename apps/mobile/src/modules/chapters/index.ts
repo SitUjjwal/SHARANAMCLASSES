@@ -12,12 +12,17 @@
  * Flow:
  *   CourseDetail → ChapterList { courseId }
  *                → ChapterContent { courseId, chapterId }
+ *                     → VideoPlayer | PdfViewer | NoteViewer | Live (YouTube)
+ *
+ * Chapter content order: Videos → PDFs → Notes → Live Classes
+ * Badges: Free preview · Locked
  *
  * API:
  *   GET /courses/:courseId/chapters
  *   GET /courses/:courseId/chapters/:chapterId
  *
- * Lock rule: unlocked if enrolled OR chapter.is_free_preview
+ * Lock rule: unlocked if enrolled OR chapter.is_free_preview;
+ * item URLs stripped when paid + not enrolled (is_locked)
  */
 export { ChapterCard } from './components/ChapterCard';
 export type { ChapterCardProps } from './components/ChapterCard';

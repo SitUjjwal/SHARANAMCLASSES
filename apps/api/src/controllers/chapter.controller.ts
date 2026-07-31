@@ -9,9 +9,13 @@ import {
   deleteChapter,
   deleteChapterContent,
   getChapterDetail,
+  getCourseContent,
   listChapterContents,
+  listChapterNotesForStudent,
+  listChapterPdfsForStudent,
   listChaptersForAdmin,
   listChaptersForCourse,
+  listChapterVideosForStudent,
   reorderChapters,
   updateChapter,
   updateChapterContent,
@@ -73,6 +77,70 @@ export async function getChapter(
     const courseId = courseIdParam(req);
     const chapterId = chapterIdParam(req);
     const data = await getChapterDetail(courseId, chapterId, userId);
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** GET /courses/:courseId/content — full course catalog (chapters + media + live) */
+export async function getCourseContentHandler(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = assertUserId(req);
+    const courseId = courseIdParam(req);
+    const data = await getCourseContent(courseId, userId);
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** GET /chapters/:chapterId/videos */
+export async function listChapterVideos(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = assertUserId(req);
+    const chapterId = chapterIdParam(req);
+    const data = await listChapterVideosForStudent(chapterId, userId);
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** GET /chapters/:chapterId/pdfs */
+export async function listChapterPdfs(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = assertUserId(req);
+    const chapterId = chapterIdParam(req);
+    const data = await listChapterPdfsForStudent(chapterId, userId);
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** GET /chapters/:chapterId/notes */
+export async function listChapterNotes(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = assertUserId(req);
+    const chapterId = chapterIdParam(req);
+    const data = await listChapterNotesForStudent(chapterId, userId);
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);

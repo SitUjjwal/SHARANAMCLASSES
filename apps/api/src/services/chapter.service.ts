@@ -8,6 +8,10 @@ import type {
   CreateChapterInput,
   UpdateChapterInput,
 } from '../validators/course.validators';
+import { listVideosForChapterPublic } from './video.service';
+import { listPdfsForChapterPublic } from './pdf.service';
+import { listNotesForChapterPublic } from './note.service';
+import { listLiveClassesPublic } from './liveClass.service';
 
 const CHAPTER_COLUMNS =
   'id, course_id, title, description, sort_order, duration_seconds, video_count, pdf_count, notes_count, video_url, is_free_preview, is_published';
@@ -219,45 +223,104 @@ export async function getChapterDetail(
   }
   const chapter = toChapter(chapterRow, index + 1, unlocked);
 
-  if (chapter.is_locked) {
-    return {
-      ...chapter,
-      course_title: course.title as string,
-      contents: [],
-    };
+  // Always load catalogs so free-preview rows appear with lock / free badges
+  const [videos, pdfs, notes, liveClasses] = await Promise.all([
+    listVideosForChapterPublic(chapterId, { enrolled: unlocked }),
+    listPdfsForChapterPublic(chapterId, { enrolled: unlocked }),
+    listNotesForChapterPublic(chapterId, { enrolled: unlocked }),
+    listLiveClassesPublic({ courseId }),
+  ]);
+
+  const videoAsContents: ChapterContentItem[] = videos.map((video) => ({
+    id: video.id,
+    chapter_id: video.chapter_id,
+    content_type: 'video' as const,
+    title: video.title,
+    url: video.youtube_url,
+    body: video.is_locked ? 'Locked — enroll to watch' : null,
+    duration_seconds: video.duration_seconds,
+    sort_order: video.sort_order,
+  }));
+
+  const pdfAsContents: ChapterContentItem[] = pdfs.map((pdf) => ({
+    id: pdf.id,
+    chapter_id: pdf.chapter_id,
+    content_type: 'pdf' as const,
+    title: pdf.title,
+    url: pdf.file_url,
+    body: pdf.is_locked ? 'Locked — enroll to open' : null,
+    duration_seconds: null,
+    sort_order: pdf.sort_order,
+  }));
+
+  const noteAsContents: ChapterContentItem[] = notes.map((note) => ({
+    id: note.id,
+    chapter_id: note.chapter_id,
+    content_type: 'note' as const,
+    title: note.title,
+    url: note.notes_url,
+    body: note.is_locked
+      ? 'Locked — enroll to open'
+      : note.description || null,
+    duration_seconds: null,
+    sort_order: note.sort_order,
+  }));
+
+  let items: ChapterContentItem[] = [];
+
+  if (!chapter.is_locked) {
+    const { data: contents, error: contentsError } = await supabase
+      .from('chapter_contents')
+      .select(CONTENT_COLUMNS)
+      .eq('chapter_id', chapterId)
+      .order('sort_order', { ascending: true });
+
+    if (contentsError) {
+      throw new AppError(500, 'CHAPTER_CONTENTS_FETCH_FAILED', contentsError.message);
+    }
+
+    items = ((contents ?? []) as ChapterContentItem[]).filter((item) => {
+      if (item.content_type === 'video' || item.content_type === 'pdf') return false;
+      if (item.content_type === 'note' && notes.length > 0) return false;
+      return true;
+    });
+
+    if (
+      !videoAsContents.length &&
+      !items.some((i) => i.content_type === 'video') &&
+      chapter.video_url
+    ) {
+      items = [
+        {
+          id: `${chapter.id}-legacy-video`,
+          chapter_id: chapter.id,
+          content_type: 'video',
+          title: chapter.title,
+          url: chapter.video_url,
+          body: null,
+          duration_seconds: chapter.duration_seconds || null,
+          sort_order: 0,
+        },
+        ...items,
+      ];
+    }
   }
 
-  const { data: contents, error: contentsError } = await supabase
-    .from('chapter_contents')
-    .select(CONTENT_COLUMNS)
-    .eq('chapter_id', chapterId)
-    .order('sort_order', { ascending: true });
+  items = [...videoAsContents, ...pdfAsContents, ...noteAsContents, ...items].sort(
+    (a, b) => (a.sort_order || 0) - (b.sort_order || 0),
+  );
 
-  if (contentsError) {
-    throw new AppError(500, 'CHAPTER_CONTENTS_FETCH_FAILED', contentsError.message);
-  }
-
-  // Fallback: legacy single video_url when no content rows yet
-  let items = (contents ?? []) as ChapterContentItem[];
-  if (!items.length && chapter.video_url) {
-    items = [
-      {
-        id: `${chapter.id}-legacy-video`,
-        chapter_id: chapter.id,
-        content_type: 'video',
-        title: chapter.title,
-        url: chapter.video_url,
-        body: null,
-        duration_seconds: chapter.duration_seconds || null,
-        sort_order: 0,
-      },
-    ];
-  }
+  // Prefer active / upcoming lives on the chapter syllabus
+  const live_classes = liveClasses.filter((live) => live.status !== 'ended');
 
   return {
     ...chapter,
     course_title: course.title as string,
     contents: items,
+    videos,
+    pdfs,
+    notes,
+    live_classes,
   };
 }
 
@@ -522,4 +585,122 @@ export async function deleteChapterContent(contentId: string): Promise<void> {
   }
 
   await syncChapterContentMeta(existing.chapter_id as string);
+}
+
+/**
+ * Resolve a published chapter for a student and enrollment on its course.
+ */
+async function resolveChapterAccess(
+  chapterId: string,
+  userId: string,
+): Promise<{ courseId: string; enrolled: boolean }> {
+  const supabase = getSupabaseAdmin();
+
+  const { data: chapter, error } = await supabase
+    .from('chapters')
+    .select('id, course_id, is_published')
+    .eq('id', chapterId)
+    .eq('is_published', true)
+    .maybeSingle();
+
+  if (error) {
+    throw new AppError(500, 'CHAPTER_FETCH_FAILED', error.message);
+  }
+  if (!chapter) {
+    throw new AppError(404, 'CHAPTER_NOT_FOUND', 'Chapter not found');
+  }
+
+  const courseId = chapter.course_id as string;
+
+  const { data: course, error: courseError } = await supabase
+    .from('courses')
+    .select('id')
+    .eq('id', courseId)
+    .eq('is_published', true)
+    .maybeSingle();
+
+  if (courseError) {
+    throw new AppError(500, 'COURSE_FETCH_FAILED', courseError.message);
+  }
+  if (!course) {
+    throw new AppError(404, 'COURSE_NOT_FOUND', 'Course not found');
+  }
+
+  const enrolled = await isUserEnrolled(userId, courseId);
+  return { courseId, enrolled };
+}
+
+/** GET /chapters/:chapterId/videos */
+export async function listChapterVideosForStudent(
+  chapterId: string,
+  userId: string,
+) {
+  const { enrolled } = await resolveChapterAccess(chapterId, userId);
+  return listVideosForChapterPublic(chapterId, { enrolled });
+}
+
+/** GET /chapters/:chapterId/pdfs */
+export async function listChapterPdfsForStudent(
+  chapterId: string,
+  userId: string,
+) {
+  const { enrolled } = await resolveChapterAccess(chapterId, userId);
+  return listPdfsForChapterPublic(chapterId, { enrolled });
+}
+
+/** GET /chapters/:chapterId/notes */
+export async function listChapterNotesForStudent(
+  chapterId: string,
+  userId: string,
+) {
+  const { enrolled } = await resolveChapterAccess(chapterId, userId);
+  return listNotesForChapterPublic(chapterId, { enrolled });
+}
+
+/**
+ * GET /courses/:courseId/content — all chapters with videos/pdfs/notes + live classes.
+ */
+export async function getCourseContent(courseId: string, userId: string) {
+  const supabase = getSupabaseAdmin();
+
+  const { data: course, error: courseError } = await supabase
+    .from('courses')
+    .select('id, title, is_published')
+    .eq('id', courseId)
+    .eq('is_published', true)
+    .maybeSingle();
+
+  if (courseError) {
+    throw new AppError(500, 'COURSE_FETCH_FAILED', courseError.message);
+  }
+  if (!course) {
+    throw new AppError(404, 'COURSE_NOT_FOUND', 'Course not found');
+  }
+
+  const chapters = await listChaptersForCourse(courseId, {
+    publishedOnly: true,
+    userId,
+  });
+  const enrolled = await isUserEnrolled(userId, courseId);
+
+  const chaptersWithContent = await Promise.all(
+    chapters.map(async (chapter) => {
+      const [videos, pdfs, notes] = await Promise.all([
+        listVideosForChapterPublic(chapter.id, { enrolled }),
+        listPdfsForChapterPublic(chapter.id, { enrolled }),
+        listNotesForChapterPublic(chapter.id, { enrolled }),
+      ]);
+      return { ...chapter, videos, pdfs, notes };
+    }),
+  );
+
+  const live_classes = await listLiveClassesPublic({ courseId });
+
+  return {
+    course_id: course.id as string,
+    course_title: course.title as string,
+    enrolled,
+    chapters: chaptersWithContent,
+    live_classes,
+  };
 }

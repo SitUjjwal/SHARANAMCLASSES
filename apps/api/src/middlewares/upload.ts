@@ -1,5 +1,5 @@
 /**
- * Multer middleware for thumbnail + chapter material uploads (memory → Supabase).
+ * Multer middleware for thumbnail + chapter material + PDF uploads (memory).
  */
 import multer from 'multer';
 
@@ -41,6 +41,19 @@ export const materialUpload = multer({
           'Only PDF, DOC, DOCX, TXT, or image uploads are allowed',
         ),
       );
+      return;
+    }
+    cb(null, true);
+  },
+}).single('file');
+
+/** Dedicated PDF catalog upload — application/pdf only, max 25MB */
+export const pdfUpload = multer({
+  storage,
+  limits: { fileSize: 25 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype !== 'application/pdf') {
+      cb(new AppError(400, 'INVALID_PDF_TYPE', 'Only PDF uploads are allowed'));
       return;
     }
     cb(null, true);

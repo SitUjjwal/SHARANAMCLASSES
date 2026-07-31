@@ -395,6 +395,7 @@ a {
 }
 
 .form-grid label,
+.form-grid .field-label,
 .thumbnail-field {
   display: flex;
   flex-direction: column;
@@ -684,6 +685,54 @@ a {
   white-space: nowrap;
 }
 
+.video-admin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.video-admin-card {
+  display: grid;
+  grid-template-columns: 140px 1fr auto;
+  gap: 0.85rem;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  border-radius: 0.75rem;
+}
+
+.video-admin-thumb {
+  width: 140px;
+  height: 78px;
+  object-fit: cover;
+  border-radius: 0.5rem;
+  background: var(--admin-bg);
+}
+
+.video-admin-thumb-empty {
+  display: grid;
+  place-items: center;
+  color: var(--admin-muted);
+  font-size: 0.8rem;
+}
+
+.video-admin-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.video-admin-meta strong {
+  color: var(--admin-primary);
+}
+
+.video-admin-meta span {
+  color: var(--admin-muted);
+  font-size: 0.85rem;
+}
+
 @media (max-width: 860px) {
   .banner-admin-card {
     grid-template-columns: 1fr;
@@ -692,6 +741,15 @@ a {
   .banner-admin-thumb {
     width: 100%;
     height: 120px;
+  }
+
+  .video-admin-card {
+    grid-template-columns: 1fr;
+  }
+
+  .video-admin-thumb {
+    width: 100%;
+    height: 140px;
   }
 }
 

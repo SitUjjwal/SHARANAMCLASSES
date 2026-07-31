@@ -1,6 +1,5 @@
 /**
- * YouTube Data API helper placeholder (unlisted video metadata / validation).
+ * YouTube Data API helper — URL validation lives in utils/youtube.ts.
+ * Optional future: fetch title/duration via googleapis youtube.v3.
  */
-export const youtubeClient = {
-  // Placeholder — googleapis youtube.v3
-} as const;
+export { extractYouTubeVideoId, isValidYouTubeUrl, parseYouTubeUrl, youtubeThumbnailUrl } from '../../utils/youtube';

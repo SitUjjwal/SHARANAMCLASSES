@@ -13,9 +13,13 @@ import {
   ChaptersPage,
   CoursesPage,
   DashboardPage,
+  LiveClassesPage,
+  NotesPage,
   PaymentsPage,
+  PdfsPage,
   StudentsPage,
   TeachersPage,
+  VideosPage,
 } from '@/pages';
 
 export function App() {
@@ -31,6 +35,10 @@ export function App() {
               <Route path="banners" element={<BannersPage />} />
               <Route path="categories" element={<CategoriesPage />} />
               <Route path="chapters" element={<ChaptersPage />} />
+              <Route path="videos" element={<VideosPage />} />
+              <Route path="pdfs" element={<PdfsPage />} />
+              <Route path="notes" element={<NotesPage />} />
+              <Route path="live-classes" element={<LiveClassesPage />} />
               <Route path="teachers" element={<TeachersPage />} />
               <Route path="students" element={<StudentsPage />} />
               <Route path="payments" element={<PaymentsPage />} />

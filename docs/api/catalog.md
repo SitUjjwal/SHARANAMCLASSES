@@ -148,8 +148,14 @@ Counts on the chapter (`video_count`, `pdf_count`, `notes_count`, `duration_seco
 
 | Method | Path | Purpose |
 |--------|------|---------|
+| `GET` | `/courses/:id/content` | Full course content (chapters + videos/pdfs/notes + live) |
 | `GET` | `/courses/:id/chapters` | Published chapters; `is_locked` from enrollment / free preview |
-| `GET` | `/courses/:id/chapters/:chapterId` | Content (videos / PDFs / notes); empty when locked |
+| `GET` | `/courses/:id/chapters/:chapterId` | Single chapter detail |
+| `GET` | `/chapters/:id/videos` | Chapter videos (student) |
+| `GET` | `/chapters/:id/pdfs` | Chapter PDFs (student) |
+| `GET` | `/chapters/:id/notes` | Chapter notes (student) |
+
+See also [content.md](./content.md) for the media CRUD map.
 
 ---
 
