@@ -4,3 +4,8 @@ export { RegisterScreen } from './RegisterScreen';
 export { ForgotPasswordScreen } from './ForgotPasswordScreen';
 export { ResetPasswordScreen } from './ResetPasswordScreen';
 export { HomeScreen } from './HomeScreen';
+export { HomeDashboardScreen } from './HomeDashboardScreen';
+export { CoursesScreen } from './CoursesScreen';
+export { CourseDetailScreen } from './CourseDetailScreen';
+export { MyLearningScreen } from './MyLearningScreen';
+export { ProfileTabScreen } from './ProfileTabScreen';

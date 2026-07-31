@@ -5,7 +5,7 @@
  * restore is instant — otherwise Login appears immediately.
  */
 import { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, type LinkingOptions } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -13,11 +13,12 @@ import { AppNavigator } from '@/navigation/AppNavigator';
 import { AuthNavigator } from '@/navigation/AuthNavigator';
 import { LoadingScreen } from '@/screens/LoadingScreen';
 import { useAuthStore } from '@/store/authStore';
+import type { RootStackParamList } from '@/types/navigation';
 
 /** Minimum time the brand photo stays on screen after open */
 const MIN_BRAND_SPLASH_MS = 3000;
 
-const linking = {
+const linking: LinkingOptions<RootStackParamList> = {
   prefixes: [Linking.createURL('/'), 'sharanam://'],
   config: {
     screens: {
@@ -25,7 +26,18 @@ const linking = {
       Register: 'register',
       ForgotPassword: 'forgot-password',
       ResetPassword: 'reset-password',
-      Home: 'home',
+      MainTabs: {
+        path: '',
+        screens: {
+          HomeTab: 'home',
+          CoursesTab: 'courses',
+          MyLearningTab: 'my-learning',
+          ProfileTab: 'profile',
+        },
+      },
+      CourseDetail: 'course/:courseId',
+      ChapterList: 'course/:courseId/chapters',
+      ChapterContent: 'course/:courseId/chapters/:chapterId',
     },
   },
 };

@@ -38,10 +38,13 @@ export const registerSchema = z
       .min(10, 'Enter a valid phone number')
       .max(15, 'Enter a valid phone number')
       .regex(/^[0-9+\-\s]+$/, 'Phone number can only contain digits'),
-    classLevel: z.enum(['9', '10', '11', '12'], {
-      required_error: 'Class is required',
-      invalid_type_error: 'Class is required',
-    }),
+    classLevel: z.enum(
+      ['6', '7', '8', '9', '10', '11', '12', 'competitive', 'computer'],
+      {
+        required_error: 'Class is required',
+        invalid_type_error: 'Class is required',
+      },
+    ),
     medium: z.enum(['hindi', 'english'], {
       required_error: 'Medium is required',
       invalid_type_error: 'Medium is required',

@@ -1,0 +1,525 @@
+/**
+ * Chapter catalog + content (with lock based on enrollment / free preview).
+ */
+import { getSupabaseAdmin } from '../config/supabase';
+import { AppError } from '../utils/AppError';
+import type { Chapter, ChapterContentItem, ChapterDetail } from '@sharanam/shared';
+import type {
+  CreateChapterInput,
+  UpdateChapterInput,
+} from '../validators/course.validators';
+
+const CHAPTER_COLUMNS =
+  'id, course_id, title, description, sort_order, duration_seconds, video_count, pdf_count, notes_count, video_url, is_free_preview, is_published';
+
+const CONTENT_COLUMNS =
+  'id, chapter_id, content_type, title, url, body, duration_seconds, sort_order';
+
+type ChapterRow = {
+  id: string;
+  course_id: string;
+  title: string;
+  description: string;
+  sort_order: number;
+  duration_seconds: number | null;
+  video_count: number | null;
+  pdf_count: number | null;
+  notes_count: number | null;
+  video_url: string | null;
+  is_free_preview: boolean;
+  is_published: boolean;
+};
+
+async function isUserEnrolled(userId: string, courseId: string): Promise<boolean> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('enrollments')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('course_id', courseId)
+    .maybeSingle();
+
+  if (error) {
+    throw new AppError(500, 'ENROLLMENT_FETCH_FAILED', error.message);
+  }
+  return Boolean(data);
+}
+
+function toChapter(
+  row: ChapterRow,
+  chapterNumber: number,
+  unlocked: boolean,
+): Chapter {
+  const isLocked = !(unlocked || row.is_free_preview);
+  return {
+    id: row.id,
+    course_id: row.course_id,
+    title: row.title,
+    description: row.description,
+    sort_order: row.sort_order,
+    chapter_number: chapterNumber,
+    duration_seconds: Number(row.duration_seconds) || 0,
+    video_count: Number(row.video_count) || 0,
+    pdf_count: Number(row.pdf_count) || 0,
+    notes_count: Number(row.notes_count) || 0,
+    is_locked: isLocked,
+    video_url: row.video_url,
+    is_free_preview: row.is_free_preview,
+    is_published: row.is_published,
+  };
+}
+
+export async function listChaptersForCourse(
+  courseId: string,
+  options: { publishedOnly: boolean; userId?: string; search?: string },
+): Promise<Chapter[]> {
+  const supabase = getSupabaseAdmin();
+  let query = supabase
+    .from('chapters')
+    .select(CHAPTER_COLUMNS)
+    .eq('course_id', courseId)
+    .order('sort_order', { ascending: true });
+
+  if (options.publishedOnly) {
+    query = query.eq('is_published', true);
+  }
+
+  const search = options.search?.trim();
+  if (search) {
+    const safe = search.replace(/[%_,.()]/g, '');
+    if (safe) {
+      query = query.or(`title.ilike.%${safe}%,description.ilike.%${safe}%`);
+    }
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new AppError(500, 'CHAPTERS_FETCH_FAILED', error.message);
+  }
+
+  const unlocked = options.userId
+    ? await isUserEnrolled(options.userId, courseId)
+    : false;
+
+  return ((data ?? []) as ChapterRow[]).map((row, index) =>
+    toChapter(row, index + 1, unlocked),
+  );
+}
+
+/** Admin syllabus list — includes unpublished chapters */
+export async function listChaptersForAdmin(
+  courseId: string,
+  search?: string,
+): Promise<Chapter[]> {
+  // Admin always treats chapters as unlocked for display of counts/meta
+  return listChaptersForCourse(courseId, {
+    publishedOnly: false,
+    search,
+  }).then((chapters) =>
+    chapters.map((chapter) => ({
+      ...chapter,
+      is_locked: false,
+    })),
+  );
+}
+
+/**
+ * Persist drag-and-drop order. `orderedIds` must be the full set for the course.
+ */
+export async function reorderChapters(
+  courseId: string,
+  orderedIds: string[],
+): Promise<Chapter[]> {
+  const supabase = getSupabaseAdmin();
+
+  const { data: existing, error: listError } = await supabase
+    .from('chapters')
+    .select('id')
+    .eq('course_id', courseId);
+
+  if (listError) {
+    throw new AppError(500, 'CHAPTERS_FETCH_FAILED', listError.message);
+  }
+
+  const existingIds = new Set((existing ?? []).map((row) => row.id as string));
+  if (existingIds.size !== orderedIds.length) {
+    throw new AppError(
+      400,
+      'CHAPTER_REORDER_MISMATCH',
+      'orderedIds must include every chapter for this course exactly once',
+    );
+  }
+  for (const id of orderedIds) {
+    if (!existingIds.has(id)) {
+      throw new AppError(400, 'CHAPTER_REORDER_INVALID', `Unknown chapter id: ${id}`);
+    }
+  }
+
+  const now = new Date().toISOString();
+  // 10, 20, 30… keeps room for manual inserts later
+  const updates = orderedIds.map((id, index) =>
+    supabase
+      .from('chapters')
+      .update({ sort_order: (index + 1) * 10, updated_at: now })
+      .eq('id', id)
+      .eq('course_id', courseId),
+  );
+
+  const results = await Promise.all(updates);
+  const firstError = results.find((result) => result.error)?.error;
+  if (firstError) {
+    throw new AppError(400, 'CHAPTER_REORDER_FAILED', firstError.message);
+  }
+
+  return listChaptersForAdmin(courseId);
+}
+
+export async function getChapterDetail(
+  courseId: string,
+  chapterId: string,
+  userId: string,
+): Promise<ChapterDetail> {
+  const supabase = getSupabaseAdmin();
+
+  const { data: course, error: courseError } = await supabase
+    .from('courses')
+    .select('id, title, is_published')
+    .eq('id', courseId)
+    .eq('is_published', true)
+    .maybeSingle();
+
+  if (courseError) {
+    throw new AppError(500, 'COURSE_FETCH_FAILED', courseError.message);
+  }
+  if (!course) {
+    throw new AppError(404, 'COURSE_NOT_FOUND', 'Course not found');
+  }
+
+  const { data: rows, error: listError } = await supabase
+    .from('chapters')
+    .select(CHAPTER_COLUMNS)
+    .eq('course_id', courseId)
+    .eq('is_published', true)
+    .order('sort_order', { ascending: true });
+
+  if (listError) {
+    throw new AppError(500, 'CHAPTERS_FETCH_FAILED', listError.message);
+  }
+
+  const chapterRows = (rows ?? []) as ChapterRow[];
+  const index = chapterRows.findIndex((row) => row.id === chapterId);
+  if (index < 0) {
+    throw new AppError(404, 'CHAPTER_NOT_FOUND', 'Chapter not found');
+  }
+
+  const unlocked = await isUserEnrolled(userId, courseId);
+  const chapterRow = chapterRows[index];
+  if (!chapterRow) {
+    throw new AppError(404, 'CHAPTER_NOT_FOUND', 'Chapter not found');
+  }
+  const chapter = toChapter(chapterRow, index + 1, unlocked);
+
+  if (chapter.is_locked) {
+    return {
+      ...chapter,
+      course_title: course.title as string,
+      contents: [],
+    };
+  }
+
+  const { data: contents, error: contentsError } = await supabase
+    .from('chapter_contents')
+    .select(CONTENT_COLUMNS)
+    .eq('chapter_id', chapterId)
+    .order('sort_order', { ascending: true });
+
+  if (contentsError) {
+    throw new AppError(500, 'CHAPTER_CONTENTS_FETCH_FAILED', contentsError.message);
+  }
+
+  // Fallback: legacy single video_url when no content rows yet
+  let items = (contents ?? []) as ChapterContentItem[];
+  if (!items.length && chapter.video_url) {
+    items = [
+      {
+        id: `${chapter.id}-legacy-video`,
+        chapter_id: chapter.id,
+        content_type: 'video',
+        title: chapter.title,
+        url: chapter.video_url,
+        body: null,
+        duration_seconds: chapter.duration_seconds || null,
+        sort_order: 0,
+      },
+    ];
+  }
+
+  return {
+    ...chapter,
+    course_title: course.title as string,
+    contents: items,
+  };
+}
+
+export async function createChapter(
+  courseId: string,
+  input: CreateChapterInput,
+): Promise<Chapter> {
+  const supabase = getSupabaseAdmin();
+
+  const { data: course, error: courseError } = await supabase
+    .from('courses')
+    .select('id')
+    .eq('id', courseId)
+    .maybeSingle();
+
+  if (courseError) {
+    throw new AppError(500, 'COURSE_LOOKUP_FAILED', courseError.message);
+  }
+  if (!course) {
+    throw new AppError(404, 'COURSE_NOT_FOUND', 'Course not found');
+  }
+
+  let sortOrder = input.sort_order;
+  if (sortOrder === undefined || sortOrder === 0) {
+    const { data: last } = await supabase
+      .from('chapters')
+      .select('sort_order')
+      .eq('course_id', courseId)
+      .order('sort_order', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    sortOrder = (Number(last?.sort_order) || 0) + 10;
+  }
+
+  const { data, error } = await supabase
+    .from('chapters')
+    .insert({
+      course_id: courseId,
+      ...input,
+      sort_order: sortOrder,
+      updated_at: new Date().toISOString(),
+    })
+    .select(CHAPTER_COLUMNS)
+    .single();
+
+  if (error) {
+    throw new AppError(400, 'CHAPTER_CREATE_FAILED', error.message);
+  }
+  return toChapter(data as ChapterRow, 1, true);
+}
+
+export async function updateChapter(
+  chapterId: string,
+  input: UpdateChapterInput,
+): Promise<Chapter> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('chapters')
+    .update({
+      ...input,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', chapterId)
+    .select(CHAPTER_COLUMNS)
+    .maybeSingle();
+
+  if (error) {
+    throw new AppError(400, 'CHAPTER_UPDATE_FAILED', error.message);
+  }
+  if (!data) {
+    throw new AppError(404, 'CHAPTER_NOT_FOUND', 'Chapter not found');
+  }
+  return toChapter(data as ChapterRow, 1, true);
+}
+
+export async function deleteChapter(chapterId: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const { error, count } = await supabase
+    .from('chapters')
+    .delete({ count: 'exact' })
+    .eq('id', chapterId);
+
+  if (error) {
+    throw new AppError(400, 'CHAPTER_DELETE_FAILED', error.message);
+  }
+  if (!count) {
+    throw new AppError(404, 'CHAPTER_NOT_FOUND', 'Chapter not found');
+  }
+}
+
+async function assertChapterExists(chapterId: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('chapters')
+    .select('id')
+    .eq('id', chapterId)
+    .maybeSingle();
+
+  if (error) {
+    throw new AppError(500, 'CHAPTER_LOOKUP_FAILED', error.message);
+  }
+  if (!data) {
+    throw new AppError(404, 'CHAPTER_NOT_FOUND', 'Chapter not found');
+  }
+}
+
+function toContentItem(row: Record<string, unknown>): ChapterContentItem {
+  return {
+    id: row.id as string,
+    chapter_id: row.chapter_id as string,
+    content_type: row.content_type as ChapterContentItem['content_type'],
+    title: row.title as string,
+    url: (row.url as string | null) ?? null,
+    body: (row.body as string | null) ?? null,
+    duration_seconds:
+      row.duration_seconds === null || row.duration_seconds === undefined
+        ? null
+        : Number(row.duration_seconds),
+    sort_order: Number(row.sort_order) || 0,
+  };
+}
+
+/** Recount video/pdf/note totals + total duration on the chapter row */
+async function syncChapterContentMeta(chapterId: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('chapter_contents')
+    .select('content_type, duration_seconds')
+    .eq('chapter_id', chapterId);
+
+  if (error) {
+    throw new AppError(500, 'CHAPTER_CONTENTS_FETCH_FAILED', error.message);
+  }
+
+  const rows = data ?? [];
+  const video_count = rows.filter((r) => r.content_type === 'video').length;
+  const pdf_count = rows.filter((r) => r.content_type === 'pdf').length;
+  const notes_count = rows.filter((r) => r.content_type === 'note').length;
+  const duration_seconds = rows.reduce(
+    (sum, r) => sum + (Number(r.duration_seconds) || 0),
+    0,
+  );
+
+  const { error: updateError } = await supabase
+    .from('chapters')
+    .update({
+      video_count,
+      pdf_count,
+      notes_count,
+      duration_seconds,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', chapterId);
+
+  if (updateError) {
+    throw new AppError(500, 'CHAPTER_META_SYNC_FAILED', updateError.message);
+  }
+}
+
+export async function listChapterContents(
+  chapterId: string,
+): Promise<ChapterContentItem[]> {
+  await assertChapterExists(chapterId);
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('chapter_contents')
+    .select(CONTENT_COLUMNS)
+    .eq('chapter_id', chapterId)
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    throw new AppError(500, 'CHAPTER_CONTENTS_FETCH_FAILED', error.message);
+  }
+
+  return ((data ?? []) as Record<string, unknown>[]).map(toContentItem);
+}
+
+export async function createChapterContent(
+  chapterId: string,
+  input: import('../validators/course.validators').CreateChapterContentInput,
+): Promise<ChapterContentItem> {
+  await assertChapterExists(chapterId);
+  const supabase = getSupabaseAdmin();
+
+  let sortOrder = input.sort_order;
+  if (sortOrder === undefined || sortOrder === 0) {
+    const { data: last } = await supabase
+      .from('chapter_contents')
+      .select('sort_order')
+      .eq('chapter_id', chapterId)
+      .order('sort_order', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    sortOrder = (Number(last?.sort_order) || 0) + 10;
+  }
+
+  const { data, error } = await supabase
+    .from('chapter_contents')
+    .insert({
+      chapter_id: chapterId,
+      content_type: input.content_type,
+      title: input.title,
+      url: input.url ?? null,
+      body: input.body ?? null,
+      duration_seconds: input.duration_seconds ?? null,
+      sort_order: sortOrder,
+    })
+    .select(CONTENT_COLUMNS)
+    .single();
+
+  if (error) {
+    throw new AppError(400, 'CHAPTER_CONTENT_CREATE_FAILED', error.message);
+  }
+
+  await syncChapterContentMeta(chapterId);
+  return toContentItem(data as Record<string, unknown>);
+}
+
+export async function updateChapterContent(
+  contentId: string,
+  input: import('../validators/course.validators').UpdateChapterContentInput,
+): Promise<ChapterContentItem> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('chapter_contents')
+    .update({
+      ...input,
+    })
+    .eq('id', contentId)
+    .select(CONTENT_COLUMNS)
+    .maybeSingle();
+
+  if (error) {
+    throw new AppError(400, 'CHAPTER_CONTENT_UPDATE_FAILED', error.message);
+  }
+  if (!data) {
+    throw new AppError(404, 'CHAPTER_CONTENT_NOT_FOUND', 'Content not found');
+  }
+
+  await syncChapterContentMeta(data.chapter_id as string);
+  return toContentItem(data as Record<string, unknown>);
+}
+
+export async function deleteChapterContent(contentId: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const { data: existing, error: lookupError } = await supabase
+    .from('chapter_contents')
+    .select('id, chapter_id')
+    .eq('id', contentId)
+    .maybeSingle();
+
+  if (lookupError) {
+    throw new AppError(500, 'CHAPTER_CONTENTS_FETCH_FAILED', lookupError.message);
+  }
+  if (!existing) {
+    throw new AppError(404, 'CHAPTER_CONTENT_NOT_FOUND', 'Content not found');
+  }
+
+  const { error } = await supabase.from('chapter_contents').delete().eq('id', contentId);
+  if (error) {
+    throw new AppError(400, 'CHAPTER_CONTENT_DELETE_FAILED', error.message);
+  }
+
+  await syncChapterContentMeta(existing.chapter_id as string);
+}

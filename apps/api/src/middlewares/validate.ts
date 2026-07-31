@@ -14,8 +14,12 @@ export function validate(schema: ZodSchema, target: RequestValidationTarget = 'b
     const result = schema.safeParse(req[target]);
 
     if (!result.success) {
+      const firstIssue = result.error.issues[0];
+      const detail = firstIssue
+        ? `${firstIssue.path.join('.') || target}: ${firstIssue.message}`
+        : 'Request validation failed';
       next(
-        new AppError(400, 'VALIDATION_ERROR', 'Request validation failed', result.error.flatten()),
+        new AppError(400, 'VALIDATION_ERROR', detail, result.error.flatten()),
       );
       return;
     }

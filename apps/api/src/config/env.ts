@@ -18,6 +18,19 @@ const envSchema = z.object({
     ),
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),
   RATE_LIMIT_MAX: z.coerce.number().default(100),
+  /**
+   * Comma-separated emails treated as admin (and auto-promoted in profiles).
+   * Example: ujjwalsharan82@gmail.com
+   */
+  ADMIN_EMAILS: z
+    .string()
+    .default('')
+    .transform((value) =>
+      value
+        .split(',')
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean),
+    ),
   JWT_SECRET: z.string().default('dev-only-change-me'),
   JWT_EXPIRES_IN: z.string().default('7d'),
   /** Project URL only — e.g. https://xxxx.supabase.co (never paste a JWT here) */

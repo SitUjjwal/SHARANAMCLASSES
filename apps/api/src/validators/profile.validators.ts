@@ -23,9 +23,14 @@ export const updateProfileSchema = z
       .max(15, 'phone_number is too long')
       .regex(/^[0-9+\-\s]+$/, 'phone_number contains invalid characters')
       .optional(),
-    class_level: z.enum(['9', '10', '11', '12'], {
-      errorMap: () => ({ message: 'class_level must be 9, 10, 11, or 12' }),
-    }).optional(),
+    class_level: z
+      .enum(['6', '7', '8', '9', '10', '11', '12', 'competitive', 'computer'], {
+        errorMap: () => ({
+          message:
+            'class_level must be 6–12, competitive, or computer',
+        }),
+      })
+      .optional(),
     medium: z.enum(['hindi', 'english'], {
       errorMap: () => ({ message: 'medium must be hindi or english' }),
     }).optional(),

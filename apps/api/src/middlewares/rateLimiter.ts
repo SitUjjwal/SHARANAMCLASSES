@@ -7,6 +7,8 @@ export const rateLimiter = rateLimit({
   max: config.rateLimit.max,
   standardHeaders: true,
   legacyHeaders: false,
+  // Local admin + Expo hot reload burns through a tight limit quickly.
+  skip: () => config.app.env === 'development',
   message: {
     success: false,
     error: {

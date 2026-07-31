@@ -4,7 +4,7 @@ create table if not exists public.profiles (
   full_name text not null,
   email text not null,
   phone_number text not null,
-  class_level text not null check (class_level in ('9', '10', '11', '12')),
+  class_level text not null check (class_level in ('6', '7', '8', '9', '10', '11', '12', 'competitive', 'computer')),
   medium text not null check (medium in ('hindi', 'english')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()

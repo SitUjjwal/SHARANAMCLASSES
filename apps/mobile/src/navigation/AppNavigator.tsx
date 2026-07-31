@@ -1,11 +1,11 @@
 /**
- * Authenticated stack (protected).
- * Why: only mounted when a Supabase session exists.
- * After login, user lands on Home.
+ * Authenticated stack: tabs + course / chapter screens above tabs.
  */
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import { HomeScreen } from '@/screens/HomeScreen';
+import { ChapterContentScreen, ChapterListScreen } from '@/modules/chapters';
+import { MainTabNavigator } from '@/navigation/MainTabNavigator';
+import { CourseDetailScreen } from '@/screens/CourseDetailScreen';
 import type { AppStackParamList } from '@/types/navigation';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -13,7 +13,10 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
 export function AppNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Home" component={HomeScreen} />
+      <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+      <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
+      <Stack.Screen name="ChapterList" component={ChapterListScreen} />
+      <Stack.Screen name="ChapterContent" component={ChapterContentScreen} />
     </Stack.Navigator>
   );
 }

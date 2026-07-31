@@ -8,7 +8,11 @@ export type UserRole = 'student' | 'admin' | 'instructor';
 export interface ApiSuccessResponse<T> {
   success: true;
   data: T;
+  message?: string;
 }
+
+/** Alias kept for paginated list responses (`data` holds CourseListPage, etc.) */
+export type ApiPaginatedResponse<T> = ApiSuccessResponse<T>;
 
 export interface ApiErrorResponse {
   success: false;
@@ -20,3 +24,5 @@ export interface ApiErrorResponse {
 }
 
 export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
+
+export * from './course';

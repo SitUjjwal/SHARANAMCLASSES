@@ -40,8 +40,10 @@ export function createApp() {
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
 
-  // Basic abuse protection
-  app.use(rateLimiter);
+  // Basic abuse protection (skipped entirely in development)
+  if (env.NODE_ENV !== 'development') {
+    app.use(rateLimiter);
+  }
 
   // Domain routes (/health, /database-status, later /api/v1/...)
   app.use(routes);
