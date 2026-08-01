@@ -1,5 +1,7 @@
 /**
- * Admin navigation menu — single source for sidebar + routes.
+ * Admin navigation menu — single source for sidebar + Dashboard tiles.
+ *
+ * Primary Test Series cluster first (per product menu), then catalog ops.
  */
 export type AdminNavItem = {
   label: string;
@@ -18,6 +20,31 @@ export const ADMIN_NAV: AdminNavItem[] = [
     label: 'Courses',
     path: '/courses',
     description: 'Create and publish course catalog.',
+  },
+  {
+    label: 'Tests',
+    path: '/tests',
+    description: 'Chapter, subject, mock, previous-year, and daily quizzes.',
+  },
+  {
+    label: 'Questions',
+    path: '/questions',
+    description: 'Open a test question bank (MCQ + Excel import).',
+  },
+  {
+    label: 'Results',
+    path: '/results',
+    description: 'Scored attempts across students.',
+  },
+  {
+    label: 'Leaderboard',
+    path: '/leaderboard',
+    description: 'Top 100 ranks by score and time.',
+  },
+  {
+    label: 'Analytics',
+    path: '/analytics',
+    description: 'Average score, pass rate, strong/weak subjects.',
   },
   {
     label: 'Banners',

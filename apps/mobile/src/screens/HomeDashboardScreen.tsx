@@ -1,14 +1,16 @@
 /**
  * Home Dashboard — production layout:
- * Greeting → Quote of the Day → Banner Slider → Categories →
- * Featured Courses → My Courses → Latest Updates
+ * Greeting → Banner → Categories → Featured → My Courses →
+ * Latest Updates → Live Classes → Quote of the Day (bottom)
  *
  * Data: GET /dashboard via useDashboardQuery (React Query).
- * Bottom tabs: Home | Courses | My Learning | Profile.
+ * Bottom tabs: Home | Courses | Tests | Live | My Learning | Profile.
  */
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import type { CompositeNavigationProp } from '@react-navigation/native';
+import { useCallback, useMemo } from 'react';
+import { Alert, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { DrawerActions, type CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import {
@@ -20,18 +22,30 @@ import {
   QuoteCard,
   UpdatesList,
 } from '@/components/dashboard';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Screen } from '@/components/ui/Screen';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useDashboardQuery } from '@/hooks/useDashboardQuery';
-import type { AppStackParamList, MainTabParamList } from '@/types/navigation';
+import { LiveClassCard } from '@/modules/live-classes/components/LiveClassCard';
+import { useLiveClassesQuery } from '@/modules/live-classes/hooks/useLiveClassesQuery';
+import { openInYouTubeApp } from '@/modules/videos/utils/openYouTube';
+import { extractYouTubeVideoId } from '@/modules/videos/utils/youtube';
+import type {
+  AppStackParamList,
+  MainDrawerParamList,
+  MainTabParamList,
+} from '@/types/navigation';
 import { getApiErrorMessage } from '@/utils/apiErrors';
 import { spacing } from '@/theme';
-import type { Category, CourseSummary } from '@sharanam/shared';
+import type { Category, CourseSummary, LiveClassPublic } from '@sharanam/shared';
 
 type Nav = CompositeNavigationProp<
   BottomTabNavigationProp<MainTabParamList, 'HomeTab'>,
-  NativeStackNavigationProp<AppStackParamList>
+  CompositeNavigationProp<
+    DrawerNavigationProp<MainDrawerParamList>,
+    NativeStackNavigationProp<AppStackParamList>
+  >
 >;
 
 type Props = {
@@ -40,6 +54,24 @@ type Props = {
 
 export function HomeDashboardScreen({ navigation }: Props) {
   const dashboardQuery = useDashboardQuery();
+  const liveQuery = useLiveClassesQuery();
+
+  const homeLiveClasses = useMemo(() => {
+    const items = liveQuery.data ?? [];
+    const now = Date.now();
+    const liveNow: LiveClassPublic[] = [];
+    const upcoming: LiveClassPublic[] = [];
+    for (const item of items) {
+      const start = Date.parse(item.start_time);
+      const end = Date.parse(item.end_time);
+      if (item.status === 'live' || (start <= now && end >= now && item.status !== 'ended')) {
+        liveNow.push(item);
+      } else if (item.status === 'upcoming' && start > now) {
+        upcoming.push(item);
+      }
+    }
+    return [...liveNow, ...upcoming].slice(0, 3);
+  }, [liveQuery.data]);
 
   function openCourse(course: CourseSummary) {
     navigation.navigate('CourseDetail', { courseId: course.id });
@@ -56,6 +88,24 @@ export function HomeDashboardScreen({ navigation }: Props) {
   function openMyLearningTab() {
     navigation.navigate('MyLearningTab');
   }
+
+  function openLiveTab() {
+    navigation.navigate('LiveTab');
+  }
+
+  function openMenu() {
+    navigation.dispatch(DrawerActions.openDrawer());
+  }
+
+  const onJoinLive = useCallback((liveClass: LiveClassPublic) => {
+    const youtubeUrl = liveClass.youtube_url?.trim() ?? '';
+    const videoId = extractYouTubeVideoId(youtubeUrl);
+    if (!videoId) {
+      Alert.alert('Invalid link', 'This live class does not have a valid YouTube URL.');
+      return;
+    }
+    void openInYouTubeApp({ youtubeUrl, videoId });
+  }, []);
 
   if (dashboardQuery.isLoading && !dashboardQuery.data) {
     return (
@@ -87,23 +137,24 @@ export function HomeDashboardScreen({ navigation }: Props) {
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
-            refreshing={dashboardQuery.isRefetching && !dashboardQuery.isLoading}
+            refreshing={
+              (dashboardQuery.isRefetching && !dashboardQuery.isLoading) ||
+              (liveQuery.isRefetching && !liveQuery.isLoading)
+            }
             onRefresh={() => {
               void dashboardQuery.refetch();
+              void liveQuery.refetch();
             }}
             tintColor="#C9A227"
           />
         }
       >
-        <GreetingHeader name={data?.greeting_name ?? 'Student'} />
+        <GreetingHeader
+          name={data?.greeting_name ?? 'Student'}
+          onMenuPress={openMenu}
+        />
 
         <View style={styles.section}>
-          <SectionHeader title="Quote of the Day" />
-          <QuoteCard quote={data?.quote ?? null} />
-        </View>
-
-        <View style={styles.section}>
-          <SectionHeader title="Banner Slider" />
           <BannerSlider banners={data?.banners ?? []} />
         </View>
 
@@ -144,6 +195,32 @@ export function HomeDashboardScreen({ navigation }: Props) {
           <SectionHeader title="Latest Updates" />
           <UpdatesList updates={data?.latest_updates ?? []} />
         </View>
+
+        <View style={styles.section}>
+          <SectionHeader
+            title="Live Classes"
+            actionLabel="See all"
+            onActionPress={openLiveTab}
+          />
+          {homeLiveClasses.length ? (
+            <View style={styles.liveList}>
+              {homeLiveClasses.map((item) => (
+                <LiveClassCard key={item.id} liveClass={item} onJoin={onJoinLive} />
+              ))}
+            </View>
+          ) : (
+            <EmptyState
+              icon="radio-outline"
+              title="No live classes"
+              message="Upcoming live sessions will appear here."
+            />
+          )}
+        </View>
+
+        <View style={styles.section}>
+          <SectionHeader title="Quote of the Day" />
+          <QuoteCard quote={data?.quote ?? null} />
+        </View>
       </ScrollView>
     </Screen>
   );
@@ -161,6 +238,9 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
   },
   section: {
+    gap: spacing.sm,
+  },
+  liveList: {
     gap: spacing.sm,
   },
 });

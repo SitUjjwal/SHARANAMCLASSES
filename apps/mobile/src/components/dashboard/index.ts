@@ -7,3 +7,4 @@ export { CourseCard } from './CourseCard';
 export { CourseHorizontalList } from './CourseHorizontalList';
 export { UpdatesList } from './UpdatesList';
 export { HomeDashboardSkeleton } from './HomeDashboardSkeleton';
+export { HomeQuickActions } from './HomeQuickActions';

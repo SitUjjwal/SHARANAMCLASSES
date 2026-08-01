@@ -137,7 +137,11 @@ export function ChapterContentScreen({ navigation, route }: Props) {
           { text: 'OK', style: 'cancel' },
           {
             text: 'Open Live tab',
-            onPress: () => navigation.navigate('MainTabs', { screen: 'LiveTab' }),
+            onPress: () =>
+              navigation.navigate('MainTabs', {
+                screen: 'Tabs',
+                params: { screen: 'LiveTab' },
+              }),
           },
         ],
       );

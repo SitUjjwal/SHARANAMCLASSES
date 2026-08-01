@@ -16,3 +16,16 @@ export { fetchChapters, fetchChapterDetail } from './chapter.service';
 export { fetchBanners } from './banner.service';
 export { fetchCategories } from './category.service';
 export type { FetchCategoriesParams } from './category.service';
+export {
+  fetchStudentTests,
+  startOrResumeAttempt,
+  fetchAttemptSession,
+  saveAttemptAnswers,
+  creditAttemptPause,
+  submitAttempt,
+  fetchAttemptResult,
+} from './test.service';
+export type { SaveAnswersPayload } from './test.service';
+export { fetchLeaderboard } from './leaderboard.service';
+export type { LeaderboardFilters } from './leaderboard.service';
+export { fetchStudentAnalytics } from './analytics.service';

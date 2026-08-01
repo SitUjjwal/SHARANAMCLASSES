@@ -9,8 +9,16 @@ import { BuyCourseScreen, PurchaseHistoryScreen } from '@/modules/payments';
 import { PaymentFailedScreen } from '@/modules/payments/screens/PaymentFailedScreen';
 import { PaymentSuccessScreen } from '@/modules/payments/screens/PaymentSuccessScreen';
 import { PdfViewerScreen } from '@/modules/pdfs';
+import {
+  TestListScreen,
+  TestScreen,
+  ResultScreen,
+  ReviewScreen,
+  LeaderboardScreen,
+  AnalyticsDashboardScreen,
+} from '@/modules/tests';
 import { VideoPlayerScreen } from '@/modules/videos';
-import { MainTabNavigator } from '@/navigation/MainTabNavigator';
+import { MainDrawerNavigator } from '@/navigation/MainDrawerNavigator';
 import { CourseDetailScreen } from '@/screens/CourseDetailScreen';
 import type { AppStackParamList } from '@/types/navigation';
 
@@ -19,7 +27,7 @@ const Stack = createNativeStackNavigator<AppStackParamList>();
 export function AppNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+      <Stack.Screen name="MainTabs" component={MainDrawerNavigator} />
       <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
       <Stack.Screen name="BuyCourse" component={BuyCourseScreen} />
       <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} />
@@ -30,6 +38,12 @@ export function AppNavigator() {
       <Stack.Screen name="VideoPlayer" component={VideoPlayerScreen} />
       <Stack.Screen name="PdfViewer" component={PdfViewerScreen} />
       <Stack.Screen name="NoteViewer" component={NoteViewerScreen} />
+      <Stack.Screen name="TestList" component={TestListScreen} />
+      <Stack.Screen name="TestAttempt" component={TestScreen} />
+      <Stack.Screen name="TestResult" component={ResultScreen} />
+      <Stack.Screen name="TestReview" component={ReviewScreen} />
+      <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+      <Stack.Screen name="TestAnalytics" component={AnalyticsDashboardScreen} />
     </Stack.Navigator>
   );
 }

@@ -5,12 +5,18 @@ import type { NextFunction, Request, Response } from 'express';
 
 import {
   createCategory,
+  deleteCategory,
   listActiveCategories,
   listAllCategoriesForAdmin,
+  updateCategory,
 } from '../services/category.service';
 import { isAdminUser } from '../services/role.service';
-import type { CreateCategoryInput } from '../validators/category.validators';
+import type {
+  CreateCategoryInput,
+  UpdateCategoryInput,
+} from '../validators/category.validators';
 import { AppError } from '../utils/AppError';
+import { requireParam } from '../utils/params';
 
 /**
  * GET /categories
@@ -67,6 +73,37 @@ export async function postCategory(
     const input = req.body as CreateCategoryInput;
     const data = await createCategory(input);
     res.status(201).json({ success: true, data, message: 'Category created' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** PATCH /categories/:id — update (admin) */
+export async function patchCategory(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const categoryId = requireParam(req.params.id, 'id');
+    const input = req.body as UpdateCategoryInput;
+    const data = await updateCategory(categoryId, input);
+    res.status(200).json({ success: true, data, message: 'Category updated' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** DELETE /categories/:id — delete (admin) */
+export async function removeCategory(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const categoryId = requireParam(req.params.id, 'id');
+    await deleteCategory(categoryId);
+    res.status(200).json({ success: true, data: null, message: 'Category deleted' });
   } catch (error) {
     next(error);
   }

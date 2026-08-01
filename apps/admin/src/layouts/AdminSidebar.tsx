@@ -1,5 +1,5 @@
 /**
- * Admin sidebar — Dashboard, Courses, Categories, Chapters, Teachers, Students, Payments.
+ * Admin sidebar — Dashboard, Courses, Tests, Questions, Results, Leaderboard, Analytics, …
  */
 import { NavLink } from 'react-router-dom';
 

@@ -1,5 +1,5 @@
 /**
- * Main tabs after login: Home | Courses | Live | My Learning | Profile.
+ * Main tabs after login: Home | Courses | Tests | Live | My Learning | Profile.
  */
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { CoursesScreen } from '@/screens/CoursesScreen';
 import { HomeDashboardScreen } from '@/screens/HomeDashboardScreen';
 import { MyLearningScreen } from '@/screens/MyLearningScreen';
 import { ProfileTabScreen } from '@/screens/ProfileTabScreen';
+import { TestsTabScreen } from '@/screens/TestsTabScreen';
 import type { MainTabParamList } from '@/types/navigation';
 import { colors } from '@/theme';
 
@@ -32,6 +33,7 @@ export function MainTabNavigator() {
           const map: Record<keyof MainTabParamList, keyof typeof Ionicons.glyphMap> = {
             HomeTab: 'home-outline',
             CoursesTab: 'grid-outline',
+            TestsTab: 'document-text-outline',
             LiveTab: 'radio-outline',
             MyLearningTab: 'book-outline',
             ProfileTab: 'person-outline',
@@ -49,6 +51,11 @@ export function MainTabNavigator() {
         name="CoursesTab"
         component={CoursesScreen}
         options={{ title: 'Courses' }}
+      />
+      <Tab.Screen
+        name="TestsTab"
+        component={TestsTabScreen}
+        options={{ title: 'Tests' }}
       />
       <Tab.Screen
         name="LiveTab"

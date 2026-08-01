@@ -75,7 +75,7 @@ Apply in Supabase SQL Editor:
 | Type | `product_type` | Entity table (later) |
 |------|----------------|----------------------|
 | Courses | `course` | `courses` |
-| Test Series | `test_series` | e.g. `test_series` |
+| Test Series | `test_series` | `tests` (see [tests.md](./tests.md)) |
 | E-books | `ebook` | e.g. `ebooks` |
 | Spoken English | `spoken_english` | e.g. `spoken_programs` |
 | Premium | `subscription` | e.g. `subscription_plans` |

@@ -43,6 +43,18 @@ export function ProfileTabScreen({ navigation }: Props) {
 
       <View style={styles.card}>
         <AppButton
+          label="Test Series"
+          onPress={() => navigation.navigate('TestsTab')}
+        />
+        <AppButton
+          label="Leaderboard"
+          onPress={() => navigation.navigate('Leaderboard')}
+        />
+        <AppButton
+          label="Analytics"
+          onPress={() => navigation.navigate('TestAnalytics')}
+        />
+        <AppButton
           label="Purchase History"
           onPress={() => navigation.navigate('PurchaseHistory')}
         />

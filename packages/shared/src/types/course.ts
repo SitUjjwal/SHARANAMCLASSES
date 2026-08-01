@@ -242,6 +242,266 @@ export type NotePublic = {
   notes_url: string | null;
 };
 
+/** Test Series catalog types (admin + student) */
+export type TestType =
+  | 'chapter_test'
+  | 'subject_test'
+  | 'mock_test'
+  | 'previous_year'
+  | 'daily_quiz';
+
+export const TEST_TYPE_LABELS: Record<TestType, string> = {
+  chapter_test: 'Chapter Test',
+  subject_test: 'Subject Test',
+  mock_test: 'Mock Test',
+  previous_year: 'Previous Year Test',
+  daily_quiz: 'Daily Quiz',
+};
+
+/** Admin / full test row */
+export type Test = {
+  id: string;
+  title: string;
+  description: string;
+  instructions: string;
+  test_type: TestType;
+  course_id: string | null;
+  chapter_id: string | null;
+  duration_minutes: number;
+  total_marks: number;
+  passing_marks: number;
+  sort_order: number;
+  is_free: boolean;
+  is_published: boolean;
+  created_at?: string;
+  updated_at?: string;
+  course_title?: string | null;
+  chapter_title?: string | null;
+};
+
+/**
+ * Student-facing test summary (unlock + catalog; attempts use TestAttemptSession).
+ */
+export type TestPublic = {
+  id: string;
+  title: string;
+  description: string;
+  instructions: string;
+  test_type: TestType;
+  course_id: string | null;
+  chapter_id: string | null;
+  duration_minutes: number;
+  total_marks: number;
+  passing_marks: number;
+  sort_order: number;
+  is_free: boolean;
+  is_locked: boolean;
+  course_title?: string | null;
+  chapter_title?: string | null;
+};
+
+/** Correct MCQ option key */
+export type QuestionCorrectAnswer = 'A' | 'B' | 'C' | 'D';
+
+/** Admin / full question row (includes correct answer) */
+export type Question = {
+  id: string;
+  test_id: string;
+  question_text: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  correct_answer: QuestionCorrectAnswer;
+  explanation: string;
+  marks: number;
+  negative_marks: number;
+  sort_order: number;
+  created_at?: string;
+  updated_at?: string;
+  test_title?: string | null;
+};
+
+/**
+ * Student-facing question during an attempt — correct_answer / explanation omitted.
+ */
+export type QuestionPublic = {
+  id: string;
+  test_id: string;
+  question_text: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  marks: number;
+  negative_marks: number;
+  sort_order: number;
+};
+
+export type QuestionBulkImportResult = {
+  imported: number;
+  skipped: number;
+  errors: Array<{ row: number; message: string }>;
+};
+
+/** Lifecycle of a student test session */
+export type TestAttemptStatus = 'in_progress' | 'submitted' | 'expired';
+
+/** One answer row inside an attempt (client + API) */
+export type TestAttemptAnswerState = {
+  question_id: string;
+  selected_answer: QuestionCorrectAnswer | null;
+  is_marked_for_review: boolean;
+};
+
+/** Attempt metadata for the Test Screen header / timer */
+export type TestAttempt = {
+  id: string;
+  test_id: string;
+  status: TestAttemptStatus;
+  started_at: string;
+  ends_at: string;
+  submitted_at: string | null;
+  current_question_index: number;
+  duration_minutes: number;
+  test_title: string;
+  total_marks: number;
+};
+
+/**
+ * Full Test Screen payload — questions without keys + saved answers.
+ */
+export type TestAttemptSession = {
+  attempt: TestAttempt;
+  questions: QuestionPublic[];
+  answers: TestAttemptAnswerState[];
+};
+
+/** Per-question outcome after scoring */
+export type TestAnswerOutcome = 'correct' | 'wrong' | 'skipped';
+
+/** Aggregate Result Screen summary */
+export type TestAttemptResultSummary = {
+  attempt_id: string;
+  test_id: string;
+  test_title: string;
+  status: TestAttemptStatus;
+  total_marks: number;
+  passing_marks: number;
+  obtained_marks: number;
+  correct_count: number;
+  wrong_count: number;
+  skipped_count: number;
+  percentage: number;
+  is_passed: boolean;
+  submitted_at: string | null;
+};
+
+/** One row for Review Answers */
+export type TestAttemptReviewItem = {
+  question_id: string;
+  sort_order: number;
+  question_text: string;
+  option_a: string;
+  option_b: string;
+  option_c: string;
+  option_d: string;
+  selected_answer: QuestionCorrectAnswer | null;
+  correct_answer: QuestionCorrectAnswer;
+  explanation: string;
+  marks: number;
+  negative_marks: number;
+  outcome: TestAnswerOutcome;
+};
+
+/** Full Result Screen payload */
+export type TestAttemptResult = {
+  summary: TestAttemptResultSummary;
+  review: TestAttemptReviewItem[];
+};
+
+/** Paginated GET /results list */
+export type TestAttemptResultListPage = {
+  items: TestAttemptResultSummary[];
+  page: number;
+  pageSize: number;
+  total: number;
+  hasMore: boolean;
+};
+
+/** One row on the Test Leaderboard (top 100) */
+export type LeaderboardEntry = {
+  rank: number;
+  user_id: string;
+  student_name: string;
+  score: number;
+  percentage: number;
+  time_taken_seconds: number;
+  attempt_id: string;
+  test_id: string;
+  test_title: string;
+  course_id: string | null;
+  submitted_at: string;
+};
+
+/** Leaderboard list + active filters echo */
+export type LeaderboardPage = {
+  items: LeaderboardEntry[];
+  total: number;
+  limit: number;
+  filters: {
+    courseId: string | null;
+    testId: string | null;
+    date: string | null;
+  };
+};
+
+/** Subject strength / weakness row */
+export type AnalyticsSubjectStat = {
+  subject: string;
+  average_percentage: number;
+  attempts: number;
+  pass_percent: number;
+};
+
+/** Recent scored attempt for activity feed */
+export type AnalyticsRecentActivity = {
+  attempt_id: string;
+  test_id: string;
+  test_title: string;
+  subject: string;
+  percentage: number;
+  obtained_marks: number;
+  is_passed: boolean;
+  submitted_at: string;
+};
+
+/** Chart series for analytics dashboard */
+export type AnalyticsCharts = {
+  /** Daily average percentage (ISO date YYYY-MM-DD) */
+  score_over_time: Array<{
+    date: string;
+    average_percentage: number;
+    attempts: number;
+  }>;
+  /** Per-subject average % for bar chart */
+  by_subject: AnalyticsSubjectStat[];
+};
+
+/** Student Test Analytics Dashboard payload */
+export type StudentTestAnalytics = {
+  summary: {
+    average_score: number;
+    total_tests: number;
+    total_attempts: number;
+    pass_percentage: number;
+  };
+  strong_subjects: AnalyticsSubjectStat[];
+  weak_subjects: AnalyticsSubjectStat[];
+  recent_activity: AnalyticsRecentActivity[];
+  charts: AnalyticsCharts;
+};
+
 /** Full chapter for content screen */
 export type ChapterDetail = Chapter & {
   course_id: string;

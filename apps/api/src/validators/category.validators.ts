@@ -11,9 +11,13 @@ export const createCategorySchema = z.object({
     .min(2)
     .max(100)
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'slug must be kebab-case'),
-  icon: z.string().trim().max(64).nullable().optional(),
+  /** Emoji, Ionicon name, or image URL */
+  icon: z.string().trim().max(500).nullable().optional(),
   sort_order: z.number().int().optional().default(0),
   is_active: z.boolean().optional().default(true),
 });
 
+export const updateCategorySchema = createCategorySchema.partial();
+
 export type CreateCategoryInput = z.infer<typeof createCategorySchema>;
+export type UpdateCategoryInput = z.infer<typeof updateCategorySchema>;

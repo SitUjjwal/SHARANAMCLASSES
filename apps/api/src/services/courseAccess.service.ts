@@ -30,6 +30,36 @@ export function toCourseAccessContext(
   };
 }
 
+/** All course ids the student can fully access (enrollment ∪ purchase). */
+export async function listAccessibleCourseIds(userId: string): Promise<Set<string>> {
+  const supabase = getSupabaseAdmin();
+  const ids = new Set<string>();
+
+  const [{ data: enrollments, error: enrollError }, { data: purchases, error: purchaseError }] =
+    await Promise.all([
+      supabase.from('enrollments').select('course_id').eq('user_id', userId),
+      supabase.from('purchased_courses').select('course_id').eq('user_id', userId),
+    ]);
+
+  if (enrollError) {
+    throw new AppError(500, 'ENROLLMENT_FETCH_FAILED', enrollError.message);
+  }
+  if (purchaseError) {
+    const msg = purchaseError.message.toLowerCase();
+    if (!msg.includes('purchased_courses') && !msg.includes('does not exist')) {
+      throw new AppError(500, 'PURCHASE_FETCH_FAILED', purchaseError.message);
+    }
+  }
+
+  for (const row of enrollments ?? []) {
+    if (row.course_id) ids.add(row.course_id as string);
+  }
+  for (const row of purchases ?? []) {
+    if (row.course_id) ids.add(row.course_id as string);
+  }
+  return ids;
+}
+
 /** True if student may unlock all paid chapter media. */
 export async function userHasCourseAccess(
   userId: string,

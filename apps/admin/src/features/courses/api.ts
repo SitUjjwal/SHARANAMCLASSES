@@ -9,6 +9,7 @@ export type TeacherOption = {
   id: string;
   full_name: string;
   email: string;
+  phone_number?: string;
   role: string;
 };
 
@@ -104,6 +105,22 @@ export function createAdminCategory(payload: {
 }) {
   return apiRequest<Category>('/categories', {
     method: 'POST',
+    body: payload,
+  });
+}
+
+export function updateAdminCategory(
+  id: string,
+  payload: Partial<{
+    name: string;
+    slug: string;
+    icon?: string | null;
+    sort_order?: number;
+    is_active?: boolean;
+  }>,
+) {
+  return apiRequest<Category>(`/categories/${id}`, {
+    method: 'PATCH',
     body: payload,
   });
 }

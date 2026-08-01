@@ -15,8 +15,8 @@ import {
   type TeacherOption,
 } from '@/features/courses/api';
 import { CourseForm } from '@/features/courses/CourseForm';
+import { CourseTestsPanel } from '@/features/tests/CourseTestsPanel';
 import { ApiClientError } from '@/services/api';
-
 const PAGE_SIZE = 10;
 
 export function CoursesPage() {
@@ -36,6 +36,7 @@ export function CoursesPage() {
   const [error, setError] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<CourseSummary | null>(null);
+  const [testsCourse, setTestsCourse] = useState<CourseSummary | null>(null);
 
   const categoryMap = Object.fromEntries(categories.map((c) => [c.id, c.name]));
 
@@ -245,6 +246,13 @@ export function CoursesPage() {
                   </span>
                 </td>
                 <td className="row-actions">
+                  <button
+                    type="button"
+                    className="btn ghost"
+                    onClick={() => setTestsCourse(course)}
+                  >
+                    Tests
+                  </button>
                   <button type="button" className="btn ghost" onClick={() => openEdit(course)}>
                     Edit
                   </button>
@@ -306,6 +314,23 @@ export function CoursesPage() {
                 void loadCourses();
               }}
             />
+          </div>
+        </div>
+      ) : null}
+
+      {testsCourse ? (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={() => setTestsCourse(null)}
+        >
+          <div
+            className="modal-panel modal-panel-wide"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CourseTestsPanel course={testsCourse} onClose={() => setTestsCourse(null)} />
           </div>
         </div>
       ) : null}

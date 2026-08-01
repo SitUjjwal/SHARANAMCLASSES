@@ -14,13 +14,19 @@ export type AuthStackParamList = {
 export type MainTabParamList = {
   HomeTab: undefined;
   CoursesTab: { categoryId?: string } | undefined;
+  TestsTab: undefined;
   LiveTab: undefined;
   MyLearningTab: undefined;
   ProfileTab: undefined;
 };
 
+/** Drawer wraps bottom tabs (hamburger sidebar). */
+export type MainDrawerParamList = {
+  Tabs: NavigatorScreenParams<MainTabParamList> | undefined;
+};
+
 export type AppStackParamList = {
-  MainTabs: NavigatorScreenParams<MainTabParamList> | undefined;
+  MainTabs: NavigatorScreenParams<MainDrawerParamList> | undefined;
   CourseDetail: { courseId: string };
   BuyCourse: { courseId: string };
   PaymentSuccess: { courseId: string; courseTitle?: string };
@@ -31,6 +37,12 @@ export type AppStackParamList = {
   VideoPlayer: { courseId: string; chapterId: string; videoId: string };
   PdfViewer: { courseId: string; chapterId: string; pdfId: string };
   NoteViewer: { courseId: string; chapterId: string; noteId: string };
+  TestList: undefined;
+  TestAttempt: { attemptId: string; testId: string };
+  TestResult: { attemptId: string };
+  TestReview: { attemptId: string };
+  Leaderboard: undefined;
+  TestAnalytics: undefined;
 };
 
 export type RootStackParamList = AuthStackParamList & AppStackParamList & MainTabParamList;

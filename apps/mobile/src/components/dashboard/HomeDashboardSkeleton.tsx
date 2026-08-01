@@ -10,9 +10,6 @@ export function HomeDashboardSkeleton() {
   return (
     <View style={styles.wrap}>
       <SkeletonBlock height={32} width="75%" radius={8} />
-      <SkeletonBlock height={18} width="40%" />
-      <SkeletonBlock height={96} radius={16} />
-      <SkeletonBlock height={18} width="35%" />
       <SkeletonBlock height={160} radius={16} />
       <SkeletonBlock height={18} width="30%" />
       <View style={styles.row}>

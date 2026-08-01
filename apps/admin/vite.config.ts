@@ -7,6 +7,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
+      // Point at TS source so Vite can resolve named re-exports (CJS dist + export* breaks).
+      '@sharanam/shared': path.resolve(__dirname, '../../packages/shared/src/index.ts'),
     },
   },
   server: {

@@ -29,11 +29,16 @@ const linking: LinkingOptions<RootStackParamList> = {
       MainTabs: {
         path: '',
         screens: {
-          HomeTab: 'home',
-          CoursesTab: 'courses',
-          LiveTab: 'live',
-          MyLearningTab: 'my-learning',
-          ProfileTab: 'profile',
+          Tabs: {
+            screens: {
+              HomeTab: 'home',
+              CoursesTab: 'courses',
+              TestsTab: 'tests-tab',
+              LiveTab: 'live',
+              MyLearningTab: 'my-learning',
+              ProfileTab: 'profile',
+            },
+          },
         },
       },
       CourseDetail: 'course/:courseId',
@@ -43,6 +48,12 @@ const linking: LinkingOptions<RootStackParamList> = {
       VideoPlayer: 'course/:courseId/chapters/:chapterId/videos/:videoId',
       PdfViewer: 'course/:courseId/chapters/:chapterId/pdfs/:pdfId',
       NoteViewer: 'course/:courseId/chapters/:chapterId/notes/:noteId',
+      TestList: 'tests',
+      TestAttempt: 'tests/attempt/:attemptId',
+      TestResult: 'tests/result/:attemptId',
+      TestReview: 'tests/review/:attemptId',
+      Leaderboard: 'leaderboard',
+      TestAnalytics: 'analytics',
     },
   },
 };

@@ -47,6 +47,33 @@ export const materialUpload = multer({
   },
 }).single('file');
 
+/** Excel question bank import — .xlsx / .xls, max 5MB */
+const EXCEL_MIME = new Set([
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  'application/vnd.ms-excel',
+  'application/octet-stream',
+]);
+
+export const excelUpload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    const name = file.originalname.toLowerCase();
+    const okExt = name.endsWith('.xlsx') || name.endsWith('.xls');
+    if (!okExt && !EXCEL_MIME.has(file.mimetype)) {
+      cb(
+        new AppError(
+          400,
+          'INVALID_EXCEL_TYPE',
+          'Only Excel uploads are allowed (.xlsx or .xls)',
+        ),
+      );
+      return;
+    }
+    cb(null, true);
+  },
+}).single('file');
+
 /** Dedicated PDF catalog upload — application/pdf only, max 25MB */
 export const pdfUpload = multer({
   storage,

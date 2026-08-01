@@ -8,17 +8,23 @@ import { LoginPage } from '@/features/auth/LoginPage';
 import { RequireAuth } from '@/features/auth/RequireAuth';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import {
+  AnalyticsPage,
   BannersPage,
   CategoriesPage,
   ChaptersPage,
   CoursesPage,
   DashboardPage,
+  LeaderboardPage,
   LiveClassesPage,
   NotesPage,
   PaymentsPage,
   PdfsPage,
+  QuestionsHubPage,
+  QuestionsPage,
+  ResultsPage,
   StudentsPage,
   TeachersPage,
+  TestsPage,
   VideosPage,
 } from '@/pages';
 
@@ -32,6 +38,12 @@ export function App() {
             <Route element={<AdminLayout />}>
               <Route index element={<DashboardPage />} />
               <Route path="courses" element={<CoursesPage />} />
+              <Route path="tests" element={<TestsPage />} />
+              <Route path="questions" element={<QuestionsHubPage />} />
+              <Route path="tests/:testId/questions" element={<QuestionsPage />} />
+              <Route path="results" element={<ResultsPage />} />
+              <Route path="leaderboard" element={<LeaderboardPage />} />
+              <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="banners" element={<BannersPage />} />
               <Route path="categories" element={<CategoriesPage />} />
               <Route path="chapters" element={<ChaptersPage />} />

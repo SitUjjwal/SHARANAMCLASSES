@@ -15,4 +15,12 @@ export const queryKeys = {
   myCourses: (search?: string) => ['my-courses', { search: search ?? '' }] as const,
   purchaseHistory: ['payments', 'history'] as const,
   profile: ['profile'] as const,
+  studentTests: (courseId?: string) =>
+    ['tests', 'student', { courseId: courseId ?? null }] as const,
+  attemptSession: (attemptId: string) => ['tests', 'attempt', attemptId] as const,
+  attemptResult: (attemptId: string) =>
+    ['tests', 'attempt', attemptId, 'result'] as const,
+  leaderboard: (filters?: Record<string, unknown>) =>
+    ['tests', 'leaderboard', filters ?? {}] as const,
+  testAnalytics: ['tests', 'analytics'] as const,
 };
