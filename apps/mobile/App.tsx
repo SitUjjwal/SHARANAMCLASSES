@@ -11,6 +11,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { queryClient } from '@/api/queryClient';
 import { AuthProvider } from '@/auth/AuthProvider';
+import { NotificationProvider } from '@/modules/notifications';
 import { RootNavigator } from '@/navigation/RootNavigator';
 
 export default function App() {
@@ -19,8 +20,10 @@ export default function App() {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
-            <RootNavigator />
-            <StatusBar style="light" />
+            <NotificationProvider>
+              <RootNavigator />
+              <StatusBar style="light" />
+            </NotificationProvider>
           </AuthProvider>
         </QueryClientProvider>
       </SafeAreaProvider>

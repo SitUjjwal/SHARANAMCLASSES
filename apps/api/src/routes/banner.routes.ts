@@ -7,6 +7,7 @@
  * Admin:
  *   GET    /admin/banners
  *   POST   /admin/banners
+ *   POST   /admin/banners/upload-image
  *   PATCH  /admin/banners/:bannerId
  *   DELETE /admin/banners/:bannerId
  */
@@ -17,10 +18,12 @@ import {
   listBanners,
   patchBanner,
   postBanner,
+  postBannerImage,
   removeBanner,
 } from '../controllers/banner.controller';
 import { requireAuth } from '../middlewares/auth';
 import { requireAdmin } from '../middlewares/requireAdmin';
+import { bannerImageUpload } from '../middlewares/upload';
 import { validate } from '../middlewares/validate';
 import {
   createBannerSchema,
@@ -32,6 +35,13 @@ export const bannerRouter = Router();
 bannerRouter.get('/banners', requireAuth, listBanners);
 
 bannerRouter.get('/admin/banners', requireAuth, requireAdmin, listAdminBanners);
+bannerRouter.post(
+  '/admin/banners/upload-image',
+  requireAuth,
+  requireAdmin,
+  bannerImageUpload,
+  postBannerImage,
+);
 bannerRouter.post(
   '/admin/banners',
   requireAuth,

@@ -1,5 +1,5 @@
 /**
- * Admin sidebar — Dashboard, Courses, Tests, Questions, Results, Leaderboard, Analytics, …
+ * Admin sidebar — Dashboard, Notifications, Announcements, Banners, Reminder Engine, …
  */
 import { NavLink } from 'react-router-dom';
 

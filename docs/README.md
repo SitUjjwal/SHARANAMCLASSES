@@ -16,6 +16,13 @@
 | [Review Screen](api/test-review.md) | Selected vs correct, explanation, green/red |
 | [Leaderboard](api/leaderboard.md) | Top 100: rank, score, %, time; course/test/date filters |
 | [Analytics](api/analytics.md) | Avg score, pass %, strong/weak subjects, charts |
+| [FCM / Push notifications](api/notifications-fcm.md) | Device tokens, permission, foreground/background/killed |
+| [Notification Service](api/notification-service.md) | Save, audience fan-out, FCM send, delivery status |
+| [Notification Center](api/notification-center.md) | Inbox, unread badge, mark read, delete, pagination |
+| [Banner Management](api/banner-management.md) | Admin CRUD, image upload, typed redirects, sort, enable |
+| [Announcements](api/announcements.md) | Home notices: rich text, image, schedule, pin |
+| [Deep linking](../apps/mobile/docs/deep-linking.md) | Notification / banner tap → Course, Live, Test, Announcement |
+| [Notification Dashboard](api/notification-dashboard.md) | Admin KPIs: delivered, opened, failed, click rate, export |
 | [Payments API](api/payments.md) | Razorpay create order + verify signature |
 | [Payment verification](api/payment-verification.md) | Signature → store → purchased_courses → unlock |
 | [Purchase History](api/purchase-history.md) | History list + download receipt |

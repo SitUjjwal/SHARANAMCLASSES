@@ -1,6 +1,10 @@
 export { DashboardPage } from './DashboardPage';
 export { CoursesPage } from './CoursesPage';
 export { BannersPage } from './BannersPage';
+export { AnnouncementsPage } from './AnnouncementsPage';
+export { NotificationsPage } from './NotificationsPage';
+export { ReminderEnginePage } from './ReminderEnginePage';
+export { NotificationsDashboardPage } from './NotificationsDashboardPage';
 export { CategoriesPage } from './CategoriesPage';
 export { ChaptersPage } from './ChaptersPage';
 export { VideosPage } from './VideosPage';

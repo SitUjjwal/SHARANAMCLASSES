@@ -5,6 +5,7 @@
 import type { LiveClass, LiveClassPublic, LiveClassStatus } from '@sharanam/shared';
 
 import { getSupabaseAdmin } from '../config/supabase';
+import { emitLiveClassScheduled } from '../events';
 import { AppError } from '../utils/AppError';
 import { parseYouTubeUrl, youtubeThumbnailUrl } from '../utils/youtube';
 import type {
@@ -220,7 +221,16 @@ export async function createLiveClass(input: CreateLiveClassInput): Promise<Live
     throw new AppError(400, 'LIVE_CLASS_CREATE_FAILED', error.message);
   }
 
-  return toLiveClass(data as Record<string, unknown>, courseTitle);
+  const liveClass = toLiveClass(data as Record<string, unknown>, courseTitle);
+  if (liveClass.is_published) {
+    emitLiveClassScheduled({
+      live_class_id: liveClass.id,
+      course_id: liveClass.course_id,
+      title: liveClass.title,
+      start_time: liveClass.start_time,
+    });
+  }
+  return liveClass;
 }
 
 export async function updateLiveClass(

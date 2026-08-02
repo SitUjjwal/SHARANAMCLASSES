@@ -13,6 +13,7 @@ import { Screen } from '@/components/ui/Screen';
 import { APP_NAME } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { useLogoutMutation } from '@/hooks/useAuthMutations';
+import { useNotifications } from '@/modules/notifications';
 import type { AppStackParamList, MainTabParamList } from '@/types/navigation';
 import { colors, spacing, typography } from '@/theme';
 
@@ -26,6 +27,7 @@ type Props = {
 export function ProfileTabScreen({ navigation }: Props) {
   const { user } = useAuth();
   const logoutMutation = useLogoutMutation();
+  const notifications = useNotifications();
 
   const displayName =
     (user?.user_metadata?.full_name as string | undefined)?.trim() ||
@@ -57,6 +59,12 @@ export function ProfileTabScreen({ navigation }: Props) {
         <AppButton
           label="Purchase History"
           onPress={() => navigation.navigate('PurchaseHistory')}
+        />
+        <AppButton
+          label="Test notification (2s)"
+          onPress={() => {
+            void notifications.sendTestNotification();
+          }}
         />
         <ErrorMessage message={logoutMutation.error?.message} />
         <AppButton

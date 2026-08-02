@@ -9,6 +9,7 @@ import { RequireAuth } from '@/features/auth/RequireAuth';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import {
   AnalyticsPage,
+  AnnouncementsPage,
   BannersPage,
   CategoriesPage,
   ChaptersPage,
@@ -17,10 +18,13 @@ import {
   LeaderboardPage,
   LiveClassesPage,
   NotesPage,
+  NotificationsDashboardPage,
+  NotificationsPage,
   PaymentsPage,
   PdfsPage,
   QuestionsHubPage,
   QuestionsPage,
+  ReminderEnginePage,
   ResultsPage,
   StudentsPage,
   TeachersPage,
@@ -37,6 +41,15 @@ export function App() {
           <Route element={<RequireAuth />}>
             <Route element={<AdminLayout />}>
               <Route index element={<DashboardPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
+              <Route path="announcements" element={<AnnouncementsPage />} />
+              <Route path="banners" element={<BannersPage />} />
+              <Route path="reminder-engine" element={<ReminderEnginePage />} />
+              <Route path="delivery-reports" element={<NotificationsDashboardPage />} />
+              <Route
+                path="notification-dashboard"
+                element={<Navigate to="/delivery-reports" replace />}
+              />
               <Route path="courses" element={<CoursesPage />} />
               <Route path="tests" element={<TestsPage />} />
               <Route path="questions" element={<QuestionsHubPage />} />
@@ -44,7 +57,6 @@ export function App() {
               <Route path="results" element={<ResultsPage />} />
               <Route path="leaderboard" element={<LeaderboardPage />} />
               <Route path="analytics" element={<AnalyticsPage />} />
-              <Route path="banners" element={<BannersPage />} />
               <Route path="categories" element={<CategoriesPage />} />
               <Route path="chapters" element={<ChaptersPage />} />
               <Route path="videos" element={<VideosPage />} />

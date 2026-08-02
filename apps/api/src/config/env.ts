@@ -59,6 +59,20 @@ const envSchema = z.object({
   RAZORPAY_KEY_SECRET: z.string().default(''),
   /** Optional — required only if webhook route is enabled */
   RAZORPAY_WEBHOOK_SECRET: z.string().default(''),
+  /**
+   * Reminder Engine (node-cron scheduled notification jobs).
+   * Default enabled outside test; set REMINDER_ENGINE_ENABLED=false to disable.
+   */
+  REMINDER_ENGINE_ENABLED: z.string().optional(),
+  /** Cron expression (default every 15 minutes) */
+  REMINDER_ENGINE_CRON: z.string().default('*/15 * * * *'),
+  REMINDER_ENGINE_TZ: z.string().default('Asia/Kolkata'),
+  REMINDER_LIVE_LEAD_MINUTES: z.coerce.number().default(60),
+  REMINDER_LIVE_WINDOW_MINUTES: z.coerce.number().default(12),
+  /** Comma-separated day milestones before course expiry */
+  REMINDER_EXPIRY_DAYS: z.string().default('7,3,1'),
+  REMINDER_CHAPTER_LOOKBACK_HOURS: z.coerce.number().default(36),
+  REMINDER_MISSED_LOOKBACK_HOURS: z.coerce.number().default(3),
 });
 
 const parsed = envSchema.safeParse(process.env);

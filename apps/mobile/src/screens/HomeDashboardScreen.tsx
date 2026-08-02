@@ -14,13 +14,13 @@ import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import {
+  AnnouncementsList,
   BannerSlider,
   CategoriesGrid,
   CourseHorizontalList,
   GreetingHeader,
   HomeDashboardSkeleton,
   QuoteCard,
-  UpdatesList,
 } from '@/components/dashboard';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -29,6 +29,8 @@ import { SectionHeader } from '@/components/ui/SectionHeader';
 import { useDashboardQuery } from '@/hooks/useDashboardQuery';
 import { LiveClassCard } from '@/modules/live-classes/components/LiveClassCard';
 import { useLiveClassesQuery } from '@/modules/live-classes/hooks/useLiveClassesQuery';
+import { useUnreadNotificationCountQuery } from '@/modules/notifications/hooks/useUnreadNotificationCountQuery';
+import { openBannerRedirect } from '@/modules/banners/openBannerRedirect';
 import { openInYouTubeApp } from '@/modules/videos/utils/openYouTube';
 import { extractYouTubeVideoId } from '@/modules/videos/utils/youtube';
 import type {
@@ -55,6 +57,7 @@ type Props = {
 export function HomeDashboardScreen({ navigation }: Props) {
   const dashboardQuery = useDashboardQuery();
   const liveQuery = useLiveClassesQuery();
+  const unreadQuery = useUnreadNotificationCountQuery();
 
   const homeLiveClasses = useMemo(() => {
     const items = liveQuery.data ?? [];
@@ -95,6 +98,10 @@ export function HomeDashboardScreen({ navigation }: Props) {
 
   function openMenu() {
     navigation.dispatch(DrawerActions.openDrawer());
+  }
+
+  function openNotifications() {
+    navigation.navigate('NotificationCenter');
   }
 
   const onJoinLive = useCallback((liveClass: LiveClassPublic) => {
@@ -144,6 +151,7 @@ export function HomeDashboardScreen({ navigation }: Props) {
             onRefresh={() => {
               void dashboardQuery.refetch();
               void liveQuery.refetch();
+              void unreadQuery.refetch();
             }}
             tintColor="#C9A227"
           />
@@ -152,10 +160,17 @@ export function HomeDashboardScreen({ navigation }: Props) {
         <GreetingHeader
           name={data?.greeting_name ?? 'Student'}
           onMenuPress={openMenu}
+          onNotificationsPress={openNotifications}
+          unreadCount={unreadQuery.data ?? 0}
         />
 
         <View style={styles.section}>
-          <BannerSlider banners={data?.banners ?? []} />
+          <BannerSlider
+            banners={data?.banners ?? []}
+            onBannerPress={(banner) => {
+              void openBannerRedirect(banner);
+            }}
+          />
         </View>
 
         <View style={styles.section}>
@@ -191,9 +206,25 @@ export function HomeDashboardScreen({ navigation }: Props) {
           />
         </View>
 
-        <View style={styles.section}>
-          <SectionHeader title="Latest Updates" />
-          <UpdatesList updates={data?.latest_updates ?? []} />
+            <View style={styles.section}>
+          <SectionHeader title="Latest Announcements" />
+          <AnnouncementsList
+            announcements={
+              data?.announcements?.length
+                ? data.announcements
+                : (data?.latest_updates ?? []).map((u) => ({
+                    id: u.id,
+                    title: u.title,
+                    body: u.body,
+                    image_url: null,
+                    is_pinned: false,
+                    is_published: true,
+                    scheduled_at: u.published_at,
+                    published_at: u.published_at,
+                    sort_order: 0,
+                  }))
+            }
+          />
         </View>
 
         <View style={styles.section}>

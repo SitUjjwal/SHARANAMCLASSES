@@ -10,10 +10,12 @@ import {
   listAllBannersForAdmin,
   updateBanner,
 } from '../services/banner.service';
+import { uploadCourseThumbnail } from '../services/upload.service';
 import type {
   CreateBannerInput,
   UpdateBannerInput,
 } from '../validators/banner.validators';
+import { AppError } from '../utils/AppError';
 import { requireParam } from '../utils/params';
 
 export async function listBanners(
@@ -80,6 +82,24 @@ export async function removeBanner(
     const bannerId = requireParam(req.params.bannerId, 'bannerId');
     await deleteBanner(bannerId);
     res.status(200).json({ success: true, data: null, message: 'Banner deleted' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** POST /admin/banners/upload-image — multipart field `image` or `thumbnail`. */
+export async function postBannerImage(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const file = req.file;
+    if (!file) {
+      throw new AppError(400, 'FILE_REQUIRED', 'Upload an image file (field: image)');
+    }
+    const url = await uploadCourseThumbnail(file);
+    res.status(201).json({ success: true, data: { url }, message: 'Image uploaded' });
   } catch (error) {
     next(error);
   }

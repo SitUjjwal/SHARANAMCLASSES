@@ -1,7 +1,7 @@
 /**
  * Admin navigation menu — single source for sidebar + Dashboard tiles.
  *
- * Primary Test Series cluster first (per product menu), then catalog ops.
+ * Module 7 (comms) cluster first, then catalog / test ops.
  */
 export type AdminNavItem = {
   label: string;
@@ -15,6 +15,31 @@ export const ADMIN_NAV: AdminNavItem[] = [
     label: 'Dashboard',
     path: '/',
     description: 'Overview of courses, students, and payments.',
+  },
+  {
+    label: 'Notifications',
+    path: '/notifications',
+    description: 'Compose and send push campaigns to students.',
+  },
+  {
+    label: 'Announcements',
+    path: '/announcements',
+    description: 'Home notices: rich text, image, schedule, pin.',
+  },
+  {
+    label: 'Banners',
+    path: '/banners',
+    description: 'Home banner slider images and redirects.',
+  },
+  {
+    label: 'Reminder Engine',
+    path: '/reminder-engine',
+    description: 'Scheduled jobs: live, tests, expiry, chapters, missed.',
+  },
+  {
+    label: 'Delivery Reports',
+    path: '/delivery-reports',
+    description: 'Delivery stats, search, filters, and CSV export.',
   },
   {
     label: 'Courses',
@@ -45,11 +70,6 @@ export const ADMIN_NAV: AdminNavItem[] = [
     label: 'Analytics',
     path: '/analytics',
     description: 'Average score, pass rate, strong/weak subjects.',
-  },
-  {
-    label: 'Banners',
-    path: '/banners',
-    description: 'Home banner slider images (max 20).',
   },
   {
     label: 'Categories',

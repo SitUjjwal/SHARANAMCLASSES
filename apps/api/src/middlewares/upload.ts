@@ -19,6 +19,19 @@ export const thumbnailUpload = multer({
   },
 }).single('thumbnail');
 
+/** Banner Management upload — multipart field `image`. */
+export const bannerImageUpload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) {
+      cb(new AppError(400, 'INVALID_IMAGE_TYPE', 'Only image uploads are allowed'));
+      return;
+    }
+    cb(null, true);
+  },
+}).single('image');
+
 const MATERIAL_MIME = new Set([
   'application/pdf',
   'application/msword',

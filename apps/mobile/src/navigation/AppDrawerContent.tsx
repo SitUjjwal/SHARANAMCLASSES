@@ -52,7 +52,9 @@ export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
     navigation.closeDrawer();
   }
 
-  function goStack(screen: 'PurchaseHistory' | 'Leaderboard' | 'TestAnalytics') {
+  function goStack(
+    screen: 'PurchaseHistory' | 'Leaderboard' | 'TestAnalytics' | 'NotificationCenter',
+  ) {
     navigation.closeDrawer();
     const parent = navigation.getParent();
     parent?.navigate(screen);
@@ -99,6 +101,12 @@ export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
       label: 'Home',
       icon: 'home-outline',
       onPress: () => goTab('HomeTab'),
+    },
+    {
+      key: 'notifications',
+      label: 'Notifications',
+      icon: 'notifications-outline',
+      onPress: () => goStack('NotificationCenter'),
     },
     {
       key: 'purchases',

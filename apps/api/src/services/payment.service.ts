@@ -16,6 +16,7 @@ import { randomBytes } from 'node:crypto';
 import type { CreatePaymentOrderResult, VerifyPaymentResult } from '@sharanam/shared';
 
 import { getSupabaseAdmin } from '../config/supabase';
+import { emitPaymentCompleted } from '../events';
 import {
   createRazorpayOrder,
   fetchRazorpayPayment,
@@ -506,6 +507,29 @@ export async function verifyPayment(
     input.razorpay_payment_id,
     updated.paid_at ?? paidAt,
   );
+
+  const product = await resolveProductForOrder(updated);
+  const productTitle =
+    product.title ||
+    (typeof updated.metadata?.product_title === 'string'
+      ? updated.metadata.product_title
+      : null) ||
+    (typeof updated.metadata?.course_title === 'string'
+      ? updated.metadata.course_title
+      : 'Purchase');
+
+  emitPaymentCompleted({
+    user_id: userId,
+    payment_order_id: updated.id,
+    razorpay_payment_id: input.razorpay_payment_id,
+    product_id: product.id,
+    product_type: product.product_type,
+    product_title: productTitle,
+    course_id: updated.course_id ?? (product.product_type === 'course' ? product.product_id : null),
+    amount_paise: updated.amount_paise,
+    currency: updated.currency,
+    enrolled: unlocked.enrolled,
+  });
 
   return buildVerifySuccess(
     updated,

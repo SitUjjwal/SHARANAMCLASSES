@@ -1,7 +1,7 @@
 /**
  * Admin banner slider API.
  */
-import type { Banner } from '@sharanam/shared';
+import type { Banner, BannerRedirectType } from '@sharanam/shared';
 
 import { apiRequest } from '@/services/api';
 
@@ -9,6 +9,8 @@ export type BannerWritePayload = {
   title: string;
   subtitle?: string | null;
   image: string;
+  redirect_type?: BannerRedirectType;
+  redirect_target_id?: string | null;
   redirect_url?: string | null;
   status?: 'active' | 'inactive';
   sort_order?: number;
@@ -38,11 +40,11 @@ export function deleteAdminBanner(bannerId: string) {
   });
 }
 
-/** Reuse course thumbnail uploader for banner images */
+/** Dedicated banner image upload → public URL. */
 export async function uploadBannerImage(file: File): Promise<string> {
   const formData = new FormData();
-  formData.append('thumbnail', file);
-  const data = await apiRequest<{ url: string }>('/courses/upload-thumbnail', {
+  formData.append('image', file);
+  const data = await apiRequest<{ url: string }>('/admin/banners/upload-image', {
     method: 'POST',
     formData,
   });

@@ -14,6 +14,8 @@ export const queryKeys = {
   liveClasses: () => ['live-classes', 'public'] as const,
   myCourses: (search?: string) => ['my-courses', { search: search ?? '' }] as const,
   purchaseHistory: ['payments', 'history'] as const,
+  notificationHistory: ['notifications', 'history'] as const,
+  notificationUnreadCount: ['notifications', 'unread-count'] as const,
   profile: ['profile'] as const,
   studentTests: (courseId?: string) =>
     ['tests', 'student', { courseId: courseId ?? null }] as const,

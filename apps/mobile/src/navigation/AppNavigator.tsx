@@ -9,6 +9,7 @@ import { BuyCourseScreen, PurchaseHistoryScreen } from '@/modules/payments';
 import { PaymentFailedScreen } from '@/modules/payments/screens/PaymentFailedScreen';
 import { PaymentSuccessScreen } from '@/modules/payments/screens/PaymentSuccessScreen';
 import { PdfViewerScreen } from '@/modules/pdfs';
+import { NotificationCenterScreen } from '@/modules/notifications';
 import {
   TestListScreen,
   TestScreen,
@@ -33,6 +34,7 @@ export function AppNavigator() {
       <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} />
       <Stack.Screen name="PaymentFailed" component={PaymentFailedScreen} />
       <Stack.Screen name="PurchaseHistory" component={PurchaseHistoryScreen} />
+      <Stack.Screen name="NotificationCenter" component={NotificationCenterScreen} />
       <Stack.Screen name="ChapterList" component={ChapterListScreen} />
       <Stack.Screen name="ChapterContent" component={ChapterContentScreen} />
       <Stack.Screen name="VideoPlayer" component={VideoPlayerScreen} />

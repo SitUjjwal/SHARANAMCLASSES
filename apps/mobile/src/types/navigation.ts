@@ -12,7 +12,7 @@ export type AuthStackParamList = {
 };
 
 export type MainTabParamList = {
-  HomeTab: undefined;
+  HomeTab: { announcementId?: string } | undefined;
   CoursesTab: { categoryId?: string } | undefined;
   TestsTab: undefined;
   LiveTab: undefined;
@@ -32,6 +32,7 @@ export type AppStackParamList = {
   PaymentSuccess: { courseId: string; courseTitle?: string };
   PaymentFailed: { courseId: string; message?: string };
   PurchaseHistory: undefined;
+  NotificationCenter: undefined;
   ChapterList: { courseId: string; courseTitle?: string };
   ChapterContent: { courseId: string; chapterId: string };
   VideoPlayer: { courseId: string; chapterId: string; videoId: string };

@@ -5,9 +5,14 @@
  */
 import { createApp } from './app';
 import { env } from './config/env';
+import { registerDomainEventHandlers } from './events/register';
+import { startReminderScheduler } from './jobs/reminderEngine/scheduler';
+
+registerDomainEventHandlers();
 
 const app = createApp();
 
 app.listen(env.PORT, () => {
   console.log(`[api] SHARANAM CLASSES listening on :${env.PORT} (${env.NODE_ENV})`);
+  startReminderScheduler();
 });

@@ -3,6 +3,9 @@
  *
  * Always shows the brand photo full-screen first (~3s), even if session
  * restore is instant — otherwise Login appears immediately.
+ *
+ * Deep links / notification cold start:
+ *   NavigationContainer ref + onReady → flushPendingDeepLinks()
  */
 import { useEffect, useState } from 'react';
 import { NavigationContainer, type LinkingOptions } from '@react-navigation/native';
@@ -11,6 +14,8 @@ import * as Linking from 'expo-linking';
 import { useAuth } from '@/hooks/useAuth';
 import { AppNavigator } from '@/navigation/AppNavigator';
 import { AuthNavigator } from '@/navigation/AuthNavigator';
+import { flushPendingDeepLinks } from '@/navigation/deepLinking';
+import { navigationRef } from '@/navigation/navigationRef';
 import { LoadingScreen } from '@/screens/LoadingScreen';
 import { useAuthStore } from '@/store/authStore';
 import type { RootStackParamList } from '@/types/navigation';
@@ -18,7 +23,7 @@ import type { RootStackParamList } from '@/types/navigation';
 /** Minimum time the brand photo stays on screen after open */
 const MIN_BRAND_SPLASH_MS = 3000;
 
-const linking: LinkingOptions<RootStackParamList> = {
+export const appLinking: LinkingOptions<RootStackParamList> = {
   prefixes: [Linking.createURL('/'), 'sharanam://'],
   config: {
     screens: {
@@ -41,6 +46,8 @@ const linking: LinkingOptions<RootStackParamList> = {
           },
         },
       },
+      PurchaseHistory: 'purchases',
+      NotificationCenter: 'notifications',
       CourseDetail: 'course/:courseId',
       BuyCourse: 'course/:courseId/buy',
       ChapterList: 'course/:courseId/chapters',
@@ -73,6 +80,13 @@ export function RootNavigator() {
     };
   }, []);
 
+  // After login, flush any cold-start notification destination.
+  useEffect(() => {
+    if (status === 'authenticated' && brandSplashDone) {
+      flushPendingDeepLinks();
+    }
+  }, [status, brandSplashDone]);
+
   // Brand photo first — do not skip even when auth is already ready
   if (!brandSplashDone || isLoading || status === 'loading') {
     return <LoadingScreen />;
@@ -80,14 +94,20 @@ export function RootNavigator() {
 
   if (isPasswordRecovery) {
     return (
-      <NavigationContainer linking={linking}>
+      <NavigationContainer linking={appLinking} ref={navigationRef}>
         <AuthNavigator initialRouteName="ResetPassword" />
       </NavigationContainer>
     );
   }
 
   return (
-    <NavigationContainer linking={linking}>
+    <NavigationContainer
+      linking={appLinking}
+      ref={navigationRef}
+      onReady={() => {
+        flushPendingDeepLinks();
+      }}
+    >
       {status === 'authenticated' ? <AppNavigator /> : <AuthNavigator />}
     </NavigationContainer>
   );

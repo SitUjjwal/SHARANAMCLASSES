@@ -6,5 +6,6 @@ export { CategoriesGrid } from './CategoriesGrid';
 export { CourseCard } from './CourseCard';
 export { CourseHorizontalList } from './CourseHorizontalList';
 export { UpdatesList } from './UpdatesList';
+export { AnnouncementsList } from './AnnouncementsList';
 export { HomeDashboardSkeleton } from './HomeDashboardSkeleton';
 export { HomeQuickActions } from './HomeQuickActions';

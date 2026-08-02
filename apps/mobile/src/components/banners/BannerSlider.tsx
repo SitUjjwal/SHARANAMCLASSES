@@ -26,7 +26,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   FlatList,
-  Linking,
   Pressable,
   StyleSheet,
   Text,
@@ -39,6 +38,7 @@ import { Image } from 'expo-image';
 
 import type { Banner } from '@sharanam/shared';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { openBannerRedirect } from '@/modules/banners/openBannerRedirect';
 import { colors, spacing, typography } from '@/theme';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -121,20 +121,11 @@ export function BannerSlider({
   }, [autoPlayIntervalMs, banners.length, scrollToIndex]);
 
   async function handlePress(banner: Banner) {
-    onBannerPress?.(banner);
-
-    if (!banner.redirect_url) {
+    if (onBannerPress) {
+      onBannerPress(banner);
       return;
     }
-
-    try {
-      const canOpen = await Linking.canOpenURL(banner.redirect_url);
-      if (canOpen) {
-        await Linking.openURL(banner.redirect_url);
-      }
-    } catch {
-      // Ignore link failures — banner still displays
-    }
+    await openBannerRedirect(banner);
   }
 
   function onScrollBeginDrag() {

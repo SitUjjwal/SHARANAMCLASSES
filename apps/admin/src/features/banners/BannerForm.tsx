@@ -1,9 +1,9 @@
 /**
- * Create / edit home banner slider slide.
+ * Create / edit home banner — image upload + typed redirect + sort + enable.
  */
 import { FormEvent, useEffect, useState } from 'react';
 
-import type { Banner } from '@sharanam/shared';
+import type { Banner, BannerRedirectType, CourseSummary, LiveClass, Test } from '@sharanam/shared';
 
 import {
   createAdminBanner,
@@ -11,6 +11,9 @@ import {
   uploadBannerImage,
   type BannerWritePayload,
 } from '@/features/banners/api';
+import { fetchAdminCourses } from '@/features/courses/api';
+import { fetchAdminLiveClasses } from '@/features/live-classes/api';
+import { fetchAdminTests } from '@/features/tests/api';
 import { ApiClientError } from '@/services/api';
 
 type BannerFormProps = {
@@ -24,6 +27,8 @@ type FormState = {
   title: string;
   subtitle: string;
   image: string;
+  redirect_type: BannerRedirectType;
+  redirect_target_id: string;
   redirect_url: string;
   status: 'active' | 'inactive';
   sort_order: string;
@@ -35,6 +40,8 @@ function fromBanner(banner: Banner | null, nextSortOrder: number): FormState {
       title: '',
       subtitle: '',
       image: '',
+      redirect_type: 'none',
+      redirect_target_id: '',
       redirect_url: '',
       status: 'active',
       sort_order: String(nextSortOrder),
@@ -44,6 +51,8 @@ function fromBanner(banner: Banner | null, nextSortOrder: number): FormState {
     title: banner.title,
     subtitle: banner.subtitle ?? '',
     image: banner.image,
+    redirect_type: banner.redirect_type ?? 'none',
+    redirect_target_id: banner.redirect_target_id ?? '',
     redirect_url: banner.redirect_url ?? '',
     status: banner.status,
     sort_order: String(banner.sort_order ?? 0),
@@ -55,11 +64,45 @@ export function BannerForm({ banner, nextSortOrder, onSaved, onCancel }: BannerF
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [courses, setCourses] = useState<CourseSummary[]>([]);
+  const [tests, setTests] = useState<Test[]>([]);
+  const [liveClasses, setLiveClasses] = useState<LiveClass[]>([]);
+  const [optionsLoading, setOptionsLoading] = useState(false);
 
   useEffect(() => {
     setForm(fromBanner(banner, nextSortOrder));
     setError(null);
   }, [banner, nextSortOrder]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadOptions() {
+      setOptionsLoading(true);
+      try {
+        const [coursePage, testPage, livePage] = await Promise.all([
+          fetchAdminCourses({ page: 1, pageSize: 100, status: 'all' }),
+          fetchAdminTests({ page: 1, pageSize: 100, status: 'all' }),
+          fetchAdminLiveClasses({ page: 1, pageSize: 100, publishStatus: 'all' }),
+        ]);
+        if (cancelled) return;
+        setCourses(coursePage.items ?? []);
+        setTests(testPage.items ?? []);
+        setLiveClasses(livePage.items ?? []);
+      } catch {
+        if (!cancelled) {
+          setCourses([]);
+          setTests([]);
+          setLiveClasses([]);
+        }
+      } finally {
+        if (!cancelled) setOptionsLoading(false);
+      }
+    }
+    void loadOptions();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -82,7 +125,7 @@ export function BannerForm({ banner, nextSortOrder, onSaved, onCancel }: BannerF
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
     if (!form.image.trim()) {
-      setError('Banner image upload karo (ya URL paste karo)');
+      setError('Upload a banner image (or paste an image URL)');
       return;
     }
 
@@ -90,7 +133,15 @@ export function BannerForm({ banner, nextSortOrder, onSaved, onCancel }: BannerF
       title: form.title.trim(),
       subtitle: form.subtitle.trim() || null,
       image: form.image.trim(),
-      redirect_url: form.redirect_url.trim() || null,
+      redirect_type: form.redirect_type,
+      redirect_target_id:
+        form.redirect_type === 'course' ||
+        form.redirect_type === 'test' ||
+        form.redirect_type === 'live_class'
+          ? form.redirect_target_id || null
+          : null,
+      redirect_url:
+        form.redirect_type === 'website' ? form.redirect_url.trim() || null : null,
       status: form.status,
       sort_order: Number(form.sort_order) || 0,
     };
@@ -114,7 +165,7 @@ export function BannerForm({ banner, nextSortOrder, onSaved, onCancel }: BannerF
   return (
     <form className="course-form" onSubmit={onSubmit}>
       <div className="course-form-head">
-        <h2>{banner ? 'Edit Banner' : 'Add Banner'}</h2>
+        <h2>{banner ? 'Edit Banner' : 'Create Banner'}</h2>
         <button type="button" className="btn ghost" onClick={onCancel}>
           Close
         </button>
@@ -142,7 +193,7 @@ export function BannerForm({ banner, nextSortOrder, onSaved, onCancel }: BannerF
         </label>
 
         <label className="span-2 file-upload-field">
-          Banner image * (upload)
+          Upload image *
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp,image/gif"
@@ -169,26 +220,108 @@ export function BannerForm({ banner, nextSortOrder, onSaved, onCancel }: BannerF
           </div>
         ) : null}
 
-        <label className="span-2">
-          Tap / click link (optional)
-          <input
-            type="url"
-            value={form.redirect_url}
-            onChange={(e) => setField('redirect_url', e.target.value)}
-            placeholder="https://… or leave empty"
-          />
+        <label>
+          Redirect to
+          <select
+            value={form.redirect_type}
+            onChange={(e) => {
+              const next = e.target.value as BannerRedirectType;
+              setForm((prev) => ({
+                ...prev,
+                redirect_type: next,
+                redirect_target_id: '',
+                redirect_url: next === 'website' ? prev.redirect_url : '',
+              }));
+            }}
+          >
+            <option value="none">None (image only)</option>
+            <option value="course">Course</option>
+            <option value="test">Test</option>
+            <option value="live_class">Live Class</option>
+            <option value="website">Website</option>
+          </select>
         </label>
 
         <label>
-          Status
+          Enable / Disable
           <select
             value={form.status}
             onChange={(e) => setField('status', e.target.value as 'active' | 'inactive')}
           >
-            <option value="active">Active (show on Home)</option>
-            <option value="inactive">Inactive (hidden)</option>
+            <option value="active">Enabled (show on Home)</option>
+            <option value="inactive">Disabled (hidden)</option>
           </select>
         </label>
+
+        {form.redirect_type === 'course' ? (
+          <label className="span-2">
+            Choose course *
+            <select
+              required
+              value={form.redirect_target_id}
+              disabled={optionsLoading}
+              onChange={(e) => setField('redirect_target_id', e.target.value)}
+            >
+              <option value="">{optionsLoading ? 'Loading…' : 'Select course'}</option>
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+
+        {form.redirect_type === 'test' ? (
+          <label className="span-2">
+            Choose test *
+            <select
+              required
+              value={form.redirect_target_id}
+              disabled={optionsLoading}
+              onChange={(e) => setField('redirect_target_id', e.target.value)}
+            >
+              <option value="">{optionsLoading ? 'Loading…' : 'Select test'}</option>
+              {tests.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+
+        {form.redirect_type === 'live_class' ? (
+          <label className="span-2">
+            Choose live class *
+            <select
+              required
+              value={form.redirect_target_id}
+              disabled={optionsLoading}
+              onChange={(e) => setField('redirect_target_id', e.target.value)}
+            >
+              <option value="">{optionsLoading ? 'Loading…' : 'Select live class'}</option>
+              {liveClasses.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
+
+        {form.redirect_type === 'website' ? (
+          <label className="span-2">
+            Website URL *
+            <input
+              required
+              type="url"
+              value={form.redirect_url}
+              onChange={(e) => setField('redirect_url', e.target.value)}
+              placeholder="https://example.com/offer"
+            />
+          </label>
+        ) : null}
 
         <label>
           Sort order
@@ -207,7 +340,7 @@ export function BannerForm({ banner, nextSortOrder, onSaved, onCancel }: BannerF
           Cancel
         </button>
         <button type="submit" className="btn primary" disabled={saving || uploading}>
-          {saving ? 'Saving…' : banner ? 'Update Banner' : 'Add Banner'}
+          {saving ? 'Saving…' : banner ? 'Update Banner' : 'Create Banner'}
         </button>
       </div>
     </form>

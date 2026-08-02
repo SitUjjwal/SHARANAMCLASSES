@@ -28,12 +28,21 @@ export type Category = {
   is_active: boolean;
 };
 
+export type BannerRedirectType =
+  | 'none'
+  | 'course'
+  | 'test'
+  | 'live_class'
+  | 'website';
+
 export type Banner = {
   id: string;
   title: string;
   subtitle: string | null;
   image: string;
   redirect_url: string | null;
+  redirect_type: BannerRedirectType;
+  redirect_target_id: string | null;
   status: 'active' | 'inactive';
   sort_order: number;
 };
@@ -756,6 +765,23 @@ export type AppUpdate = {
   published_at: string;
 };
 
+/** Home / admin announcement (rich text + image + pin + schedule). */
+export type Announcement = {
+  id: string;
+  title: string;
+  /** HTML rich text */
+  body: string;
+  image_url: string | null;
+  is_pinned: boolean;
+  is_published: boolean;
+  /** When the announcement becomes visible on Home */
+  scheduled_at: string;
+  published_at: string;
+  sort_order: number;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export type DashboardPayload = {
   greeting_name: string;
   quote: MotivationalQuote | null;
@@ -763,7 +789,9 @@ export type DashboardPayload = {
   categories: Category[];
   featured_courses: CourseSummary[];
   my_courses: Enrollment[];
+  /** @deprecated Prefer `announcements` — kept for older clients */
   latest_updates: AppUpdate[];
+  announcements: Announcement[];
 };
 
 export type CourseDetail = CourseSummary & {

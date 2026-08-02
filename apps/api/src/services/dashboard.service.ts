@@ -4,7 +4,16 @@
  */
 import { getSupabaseAdmin } from '../config/supabase';
 import { AppError } from '../utils/AppError';
+import { listPublishedAnnouncements } from './announcement.service';
 import type { DashboardPayload } from '@sharanam/shared';
+
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 export async function getDashboardForUser(userId: string): Promise<DashboardPayload> {
   const supabase = getSupabaseAdmin();
@@ -16,7 +25,7 @@ export async function getDashboardForUser(userId: string): Promise<DashboardPayl
     categoriesResult,
     featuredResult,
     enrollmentsResult,
-    updatesResult,
+    announcements,
   ] = await Promise.all([
     supabase.from('profiles').select('full_name').eq('id', userId).maybeSingle(),
     supabase
@@ -28,7 +37,9 @@ export async function getDashboardForUser(userId: string): Promise<DashboardPayl
       .maybeSingle(),
     supabase
       .from('banners')
-      .select('id, title, subtitle, image, redirect_url, status, sort_order')
+      .select(
+        'id, title, subtitle, image, redirect_url, redirect_type, redirect_target_id, status, sort_order',
+      )
       .eq('status', 'active')
       .order('sort_order', { ascending: true }),
     supabase
@@ -53,12 +64,7 @@ export async function getDashboardForUser(userId: string): Promise<DashboardPayl
       .eq('user_id', userId)
       .order('enrolled_at', { ascending: false })
       .limit(10),
-    supabase
-      .from('app_updates')
-      .select('id, title, body, published_at')
-      .eq('is_published', true)
-      .order('published_at', { ascending: false })
-      .limit(8),
+    listPublishedAnnouncements(8),
   ]);
 
   const firstError =
@@ -67,8 +73,7 @@ export async function getDashboardForUser(userId: string): Promise<DashboardPayl
     bannersResult.error ||
     categoriesResult.error ||
     featuredResult.error ||
-    enrollmentsResult.error ||
-    updatesResult.error;
+    enrollmentsResult.error;
 
   if (firstError) {
     throw new AppError(500, 'DASHBOARD_FETCH_FAILED', firstError.message);
@@ -120,6 +125,12 @@ export async function getDashboardForUser(userId: string): Promise<DashboardPayl
     categories: categoriesResult.data ?? [],
     featured_courses: featuredCourses,
     my_courses: myCourses,
-    latest_updates: updatesResult.data ?? [],
+    announcements,
+    latest_updates: announcements.map((item) => ({
+      id: item.id,
+      title: item.title,
+      body: stripHtml(item.body) || item.title,
+      published_at: item.scheduled_at || item.published_at,
+    })),
   };
 }

@@ -2,6 +2,7 @@
  * Chapter catalog + content (with lock based on enrollment / free preview).
  */
 import { getSupabaseAdmin } from '../config/supabase';
+import { emitChapterPublished } from '../events';
 import { AppError } from '../utils/AppError';
 import type { Chapter, ChapterContentItem, ChapterDetail } from '@sharanam/shared';
 import type {
@@ -325,7 +326,7 @@ export async function createChapter(
 
   const { data: course, error: courseError } = await supabase
     .from('courses')
-    .select('id')
+    .select('id, title')
     .eq('id', courseId)
     .maybeSingle();
 
@@ -362,7 +363,17 @@ export async function createChapter(
   if (error) {
     throw new AppError(400, 'CHAPTER_CREATE_FAILED', error.message);
   }
-  return toChapter(data as ChapterRow, 1, true);
+
+  const chapter = toChapter(data as ChapterRow, 1, true);
+  if (chapter.is_published) {
+    emitChapterPublished({
+      chapter_id: chapter.id,
+      course_id: courseId,
+      title: chapter.title,
+      course_title: String(course.title ?? 'your course'),
+    });
+  }
+  return chapter;
 }
 
 export async function updateChapter(
@@ -370,6 +381,20 @@ export async function updateChapter(
   input: UpdateChapterInput,
 ): Promise<Chapter> {
   const supabase = getSupabaseAdmin();
+
+  const { data: existing, error: existingError } = await supabase
+    .from('chapters')
+    .select('id, course_id, title, is_published')
+    .eq('id', chapterId)
+    .maybeSingle();
+
+  if (existingError) {
+    throw new AppError(500, 'CHAPTER_LOOKUP_FAILED', existingError.message);
+  }
+  if (!existing) {
+    throw new AppError(404, 'CHAPTER_NOT_FOUND', 'Chapter not found');
+  }
+
   const { data, error } = await supabase
     .from('chapters')
     .update({
@@ -386,7 +411,23 @@ export async function updateChapter(
   if (!data) {
     throw new AppError(404, 'CHAPTER_NOT_FOUND', 'Chapter not found');
   }
-  return toChapter(data as ChapterRow, 1, true);
+
+  const chapter = toChapter(data as ChapterRow, 1, true);
+  const wasPublished = Boolean(existing.is_published);
+  if (chapter.is_published && !wasPublished) {
+    const { data: course } = await supabase
+      .from('courses')
+      .select('title')
+      .eq('id', chapter.course_id)
+      .maybeSingle();
+    emitChapterPublished({
+      chapter_id: chapter.id,
+      course_id: chapter.course_id,
+      title: chapter.title,
+      course_title: String(course?.title ?? 'your course'),
+    });
+  }
+  return chapter;
 }
 
 export async function deleteChapter(chapterId: string): Promise<void> {

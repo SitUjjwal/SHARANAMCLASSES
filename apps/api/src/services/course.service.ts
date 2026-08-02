@@ -2,6 +2,7 @@
  * Course catalog + admin CRUD (service role).
  */
 import { getSupabaseAdmin } from '../config/supabase';
+import { emitCourseUpdated } from '../events';
 import { AppError } from '../utils/AppError';
 import type { CourseDetail, CourseListPage, CourseSummary } from '@sharanam/shared';
 import type {
@@ -430,6 +431,20 @@ export async function updateCourse(
   input: UpdateCourseInput,
 ): Promise<CourseSummary> {
   const supabase = getSupabaseAdmin();
+
+  const { data: existing, error: existingError } = await supabase
+    .from('courses')
+    .select('id, title, is_published')
+    .eq('id', courseId)
+    .maybeSingle();
+
+  if (existingError) {
+    throw new AppError(500, 'COURSE_LOOKUP_FAILED', existingError.message);
+  }
+  if (!existing) {
+    throw new AppError(404, 'COURSE_NOT_FOUND', 'Course not found');
+  }
+
   const { data, error } = await supabase
     .from('courses')
     .update({
@@ -446,7 +461,17 @@ export async function updateCourse(
   if (!data) {
     throw new AppError(404, 'COURSE_NOT_FOUND', 'Course not found');
   }
-  return toSummary(data as CourseRow, new Set());
+
+  const summary = toSummary(data as CourseRow, new Set());
+  emitCourseUpdated({
+    course_id: summary.id,
+    title: summary.title,
+    is_published: summary.is_published,
+    previous_is_published: Boolean(existing.is_published),
+    updated_fields: Object.keys(input),
+  });
+
+  return summary;
 }
 
 export async function deleteCourse(courseId: string): Promise<void> {
