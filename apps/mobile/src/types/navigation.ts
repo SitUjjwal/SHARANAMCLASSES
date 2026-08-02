@@ -3,6 +3,11 @@
  * Why: typed routes for auth + authenticated tabs/stack.
  */
 import type { NavigatorScreenParams } from '@react-navigation/native';
+import type {
+  ContentReportTargetType,
+  ContentReportType,
+  FeedbackType,
+} from '@sharanam/shared';
 
 export type AuthStackParamList = {
   Login: undefined;
@@ -45,6 +50,31 @@ export type AppStackParamList = {
   About: undefined;
   ChangePassword: undefined;
   TestHistory: undefined;
+  Feedback: undefined;
+  SubmitFeedback: { type?: FeedbackType } | undefined;
+  MyFeedback: undefined;
+  FeedbackDetail: { feedbackId: string };
+  AppReview: { courseId?: string } | undefined;
+  Support: undefined;
+  FAQ: undefined;
+  ContactUs: undefined;
+  BugReport: undefined;
+  MyBugReports: undefined;
+  BugReportDetail: { reportId: string };
+  ReportContent:
+    | {
+        report_type?: ContentReportType;
+        target_type?: ContentReportTargetType;
+        target_id?: string;
+        course_id?: string;
+        chapter_id?: string;
+        target_label?: string;
+      }
+    | undefined;
+  MyContentReports: undefined;
+  ContentReportDetail: { reportId: string };
+  FeatureRequest: undefined;
+  ChatSupport: { ticketId?: string } | undefined;
   ChapterList: { courseId: string; courseTitle?: string };
   ChapterContent: { courseId: string; chapterId: string };
   VideoPlayer: { courseId: string; chapterId: string; videoId: string };

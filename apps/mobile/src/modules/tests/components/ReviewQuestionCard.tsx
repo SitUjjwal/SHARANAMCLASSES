@@ -3,7 +3,7 @@
  * question, selected answer, correct answer, explanation.
  * Green when correct; red when wrong; muted when skipped.
  */
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { colors, spacing, typography } from '@/theme';
 import type {
@@ -14,6 +14,7 @@ import type {
 type Props = {
   index: number;
   item: TestAttemptReviewItem;
+  onReport?: () => void;
 };
 
 function optionText(
@@ -34,7 +35,7 @@ function formatAnswer(
   return `${key}. ${optionText(item, key)}`;
 }
 
-export function ReviewQuestionCard({ index, item }: Props) {
+export function ReviewQuestionCard({ index, item, onReport }: Props) {
   const isCorrect = item.outcome === 'correct';
   const isWrong = item.outcome === 'wrong';
   const isSkipped = item.outcome === 'skipped';
@@ -103,6 +104,17 @@ export function ReviewQuestionCard({ index, item }: Props) {
       ) : (
         <Text style={styles.noExplanation}>No explanation provided.</Text>
       )}
+
+      {onReport ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Report question ${index + 1}`}
+          onPress={onReport}
+          style={styles.reportBtn}
+        >
+          <Text style={styles.reportText}>Report incorrect question</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
@@ -210,5 +222,14 @@ const styles = StyleSheet.create({
     color: '#7A8799',
     fontSize: typography.fontSize.sm,
     fontStyle: 'italic',
+  },
+  reportBtn: {
+    alignSelf: 'flex-start',
+    paddingVertical: spacing.xs,
+  },
+  reportText: {
+    color: colors.accent,
+    fontSize: typography.fontSize.sm,
+    fontWeight: '700',
   },
 });

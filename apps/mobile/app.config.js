@@ -27,7 +27,16 @@ const config = {
     supportsTablet: true,
     bundleIdentifier: 'com.sharanamclasses.app',
     infoPlist: {
-      LSApplicationQueriesSchemes: ['youtube', 'vnd.youtube'],
+      LSApplicationQueriesSchemes: [
+        'youtube',
+        'vnd.youtube',
+        'whatsapp',
+        'fb',
+        'instagram',
+        'comgooglemaps',
+        'tel',
+        'mailto',
+      ],
       UIBackgroundModes: ['remote-notification'],
     },
   },

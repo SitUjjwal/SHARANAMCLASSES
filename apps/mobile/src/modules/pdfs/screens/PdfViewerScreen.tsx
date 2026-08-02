@@ -191,6 +191,23 @@ export function PdfViewerScreen({ navigation, route }: Props) {
           />
         ) : null}
       </View>
+
+      <View style={styles.pad}>
+        <AppButton
+          label="Report wrong PDF"
+          variant="ghost"
+          onPress={() =>
+            navigation.navigate('ReportContent', {
+              report_type: 'wrong_pdf',
+              target_type: 'pdf',
+              target_id: pdfId,
+              course_id: courseId,
+              chapter_id: chapterId,
+              target_label: pdf.title,
+            })
+          }
+        />
+      </View>
     </Screen>
   );
 }

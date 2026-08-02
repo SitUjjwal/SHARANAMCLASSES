@@ -1,7 +1,7 @@
 /**
  * App drawer sidebar — profile header, menu rows, Follow us socials.
  */
-import { Alert, Linking, Pressable, Share, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import type { DrawerContentComponentProps } from '@react-navigation/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { APP_NAME, SOCIAL_LINKS } from '@/constants';
 import { useAuth } from '@/hooks/useAuth';
 import { useLogoutMutation } from '@/hooks/useAuthMutations';
+import { openExternalUrl } from '@/utils/openExternal';
 import { colors, spacing, typography } from '@/theme';
 
 type MenuItem = {
@@ -58,7 +59,9 @@ export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
       | 'Leaderboard'
       | 'TestAnalytics'
       | 'NotificationCenter'
-      | 'Settings',
+      | 'Settings'
+      | 'Feedback'
+      | 'AppReview',
   ) {
     navigation.closeDrawer();
     const parent = navigation.getParent();
@@ -66,11 +69,7 @@ export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
   }
 
   async function openUrl(url: string) {
-    try {
-      await Linking.openURL(url);
-    } catch {
-      Alert.alert('Could not open link');
-    }
+    await openExternalUrl(url);
   }
 
   async function onShare() {
@@ -81,10 +80,6 @@ export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
     } catch {
       // user cancelled
     }
-  }
-
-  function onRate() {
-    Alert.alert('Rate App', 'Store listing link will open here once the app is published.');
   }
 
   function onTutorial() {
@@ -147,7 +142,13 @@ export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
       key: 'rate',
       label: 'Rate',
       icon: 'star-outline',
-      onPress: onRate,
+      onPress: () => goStack('AppReview'),
+    },
+    {
+      key: 'feedback',
+      label: 'Feedback & Support',
+      icon: 'chatbubbles-outline',
+      onPress: () => goStack('Feedback'),
     },
     {
       key: 'share',

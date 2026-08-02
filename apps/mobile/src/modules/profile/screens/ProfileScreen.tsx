@@ -93,6 +93,10 @@ export function ProfileScreen({ navigation }: Props) {
               onPress={() => navigation.navigate('TestHistory')}
             />
             <SettingItem
+              label="Feedback & Support"
+              onPress={() => navigation.navigate('Feedback')}
+            />
+            <SettingItem
               label="Logout"
               danger
               onPress={() => logoutMutation.mutate()}

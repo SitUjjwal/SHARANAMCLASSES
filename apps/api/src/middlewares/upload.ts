@@ -49,6 +49,23 @@ export const profileAvatarUpload = multer({
   },
 }).single('image');
 
+/** Bug report screenshot — optional multipart field `screenshot` (JPEG/PNG/WebP, max 5MB). */
+export const bugScreenshotUpload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    const ok =
+      file.mimetype === 'image/jpeg' ||
+      file.mimetype === 'image/png' ||
+      file.mimetype === 'image/webp';
+    if (!ok) {
+      cb(new AppError(400, 'INVALID_IMAGE_TYPE', 'Use JPEG, PNG, or WebP for screenshots'));
+      return;
+    }
+    cb(null, true);
+  },
+}).single('screenshot');
+
 const MATERIAL_MIME = new Set([
   'application/pdf',
   'application/msword',

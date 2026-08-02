@@ -72,8 +72,10 @@ export type CourseSummary = {
    * When greater than `price`, Buy Course shows Discount = compare_at − price.
    */
   compare_at_price?: number | null;
-  /** Average rating 0–5 */
+  /** Average of approved reviews 0–5 (0 when none) */
   rating: number;
+  /** Count of approved reviews */
+  review_count?: number;
   is_free: boolean;
   /** True when the current user has an enrollment (purchased / enrolled) */
   is_purchased: boolean;

@@ -1,9 +1,24 @@
 /**
- * Admin sidebar — Dashboard, Notifications, Announcements, Banners, Reminder Engine, …
+ * Admin sidebar — sectioned nav (Feedback & Support cluster first).
  */
 import { NavLink } from 'react-router-dom';
 
-import { ADMIN_NAV, APP_NAME } from '@/constants';
+import {
+  ADMIN_NAV,
+  ADMIN_NAV_SECTION_LABELS,
+  APP_NAME,
+  type AdminNavSection,
+} from '@/constants';
+
+const SECTION_ORDER: AdminNavSection[] = [
+  'main',
+  'feedback',
+  'comms',
+  'catalog',
+  'tests',
+  'people',
+  'billing',
+];
 
 export function AdminSidebar() {
   return (
@@ -21,18 +36,30 @@ export function AdminSidebar() {
       </div>
 
       <nav className="admin-nav" aria-label="Admin">
-        {ADMIN_NAV.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end={item.path === '/'}
-            className={({ isActive }) =>
-              isActive ? 'admin-nav-link is-active' : 'admin-nav-link'
-            }
-          >
-            {item.label}
-          </NavLink>
-        ))}
+        {SECTION_ORDER.map((section) => {
+          const items = ADMIN_NAV.filter((item) => item.section === section);
+          if (!items.length) return null;
+          const label = ADMIN_NAV_SECTION_LABELS[section];
+          return (
+            <div key={section} className="admin-nav-section">
+              {label ? (
+                <p className="admin-nav-section-label">{label}</p>
+              ) : null}
+              {items.map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  end={item.path === '/'}
+                  className={({ isActive }) =>
+                    isActive ? 'admin-nav-link is-active' : 'admin-nav-link'
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          );
+        })}
       </nav>
 
       <p className="admin-sidebar-foot">{APP_NAME}</p>

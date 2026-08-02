@@ -369,6 +369,20 @@ export function VideoPlayerScreen({ navigation, route }: Props) {
                   void openExternal();
                 }}
               />
+              <AppButton
+                label="Report content"
+                variant="ghost"
+                onPress={() =>
+                  navigation.navigate('ReportContent', {
+                    report_type: 'incorrect_video',
+                    target_type: 'video',
+                    target_id: videoId,
+                    course_id: courseId,
+                    chapter_id: chapterId,
+                    target_label: video.title,
+                  })
+                }
+              />
             </View>
           )}
         </View>

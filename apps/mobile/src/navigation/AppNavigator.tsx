@@ -27,6 +27,24 @@ import {
   SettingsScreen,
 } from '@/modules/settings';
 import {
+  BugReportDetailScreen,
+  BugReportScreen,
+  ChatSupportScreen,
+  ContactUsScreen,
+  ContentReportDetailScreen,
+  FAQScreen,
+  FeatureRequestScreen,
+  FeedbackDetailScreen,
+  FeedbackScreen,
+  MyBugReportsScreen,
+  MyContentReportsScreen,
+  MyFeedbackScreen,
+  ReportContentScreen,
+  ReviewScreen as AppReviewScreen,
+  SubmitFeedbackScreen,
+  SupportScreen,
+} from '@/modules/feedback';
+import {
   TestListScreen,
   TestScreen,
   ResultScreen,
@@ -66,6 +84,25 @@ export function AppNavigator() {
       <Stack.Screen name="About" component={AboutScreen} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
       <Stack.Screen name="TestHistory" component={TestHistoryScreen} />
+      <Stack.Screen name="Feedback" component={FeedbackScreen} />
+      <Stack.Screen name="SubmitFeedback" component={SubmitFeedbackScreen} />
+      <Stack.Screen name="MyFeedback" component={MyFeedbackScreen} />
+      <Stack.Screen name="FeedbackDetail" component={FeedbackDetailScreen} />
+      <Stack.Screen name="AppReview" component={AppReviewScreen} />
+      <Stack.Screen name="Support" component={SupportScreen} />
+      <Stack.Screen name="FAQ" component={FAQScreen} />
+      <Stack.Screen name="ContactUs" component={ContactUsScreen} />
+      <Stack.Screen name="BugReport" component={BugReportScreen} />
+      <Stack.Screen name="MyBugReports" component={MyBugReportsScreen} />
+      <Stack.Screen name="BugReportDetail" component={BugReportDetailScreen} />
+      <Stack.Screen name="ReportContent" component={ReportContentScreen} />
+      <Stack.Screen name="MyContentReports" component={MyContentReportsScreen} />
+      <Stack.Screen
+        name="ContentReportDetail"
+        component={ContentReportDetailScreen}
+      />
+      <Stack.Screen name="FeatureRequest" component={FeatureRequestScreen} />
+      <Stack.Screen name="ChatSupport" component={ChatSupportScreen} />
       <Stack.Screen name="ChapterList" component={ChapterListScreen} />
       <Stack.Screen name="ChapterContent" component={ChapterContentScreen} />
       <Stack.Screen name="VideoPlayer" component={VideoPlayerScreen} />

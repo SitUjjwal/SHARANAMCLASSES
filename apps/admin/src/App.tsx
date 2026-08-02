@@ -11,11 +11,16 @@ import {
   AnalyticsPage,
   AnnouncementsPage,
   BannersPage,
+  BugReportsPage,
   CategoriesPage,
   CertificatesPage,
   ChaptersPage,
+  ContentReportsPage,
   CoursesPage,
   DashboardPage,
+  FaqsPage,
+  FeedbackDashboardPage,
+  FeedbackTicketsPage,
   LeaderboardPage,
   LiveClassesPage,
   NotesPage,
@@ -27,8 +32,11 @@ import {
   QuestionsPage,
   ReminderEnginePage,
   ResultsPage,
+  ReviewsPage,
   StudentsPage,
+  SupportChatPage,
   TeachersPage,
+  TestimonialsPage,
   TestsPage,
   VideosPage,
 } from '@/pages';
@@ -52,6 +60,14 @@ export function App() {
                 element={<Navigate to="/delivery-reports" replace />}
               />
               <Route path="certificates" element={<CertificatesPage />} />
+              <Route path="reviews" element={<ReviewsPage />} />
+              <Route path="testimonials" element={<TestimonialsPage />} />
+              <Route path="feedback" element={<FeedbackTicketsPage />} />
+              <Route path="feedback-dashboard" element={<FeedbackDashboardPage />} />
+              <Route path="bug-reports" element={<BugReportsPage />} />
+              <Route path="faqs" element={<FaqsPage />} />
+              <Route path="support-chat" element={<SupportChatPage />} />
+              <Route path="content-reports" element={<ContentReportsPage />} />
               <Route path="courses" element={<CoursesPage />} />
               <Route path="tests" element={<TestsPage />} />
               <Route path="questions" element={<QuestionsHubPage />} />

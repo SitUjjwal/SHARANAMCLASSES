@@ -13,11 +13,12 @@ import type {
 import { listChaptersForCourse } from './chapter.service';
 
 export const COURSE_COLUMNS =
-  'id, category_id, title, slug, description, thumbnail_url, class_level, medium, stream, board, academic_year, subject, teacher_id, language, teacher_name, price, rating, is_free, is_featured, is_published, sort_order, features';
+  'id, category_id, title, slug, description, thumbnail_url, class_level, medium, stream, board, academic_year, subject, teacher_id, language, teacher_name, price, rating, review_count, is_free, is_featured, is_published, sort_order, features';
 
-type CourseRow = Omit<CourseSummary, 'is_purchased' | 'price' | 'rating'> & {
+type CourseRow = Omit<CourseSummary, 'is_purchased' | 'price' | 'rating' | 'review_count'> & {
   price: number | string;
   rating: number | string;
+  review_count?: number | string | null;
   features?: string[] | null;
   stream?: CourseSummary['stream'];
   board?: CourseSummary['board'];
@@ -39,6 +40,7 @@ function toSummary(row: CourseRow, purchasedIds: Set<string>): CourseSummary {
     language: (row.language as CourseSummary['language']) ?? row.medium ?? null,
     price: Number(row.price) || 0,
     rating: Math.min(5, Math.max(0, Number(row.rating) || 0)),
+    review_count: Math.max(0, Number(row.review_count) || 0),
     is_purchased: purchasedIds.has(row.id),
   };
 }

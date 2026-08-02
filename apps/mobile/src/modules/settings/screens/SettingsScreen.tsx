@@ -86,6 +86,15 @@ export function SettingsScreen({ navigation }: Props) {
           />
         </View>
 
+        <Text style={[styles.section, { color: theme.textSecondary }]}>Help</Text>
+        <View style={styles.list}>
+          <SettingItem
+            label="Feedback & Support"
+            subtitle="Reviews, FAQ, contact, bug reports"
+            onPress={() => navigation.navigate('Feedback')}
+          />
+        </View>
+
         <Text style={[styles.section, { color: theme.textSecondary }]}>Legal & info</Text>
         <View style={styles.list}>
           <SettingItem

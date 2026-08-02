@@ -26,6 +26,7 @@ import { ChapterList } from '@/modules/courses/components/ChapterList';
 import { CourseDetailHero } from '@/modules/courses/components/CourseDetailHero';
 import { CourseDetailSkeleton } from '@/modules/courses/components/CourseDetailSkeleton';
 import { CourseFeatures } from '@/modules/courses/components/CourseFeatures';
+import { CourseReviewsSection } from '@/modules/courses/components/CourseReviewsSection';
 import { RelatedCourses } from '@/modules/courses/components/RelatedCourses';
 import { StarRating } from '@/modules/courses/components/StarRating';
 import { useCourseDetailQuery } from '@/modules/courses/hooks/useCourseDetailQuery';
@@ -154,7 +155,15 @@ export function CourseDetailScreen({ navigation, route }: Props) {
           <Text style={styles.teacher}>
             {course.teacher_name?.trim() || 'SHARANAM Faculty'}
           </Text>
-          <StarRating rating={course.rating ?? 0} size={16} />
+          <View style={styles.ratingRow}>
+            <StarRating rating={course.rating ?? 0} size={16} />
+            {(course.review_count ?? 0) > 0 ? (
+              <Text style={styles.ratingMeta}>
+                {(course.rating ?? 0).toFixed(1)} · {course.review_count} review
+                {course.review_count === 1 ? '' : 's'}
+              </Text>
+            ) : null}
+          </View>
 
           <Text style={styles.description}>
             {course.description?.trim() || 'No description yet.'}
@@ -172,6 +181,15 @@ export function CourseDetailScreen({ navigation, route }: Props) {
             onPress={onBuy}
             loading={enrollMutation.isPending}
             disabled={course.is_purchased || enrollMutation.isPending}
+          />
+
+          <CourseReviewsSection
+            courseId={courseId}
+            fallbackRating={course.rating ?? 0}
+            fallbackCount={course.review_count ?? 0}
+            onWriteReview={() =>
+              navigation.navigate('AppReview', { courseId })
+            }
           />
 
           <ChapterList
@@ -210,6 +228,15 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.lg,
     fontWeight: '600',
     marginTop: -spacing.sm,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  ratingMeta: {
+    color: '#A8B3C5',
+    fontSize: typography.fontSize.sm,
   },
   description: {
     color: '#A8B3C5',

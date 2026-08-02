@@ -97,6 +97,14 @@ export function ReviewScreen({ navigation, route }: Props) {
               key={item.question_id}
               index={index}
               item={item}
+              onReport={() =>
+                navigation.navigate('ReportContent', {
+                  report_type: 'incorrect_question',
+                  target_type: 'question',
+                  target_id: item.question_id,
+                  target_label: `Q${index + 1}: ${item.question_text.slice(0, 80)}`,
+                })
+              }
             />
           ))
         )}
