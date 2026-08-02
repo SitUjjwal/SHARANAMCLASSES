@@ -706,9 +706,101 @@ async function buildResult(row: AttemptRow): Promise<TestAttemptResult> {
       row.percentage != null ? Number(row.percentage) : scored.percentage,
     is_passed: row.is_passed ?? scored.is_passed,
     submitted_at: row.submitted_at,
+    rank: await computeAttemptRank(row.test_id, row.id, {
+      percentage:
+        row.percentage != null ? Number(row.percentage) : scored.percentage,
+      obtained_marks:
+        row.obtained_marks != null
+          ? Number(row.obtained_marks)
+          : scored.obtained_marks,
+      started_at: row.started_at,
+      submitted_at: row.submitted_at,
+    }),
   };
 
   return { summary, review: scored.review };
+}
+
+type RankSeed = {
+  percentage: number;
+  obtained_marks: number;
+  started_at: string;
+  submitted_at: string | null;
+};
+
+function timeTakenSeconds(startedAt: string, submittedAt: string | null): number {
+  if (!submittedAt) return Number.MAX_SAFE_INTEGER;
+  const ms = Date.parse(submittedAt) - Date.parse(startedAt);
+  if (!Number.isFinite(ms) || ms < 0) return Number.MAX_SAFE_INTEGER;
+  return Math.round(ms / 1000);
+}
+
+function compareAttemptsForRank(
+  a: RankSeed & { id: string },
+  b: RankSeed & { id: string },
+): number {
+  if (a.percentage !== b.percentage) return b.percentage - a.percentage;
+  if (a.obtained_marks !== b.obtained_marks) return b.obtained_marks - a.obtained_marks;
+  return (
+    timeTakenSeconds(a.started_at, a.submitted_at) -
+    timeTakenSeconds(b.started_at, b.submitted_at)
+  );
+}
+
+/**
+ * Rank of one attempt within its test (same rules as leaderboard).
+ */
+async function computeAttemptRank(
+  testId: string,
+  attemptId: string,
+  seed: RankSeed,
+): Promise<number | null> {
+  const ranks = await computeRanksForTest(testId, [
+    { id: attemptId, ...seed },
+  ]);
+  return ranks.get(attemptId) ?? null;
+}
+
+async function computeRanksForTest(
+  testId: string,
+  needed: Array<RankSeed & { id: string }>,
+): Promise<Map<string, number>> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from('test_attempts')
+    .select('id, started_at, submitted_at, obtained_marks, percentage')
+    .eq('test_id', testId)
+    .in('status', ['submitted', 'expired'])
+    .not('obtained_marks', 'is', null)
+    .not('percentage', 'is', null)
+    .limit(2000);
+
+  if (error) {
+    console.warn('[results] rank fetch failed', testId, error.message);
+    return new Map();
+  }
+
+  const pool = (data ?? []).map((row) => ({
+    id: row.id as string,
+    percentage: Number(row.percentage) || 0,
+    obtained_marks: Number(row.obtained_marks) || 0,
+    started_at: row.started_at as string,
+    submitted_at: (row.submitted_at as string | null) ?? null,
+  }));
+
+  // Ensure current attempt is present even if just submitted
+  for (const n of needed) {
+    if (!pool.some((p) => p.id === n.id)) {
+      pool.push(n);
+    }
+  }
+
+  pool.sort(compareAttemptsForRank);
+  const ranks = new Map<string, number>();
+  pool.forEach((row, index) => {
+    ranks.set(row.id, index + 1);
+  });
+  return ranks;
 }
 
 /**
@@ -764,6 +856,25 @@ export async function listStudentResults(
     }
   }
 
+  const ranksByAttempt = new Map<string, number>();
+  await Promise.all(
+    testIds.map(async (testId) => {
+      const needed = rows
+        .filter((r) => r.test_id === testId)
+        .map((r) => ({
+          id: r.id,
+          percentage: Number(r.percentage ?? 0),
+          obtained_marks: Number(r.obtained_marks ?? 0),
+          started_at: r.started_at,
+          submitted_at: r.submitted_at,
+        }));
+      const ranks = await computeRanksForTest(testId, needed);
+      for (const [attemptId, rank] of ranks) {
+        ranksByAttempt.set(attemptId, rank);
+      }
+    }),
+  );
+
   const items: TestAttemptResultSummary[] = rows.map((row) => {
     const meta = testMeta.get(row.test_id);
     return {
@@ -780,6 +891,7 @@ export async function listStudentResults(
       percentage: Number(row.percentage ?? 0),
       is_passed: Boolean(row.is_passed),
       submitted_at: row.submitted_at,
+      rank: ranksByAttempt.get(row.id) ?? null,
     };
   });
 

@@ -404,6 +404,8 @@ export type TestAttemptResultSummary = {
   percentage: number;
   is_passed: boolean;
   submitted_at: string | null;
+  /** Rank on this test among scored attempts (1 = best). Null if unavailable. */
+  rank: number | null;
 };
 
 /** One row for Review Answers */
@@ -789,9 +791,44 @@ export type DashboardPayload = {
   categories: Category[];
   featured_courses: CourseSummary[];
   my_courses: Enrollment[];
+  /** Resume in-progress video (Home Continue Watching) */
+  continue_watching: ContinueWatchingItem | null;
   /** @deprecated Prefer `announcements` — kept for older clients */
   latest_updates: AppUpdate[];
   announcements: Announcement[];
+};
+
+/** Saved playback row (per user × video) */
+export type VideoWatchProgress = {
+  video_id: string;
+  course_id: string;
+  chapter_id: string;
+  position_seconds: number;
+  duration_seconds: number;
+  completed: boolean;
+  updated_at: string;
+};
+
+/** Home / dashboard Continue Watching CTA */
+export type ContinueWatchingItem = {
+  video_id: string;
+  course_id: string;
+  chapter_id: string;
+  video_title: string;
+  course_title: string;
+  chapter_title: string;
+  thumbnail_url: string | null;
+  position_seconds: number;
+  duration_seconds: number;
+  progress_percent: number;
+  updated_at: string;
+};
+
+export type UpsertVideoWatchProgressInput = {
+  course_id: string;
+  chapter_id: string;
+  position_seconds: number;
+  duration_seconds?: number;
 };
 
 export type CourseDetail = CourseSummary & {

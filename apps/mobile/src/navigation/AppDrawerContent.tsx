@@ -53,7 +53,12 @@ export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
   }
 
   function goStack(
-    screen: 'PurchaseHistory' | 'Leaderboard' | 'TestAnalytics' | 'NotificationCenter',
+    screen:
+      | 'PurchaseHistory'
+      | 'Leaderboard'
+      | 'TestAnalytics'
+      | 'NotificationCenter'
+      | 'Settings',
   ) {
     navigation.closeDrawer();
     const parent = navigation.getParent();
@@ -130,7 +135,7 @@ export function AppDrawerContent({ navigation }: DrawerContentComponentProps) {
       key: 'settings',
       label: 'Settings',
       icon: 'settings-outline',
-      onPress: () => goTab('ProfileTab'),
+      onPress: () => goStack('Settings'),
     },
     {
       key: 'refer',

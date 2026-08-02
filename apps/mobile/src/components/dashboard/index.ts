@@ -9,3 +9,4 @@ export { UpdatesList } from './UpdatesList';
 export { AnnouncementsList } from './AnnouncementsList';
 export { HomeDashboardSkeleton } from './HomeDashboardSkeleton';
 export { HomeQuickActions } from './HomeQuickActions';
+export { ContinueWatchingCard } from './ContinueWatchingCard';

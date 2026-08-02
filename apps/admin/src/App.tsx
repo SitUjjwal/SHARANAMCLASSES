@@ -12,6 +12,7 @@ import {
   AnnouncementsPage,
   BannersPage,
   CategoriesPage,
+  CertificatesPage,
   ChaptersPage,
   CoursesPage,
   DashboardPage,
@@ -50,6 +51,7 @@ export function App() {
                 path="notification-dashboard"
                 element={<Navigate to="/delivery-reports" replace />}
               />
+              <Route path="certificates" element={<CertificatesPage />} />
               <Route path="courses" element={<CoursesPage />} />
               <Route path="tests" element={<TestsPage />} />
               <Route path="questions" element={<QuestionsHubPage />} />

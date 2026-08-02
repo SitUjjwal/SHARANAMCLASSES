@@ -6,6 +6,7 @@ export { NotificationsPage } from './NotificationsPage';
 export { ReminderEnginePage } from './ReminderEnginePage';
 export { NotificationsDashboardPage } from './NotificationsDashboardPage';
 export { CategoriesPage } from './CategoriesPage';
+export { CertificatesPage } from './CertificatesPage';
 export { ChaptersPage } from './ChaptersPage';
 export { VideosPage } from './VideosPage';
 export { PdfsPage } from './PdfsPage';

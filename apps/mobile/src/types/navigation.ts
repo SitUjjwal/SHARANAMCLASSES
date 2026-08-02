@@ -33,6 +33,18 @@ export type AppStackParamList = {
   PaymentFailed: { courseId: string; message?: string };
   PurchaseHistory: undefined;
   NotificationCenter: undefined;
+  EditProfile: undefined;
+  LearningProgress: undefined;
+  Certificates: undefined;
+  CertificateViewer: { certificateId: string };
+  Achievements: undefined;
+  Settings: undefined;
+  NotificationPreferences: undefined;
+  LanguageSettings: undefined;
+  LegalDocument: { doc: 'privacy' | 'terms' };
+  About: undefined;
+  ChangePassword: undefined;
+  TestHistory: undefined;
   ChapterList: { courseId: string; courseTitle?: string };
   ChapterContent: { courseId: string; chapterId: string };
   VideoPlayer: { courseId: string; chapterId: string; videoId: string };

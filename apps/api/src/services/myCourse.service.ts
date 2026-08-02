@@ -194,9 +194,33 @@ export async function updateLastWatchedChapter(
     throw new AppError(400, 'CHAPTER_COURSE_MISMATCH', 'Chapter does not belong to this course');
   }
 
+  const { data: publishedChapters, error: listError } = await supabase
+    .from('chapters')
+    .select('id')
+    .eq('course_id', courseId)
+    .eq('is_published', true)
+    .order('sort_order', { ascending: true });
+
+  if (listError) {
+    throw new AppError(500, 'CHAPTER_LIST_FAILED', listError.message);
+  }
+
+  const chapterIds = (publishedChapters ?? []).map((c) => c.id as string);
+  const total = chapterIds.length;
+  const idx = chapterIds.indexOf(input.chapter_id);
+  const completedThrough = idx >= 0 ? idx + 1 : 0;
+
   const currentProgress = Number(enrollment.progress_percent) || 0;
-  const nextProgress =
+  let nextProgress =
     currentProgress >= 95 ? currentProgress : Math.min(95, currentProgress + 5);
+
+  // Full syllabus walk-through → 100% + certificate request
+  if (total > 0 && completedThrough >= total) {
+    nextProgress = 100;
+  } else if (total > 0) {
+    const chapterPct = Math.round((100 * completedThrough) / total);
+    nextProgress = Math.max(nextProgress, Math.min(99, chapterPct));
+  }
 
   const now = new Date().toISOString();
   const { error: updateError } = await supabase
@@ -210,6 +234,11 @@ export async function updateLastWatchedChapter(
 
   if (updateError) {
     throw new AppError(400, 'LAST_WATCHED_UPDATE_FAILED', updateError.message);
+  }
+
+  if (nextProgress >= 100) {
+    const { maybeRequestCertificateOnCompletion } = await import('./certificate.service');
+    await maybeRequestCertificateOnCompletion(userId, courseId, nextProgress);
   }
 
   const page = await listMyCourses(userId, { search: '' });

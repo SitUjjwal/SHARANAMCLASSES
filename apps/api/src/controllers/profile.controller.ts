@@ -15,6 +15,8 @@ import {
   getProfileByUserId,
   updateProfileByUserId,
 } from '../services/profile.service';
+import { uploadProfileAvatar } from '../services/profileAvatar.service';
+import { getProfileOverview } from '../services/profileOverview.service';
 import type { UpdateProfileInput } from '../validators/profile.validators';
 import { AppError } from '../utils/AppError';
 
@@ -53,8 +55,31 @@ export async function getProfile(
 }
 
 /**
+ * getOverview
+ * GET /profile/overview
+ * Profile + purchased courses / tests / average score for the Profile hub.
+ */
+export async function getOverview(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = assertAuthenticatedUser(req);
+    const overview = await getProfileOverview(userId);
+
+    res.status(200).json({
+      success: true,
+      data: overview,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
  * updateProfile
- * PATCH /profile
+ * PUT|PATCH /profile
  * Updates allowed profile fields for the signed-in student.
  * Body is already validated by `validate(updateProfileSchema)`.
  */
@@ -73,6 +98,41 @@ export async function updateProfile(
       success: true,
       data: profile,
       message: 'Profile updated successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * uploadAvatar
+ * POST /profile/upload-photo · POST /profile/avatar
+ * Multipart field `image` → Cloudflare R2 → { avatar_url, avatar_storage_key }.
+ * Client then PUTs those onto the profile (with name/phone/class/medium).
+ */
+export async function uploadAvatar(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const userId = assertAuthenticatedUser(req);
+    const file = req.file;
+    if (!file) {
+      throw new AppError(400, 'IMAGE_REQUIRED', 'Attach an image file as field "image"');
+    }
+
+    const data = await uploadProfileAvatar(userId, {
+      buffer: file.buffer,
+      mimetype: file.mimetype,
+      originalname: file.originalname,
+      size: file.size,
+    });
+
+    res.status(201).json({
+      success: true,
+      data,
+      message: 'Profile photo uploaded',
     });
   } catch (error) {
     next(error);

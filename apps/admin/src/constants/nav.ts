@@ -42,6 +42,11 @@ export const ADMIN_NAV: AdminNavItem[] = [
     description: 'Delivery stats, search, filters, and CSV export.',
   },
   {
+    label: 'Certificates',
+    path: '/certificates',
+    description: 'Approve course-completion certificates and PDFs.',
+  },
+  {
     label: 'Courses',
     path: '/courses',
     description: 'Create and publish course catalog.',

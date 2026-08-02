@@ -13,6 +13,7 @@
  *   POST /submit-test
  *   GET  /results
  *   GET  /results/:id
+ *   GET  /test-history   (profile alias of GET /results)
  */
 import { Router } from 'express';
 
@@ -81,6 +82,13 @@ attemptRouter.post(
 
 attemptRouter.get(
   '/results',
+  requireAuth,
+  validate(listResultsQuerySchema, 'query'),
+  listResults,
+);
+
+attemptRouter.get(
+  '/test-history',
   requireAuth,
   validate(listResultsQuerySchema, 'query'),
   listResults,

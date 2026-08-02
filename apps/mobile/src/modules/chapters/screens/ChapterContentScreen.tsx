@@ -68,6 +68,9 @@ export function ChapterContentScreen({ navigation, route }: Props) {
         await updateLastWatchedChapter(courseId, chapterId);
         if (!cancelled) {
           await queryClient.invalidateQueries({ queryKey: ['my-courses'] });
+          await queryClient.invalidateQueries({
+            queryKey: ['profile', 'learning-progress'],
+          });
         }
       } catch {
         // Not enrolled / offline — ignore; chapter content still works

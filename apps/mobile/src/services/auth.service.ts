@@ -6,13 +6,16 @@ import { supabase } from '@/auth/supabase';
 import { clearLocalAuthState } from '@/auth/clearLocalAuthState';
 import { getPasswordResetRedirectUrl } from '@/auth/redirectUrls';
 import type {
+  ChangePasswordFormValues,
   ForgotPasswordFormValues,
   LoginFormValues,
   RegisterFormValues,
   ResetPasswordFormValues,
 } from '@/auth/schemas';
+import { apiClient } from '@/api/client';
 import { insertStudentProfile } from '@/services/profile.service';
 import {
+  mapChangePasswordError,
   mapForgotPasswordError,
   mapLoginError,
   mapResetPasswordError,
@@ -143,6 +146,24 @@ export async function updatePassword(values: ResetPasswordFormValues): Promise<v
     }
   } catch (error) {
     throw mapResetPasswordError(error);
+  }
+}
+
+/**
+ * changePassword
+ * Logged-in flow: PUT /change-password → API re-verifies + Supabase Auth admin update.
+ */
+export async function changePassword(
+  values: ChangePasswordFormValues,
+): Promise<void> {
+  try {
+    await apiClient.put('/change-password', {
+      current_password: values.currentPassword,
+      new_password: values.newPassword,
+      confirm_password: values.confirmPassword,
+    });
+  } catch (error) {
+    throw mapChangePasswordError(error);
   }
 }
 

@@ -15,7 +15,7 @@ const config = {
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
-  userInterfaceStyle: 'light',
+  userInterfaceStyle: 'automatic',
   newArchEnabled: true,
   scheme: 'sharanam',
   splash: {
@@ -45,6 +45,13 @@ const config = {
   },
   plugins: [
     'expo-secure-store',
+    [
+      'expo-image-picker',
+      {
+        photosPermission:
+          'Allow SHARANAM CLASSES to access your photos so you can set a profile picture.',
+      },
+    ],
     [
       'expo-splash-screen',
       {

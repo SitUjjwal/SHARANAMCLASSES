@@ -117,6 +117,7 @@ export async function listAdminResults(options: {
       percentage: Number(row.percentage ?? 0),
       is_passed: Boolean(row.is_passed),
       submitted_at: row.submitted_at,
+      rank: null,
       student_name: nameByUser.get(row.user_id) ?? 'Student',
       user_id: row.user_id,
     };

@@ -2,6 +2,8 @@
  * Maps Supabase / network failures to user-friendly login errors.
  * Why: raw SDK messages are unclear; UI needs Wrong password / User not found / Network.
  */
+import { getApiErrorMessage } from '@/utils/apiErrors';
+
 export type AuthErrorCode =
   | 'WRONG_PASSWORD'
   | 'USER_NOT_FOUND'
@@ -172,6 +174,64 @@ export function mapResetPasswordError(error: unknown): AuthAppError {
     return new AuthAppError(
       'UNKNOWN',
       'Choose a password that is different from your current one.',
+    );
+  }
+
+  return new AuthAppError('UNKNOWN', message);
+}
+
+/**
+ * mapChangePasswordError
+ * Maps failures while changing password while logged in (API or Supabase).
+ */
+export function mapChangePasswordError(error: unknown): AuthAppError {
+  if (error instanceof AuthAppError) {
+    return error;
+  }
+
+  if (isNetworkError(error)) {
+    return new AuthAppError(
+      'NETWORK',
+      'Network error. Check your internet connection and try again.',
+    );
+  }
+
+  const message = getApiErrorMessage(error, getErrorMessage(error));
+  const lower = message.toLowerCase();
+
+  if (
+    lower.includes('invalid login') ||
+    lower.includes('invalid credentials') ||
+    lower.includes('wrong password') ||
+    lower.includes('incorrect')
+  ) {
+    return new AuthAppError('WRONG_PASSWORD', 'Current password is incorrect.');
+  }
+
+  if (
+    lower.includes('session') ||
+    lower.includes('not authenticated') ||
+    lower.includes('jwt') ||
+    lower.includes('unauthorized') ||
+    lower.includes('expired')
+  ) {
+    return new AuthAppError(
+      'UNKNOWN',
+      'Your session expired. Sign in again and retry.',
+    );
+  }
+
+  if (lower.includes('same password') || lower.includes('different from your current')) {
+    return new AuthAppError(
+      'UNKNOWN',
+      'Choose a password that is different from your current one.',
+    );
+  }
+
+  if (lower.includes('weak') || lower.includes('password should') || lower.includes('too weak')) {
+    return new AuthAppError(
+      'UNKNOWN',
+      'Password is too weak. Use 8+ characters with upper, lower, number, and a symbol.',
     );
   }
 

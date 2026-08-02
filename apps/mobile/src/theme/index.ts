@@ -36,3 +36,6 @@ export const theme = {
 } as const;
 
 export type AppTheme = typeof theme;
+
+export { ThemeProvider, useAppTheme } from './ThemeProvider';
+export { darkPalette, lightPalette, type AppPalette } from './palettes';

@@ -17,6 +17,7 @@ import {
   AnnouncementsList,
   BannerSlider,
   CategoriesGrid,
+  ContinueWatchingCard,
   CourseHorizontalList,
   GreetingHeader,
   HomeDashboardSkeleton,
@@ -163,6 +164,23 @@ export function HomeDashboardScreen({ navigation }: Props) {
           onNotificationsPress={openNotifications}
           unreadCount={unreadQuery.data ?? 0}
         />
+
+        {data?.continue_watching ? (
+          <View style={styles.section}>
+            <ContinueWatchingCard
+              item={data.continue_watching}
+              onContinue={() => {
+                const item = data.continue_watching;
+                if (!item) return;
+                navigation.navigate('VideoPlayer', {
+                  courseId: item.course_id,
+                  chapterId: item.chapter_id,
+                  videoId: item.video_id,
+                });
+              }}
+            />
+          </View>
+        ) : null}
 
         <View style={styles.section}>
           <BannerSlider

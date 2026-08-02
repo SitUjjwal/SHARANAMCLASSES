@@ -1,12 +1,12 @@
 /**
- * VideoPlayerScreen — in-app YouTube playback with poster, meta, and fallbacks.
+ * VideoPlayerScreen — YouTube playback with Continue Watching resume + 15s saves.
  *
  * Flow:
- *   ChapterContent → VideoPlayer { courseId, chapterId, videoId }
- *   Data: reuse chapter detail cache (videos[]) + course detail (teacher_name)
- *   Play → embed via react-native-youtube-iframe; on failure → open YouTube app
+ *   ChapterContent / Home Continue → VideoPlayer { courseId, chapterId, videoId }
+ *   GET /videos/:id/progress → startSeconds
+ *   While playing → PUT progress every 15s (YouTubeEmbed)
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -18,8 +18,10 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import NetInfo from '@react-native-community/netinfo';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { queryKeys } from '@/api/queryKeys';
 import { AppButton } from '@/components/ui/AppButton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -29,6 +31,10 @@ import { useChapterContentQuery } from '@/modules/chapters/hooks/useChapterConte
 import { useCourseDetailQuery } from '@/modules/courses/hooks/useCourseDetailQuery';
 import { VideoPoster } from '@/modules/videos/components/VideoPoster';
 import { YouTubeEmbed } from '@/modules/videos/components/YouTubeEmbed';
+import {
+  fetchVideoWatchProgress,
+  saveVideoWatchProgress,
+} from '@/modules/videos/services/watchProgress.service';
 import { formatVideoDuration } from '@/modules/videos/utils/formatVideoDuration';
 import { openInYouTubeApp } from '@/modules/videos/utils/openYouTube';
 import {
@@ -47,15 +53,24 @@ type PlayerMode = 'poster' | 'embed';
 export function VideoPlayerScreen({ navigation, route }: Props) {
   const { courseId, chapterId, videoId } = route.params;
   const insets = useSafeAreaInsets();
+  const queryClient = useQueryClient();
 
   const chapterQuery = useChapterContentQuery(courseId, chapterId);
   const courseQuery = useCourseDetailQuery(courseId);
+  const progressQuery = useQuery({
+    queryKey: ['videos', videoId, 'progress'],
+    queryFn: () => fetchVideoWatchProgress(videoId),
+    staleTime: 30_000,
+  });
 
   const [mode, setMode] = useState<PlayerMode>('poster');
   const [playing, setPlaying] = useState(false);
   const [checkingNetwork, setCheckingNetwork] = useState(false);
   const [networkError, setNetworkError] = useState<string | null>(null);
   const [embedError, setEmbedError] = useState<string | null>(null);
+
+  const lastSavedRef = useRef(0);
+  const savingRef = useRef(false);
 
   const video = useMemo(() => {
     const chapter = chapterQuery.data;
@@ -98,12 +113,52 @@ export function VideoPlayerScreen({ navigation, route }: Props) {
   const teacherName =
     courseQuery.data?.teacher_name?.trim() || 'SHARANAM Faculty';
 
+  const resumeSeconds = useMemo(() => {
+    const row = progressQuery.data;
+    if (!row || row.completed) return 0;
+    const pos = Math.floor(row.position_seconds);
+    if (pos < 5) return 0;
+    if (row.duration_seconds > 0 && pos >= row.duration_seconds * 0.95) return 0;
+    return pos;
+  }, [progressQuery.data]);
+
   useEffect(() => {
     setMode('poster');
     setPlaying(false);
     setNetworkError(null);
     setEmbedError(null);
+    lastSavedRef.current = 0;
   }, [videoId]);
+
+  const persistProgress = useCallback(
+    async (positionSeconds: number, durationSeconds: number) => {
+      if (positionSeconds < 1) return;
+      // Skip noisy duplicates within 2s of the same position
+      if (Math.abs(positionSeconds - lastSavedRef.current) < 2 && lastSavedRef.current > 0) {
+        return;
+      }
+      if (savingRef.current) return;
+      savingRef.current = true;
+      try {
+        await saveVideoWatchProgress(videoId, {
+          course_id: courseId,
+          chapter_id: chapterId,
+          position_seconds: positionSeconds,
+          duration_seconds: durationSeconds || undefined,
+        });
+        lastSavedRef.current = positionSeconds;
+        void queryClient.invalidateQueries({ queryKey: queryKeys.dashboard });
+        void queryClient.invalidateQueries({ queryKey: ['videos', videoId, 'progress'] });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.learningProgress });
+        void queryClient.invalidateQueries({ queryKey: ['my-courses'] });
+      } catch {
+        // Offline / not enrolled — keep playback working
+      } finally {
+        savingRef.current = false;
+      }
+    },
+    [chapterId, courseId, queryClient, videoId],
+  );
 
   const openExternal = useCallback(async () => {
     if (!youtubeVideoId) return;
@@ -136,18 +191,15 @@ export function VideoPlayerScreen({ navigation, route }: Props) {
     }
   }, [youtubeVideoId]);
 
-  const handleEmbedError = useCallback(
-    (message: string) => {
-      setPlaying(false);
-      setMode('poster');
-      setEmbedError(
-        message.includes('network') || message.toLowerCase().includes('error')
-          ? 'Couldn’t embed this video. Open it in the YouTube app instead.'
-          : message,
-      );
-    },
-    [],
-  );
+  const handleEmbedError = useCallback((message: string) => {
+    setPlaying(false);
+    setMode('poster');
+    setEmbedError(
+      message.includes('network') || message.toLowerCase().includes('error')
+        ? 'Couldn’t embed this video. Open it in the YouTube app instead.'
+        : message,
+    );
+  }, []);
 
   if (chapterQuery.isLoading && !chapterQuery.data) {
     return (
@@ -211,6 +263,10 @@ export function VideoPlayerScreen({ navigation, route }: Props) {
   }
 
   const showError = networkError || embedError;
+  const resumeLabel =
+    resumeSeconds > 0
+      ? `Continue from ${formatVideoDuration(resumeSeconds)}`
+      : 'Play';
 
   return (
     <Screen style={styles.screen}>
@@ -229,13 +285,17 @@ export function VideoPlayerScreen({ navigation, route }: Props) {
             <YouTubeEmbed
               videoId={youtubeVideoId}
               playing={playing}
+              startSeconds={resumeSeconds}
               onPlayingChange={setPlaying}
               onError={handleEmbedError}
+              onProgress={(position, duration) => {
+                void persistProgress(position, duration);
+              }}
             />
           ) : (
             <VideoPoster
               thumbnailUrl={thumbnailUrl}
-              loading={checkingNetwork}
+              loading={checkingNetwork || progressQuery.isPending}
               onPlay={() => {
                 void startPlayback();
               }}
@@ -247,6 +307,7 @@ export function VideoPlayerScreen({ navigation, route }: Props) {
           <Text style={styles.kicker}>
             {video.video_type === 'live' ? 'Live' : 'Recorded'}
             {video.is_free ? ' · Free preview' : ''}
+            {resumeSeconds > 0 ? ' · Resume available' : ''}
           </Text>
           <Text style={styles.title}>{video.title}</Text>
           <View style={styles.metaRow}>
@@ -290,7 +351,7 @@ export function VideoPlayerScreen({ navigation, route }: Props) {
             <View style={styles.actions}>
               {mode === 'poster' ? (
                 <AppButton
-                  label="Play"
+                  label={resumeLabel}
                   onPress={() => {
                     void startPlayback();
                   }}

@@ -32,6 +32,23 @@ export const bannerImageUpload = multer({
   },
 }).single('image');
 
+/** Student profile photo — multipart field `image` (JPEG/PNG/WebP, max 5MB). */
+export const profileAvatarUpload = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    const ok =
+      file.mimetype === 'image/jpeg' ||
+      file.mimetype === 'image/png' ||
+      file.mimetype === 'image/webp';
+    if (!ok) {
+      cb(new AppError(400, 'INVALID_IMAGE_TYPE', 'Use JPEG, PNG, or WebP for profile photos'));
+      return;
+    }
+    cb(null, true);
+  },
+}).single('image');
+
 const MATERIAL_MIME = new Set([
   'application/pdf',
   'application/msword',

@@ -34,6 +34,22 @@ export const updateProfileSchema = z
     medium: z.enum(['hindi', 'english'], {
       errorMap: () => ({ message: 'medium must be hindi or english' }),
     }).optional(),
+    avatar_url: z
+      .union([z.string().url(), z.literal(''), z.null()])
+      .optional()
+      .transform((value) => {
+        if (value === undefined) return undefined;
+        if (value === null || value === '') return null;
+        return value;
+      }),
+    avatar_storage_key: z
+      .union([z.string().trim().min(3).max(500), z.literal(''), z.null()])
+      .optional()
+      .transform((value) => {
+        if (value === undefined) return undefined;
+        if (value === null || value === '') return null;
+        return value;
+      }),
   })
   .strict()
   .refine(
@@ -41,7 +57,9 @@ export const updateProfileSchema = z
       value.full_name !== undefined ||
       value.phone_number !== undefined ||
       value.class_level !== undefined ||
-      value.medium !== undefined,
+      value.medium !== undefined ||
+      value.avatar_url !== undefined ||
+      value.avatar_storage_key !== undefined,
     {
       message: 'Provide at least one field to update',
     },

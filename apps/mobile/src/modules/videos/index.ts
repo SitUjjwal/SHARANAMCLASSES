@@ -32,3 +32,8 @@ export { YouTubeEmbed } from './components/YouTubeEmbed';
 export { extractYouTubeVideoId, youtubeThumbnailUrl } from './utils/youtube';
 export { openInYouTubeApp } from './utils/openYouTube';
 export { formatVideoDuration } from './utils/formatVideoDuration';
+export {
+  fetchVideoWatchProgress,
+  saveVideoWatchProgress,
+  fetchContinueWatching,
+} from './services/watchProgress.service';

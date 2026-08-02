@@ -17,6 +17,8 @@ export const queryKeys = {
   notificationHistory: ['notifications', 'history'] as const,
   notificationUnreadCount: ['notifications', 'unread-count'] as const,
   profile: ['profile'] as const,
+  profileOverview: ['profile', 'overview'] as const,
+  learningProgress: ['profile', 'learning-progress'] as const,
   studentTests: (courseId?: string) =>
     ['tests', 'student', { courseId: courseId ?? null }] as const,
   attemptSession: (attemptId: string) => ['tests', 'attempt', attemptId] as const,
@@ -25,4 +27,6 @@ export const queryKeys = {
   leaderboard: (filters?: Record<string, unknown>) =>
     ['tests', 'leaderboard', filters ?? {}] as const,
   testAnalytics: ['tests', 'analytics'] as const,
+  testHistory: (page?: number) =>
+    ['tests', 'history', { page: page ?? 1 }] as const,
 };

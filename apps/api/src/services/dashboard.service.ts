@@ -5,6 +5,7 @@
 import { getSupabaseAdmin } from '../config/supabase';
 import { AppError } from '../utils/AppError';
 import { listPublishedAnnouncements } from './announcement.service';
+import { getContinueWatchingForUser } from './videoWatchProgress.service';
 import type { DashboardPayload } from '@sharanam/shared';
 
 function stripHtml(html: string): string {
@@ -26,6 +27,7 @@ export async function getDashboardForUser(userId: string): Promise<DashboardPayl
     featuredResult,
     enrollmentsResult,
     announcements,
+    continueWatching,
   ] = await Promise.all([
     supabase.from('profiles').select('full_name').eq('id', userId).maybeSingle(),
     supabase
@@ -65,6 +67,7 @@ export async function getDashboardForUser(userId: string): Promise<DashboardPayl
       .order('enrolled_at', { ascending: false })
       .limit(10),
     listPublishedAnnouncements(8),
+    getContinueWatchingForUser(userId),
   ]);
 
   const firstError =
@@ -125,6 +128,7 @@ export async function getDashboardForUser(userId: string): Promise<DashboardPayl
     categories: categoriesResult.data ?? [],
     featured_courses: featuredCourses,
     my_courses: myCourses,
+    continue_watching: continueWatching,
     announcements,
     latest_updates: announcements.map((item) => ({
       id: item.id,

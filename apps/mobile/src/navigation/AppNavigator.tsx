@@ -11,6 +11,22 @@ import { PaymentSuccessScreen } from '@/modules/payments/screens/PaymentSuccessS
 import { PdfViewerScreen } from '@/modules/pdfs';
 import { NotificationCenterScreen } from '@/modules/notifications';
 import {
+  AchievementsScreen,
+  CertificateViewerScreen,
+  CertificatesScreen,
+  ChangePasswordScreen,
+  EditProfileScreen,
+  LearningProgressScreen,
+  TestHistoryScreen,
+} from '@/modules/profile';
+import {
+  AboutScreen,
+  LanguageSettingsScreen,
+  LegalDocumentScreen,
+  NotificationPreferencesScreen,
+  SettingsScreen,
+} from '@/modules/settings';
+import {
   TestListScreen,
   TestScreen,
   ResultScreen,
@@ -35,6 +51,21 @@ export function AppNavigator() {
       <Stack.Screen name="PaymentFailed" component={PaymentFailedScreen} />
       <Stack.Screen name="PurchaseHistory" component={PurchaseHistoryScreen} />
       <Stack.Screen name="NotificationCenter" component={NotificationCenterScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="LearningProgress" component={LearningProgressScreen} />
+      <Stack.Screen name="Certificates" component={CertificatesScreen} />
+      <Stack.Screen name="CertificateViewer" component={CertificateViewerScreen} />
+      <Stack.Screen name="Achievements" component={AchievementsScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen
+        name="NotificationPreferences"
+        component={NotificationPreferencesScreen}
+      />
+      <Stack.Screen name="LanguageSettings" component={LanguageSettingsScreen} />
+      <Stack.Screen name="LegalDocument" component={LegalDocumentScreen} />
+      <Stack.Screen name="About" component={AboutScreen} />
+      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
+      <Stack.Screen name="TestHistory" component={TestHistoryScreen} />
       <Stack.Screen name="ChapterList" component={ChapterListScreen} />
       <Stack.Screen name="ChapterContent" component={ChapterContentScreen} />
       <Stack.Screen name="VideoPlayer" component={VideoPlayerScreen} />

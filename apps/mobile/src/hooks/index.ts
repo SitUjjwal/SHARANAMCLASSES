@@ -5,6 +5,7 @@ export {
   useForgotPasswordMutation,
   useLogoutMutation,
   useResetPasswordMutation,
+  useChangePasswordMutation,
 } from './useAuthMutations';
 export { useDashboardQuery } from './useDashboardQuery';
 export { useCourseListInfiniteQuery, useCourseDetailQuery } from './useCoursesQuery';

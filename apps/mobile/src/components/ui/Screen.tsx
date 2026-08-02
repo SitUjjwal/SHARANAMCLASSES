@@ -1,20 +1,22 @@
 /**
- * Screen shell with safe-area + shared background.
- * Why: avoid repeating SafeAreaView/layout boilerplate on every auth screen.
+ * Screen shell with safe-area + theme canvas background.
  */
 import type { ReactNode } from 'react';
 import { StyleSheet, View, type ViewProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { colors, spacing } from '@/theme';
+import { useAppTheme } from '@/theme/ThemeProvider';
+import { spacing } from '@/theme';
 
 type ScreenProps = ViewProps & {
   children: ReactNode;
 };
 
 export function Screen({ children, style, ...props }: ScreenProps) {
+  const theme = useAppTheme();
+
   return (
-    <SafeAreaView style={styles.safe}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.canvas }]}>
       <View style={[styles.content, style]} {...props}>
         {children}
       </View>
@@ -25,7 +27,6 @@ export function Screen({ children, style, ...props }: ScreenProps) {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.primary,
   },
   content: {
     flex: 1,
