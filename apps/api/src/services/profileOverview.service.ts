@@ -26,22 +26,37 @@ async function countOwnedCourses(userId: string): Promise<number> {
 /**
  * getProfileOverview
  * Combines GET /profile fields with purchased-course + test aggregates.
+ * Stats failures degrade to zeros so the Profile hub still loads.
  */
 export async function getProfileOverview(
   userId: string,
 ): Promise<StudentProfileOverview> {
-  const [profile, purchasedCourses, analytics] = await Promise.all([
-    getProfileByUserId(userId),
-    countOwnedCourses(userId),
-    getStudentTestAnalytics(userId),
-  ]);
+  const profile = await getProfileByUserId(userId);
+
+  let purchasedCourses = 0;
+  let totalTests = 0;
+  let averageScore = 0;
+
+  try {
+    purchasedCourses = await countOwnedCourses(userId);
+  } catch (err) {
+    console.warn('[profile/overview] enrollments count failed', err);
+  }
+
+  try {
+    const analytics = await getStudentTestAnalytics(userId);
+    totalTests = analytics.summary.total_tests;
+    averageScore = analytics.summary.average_score;
+  } catch (err) {
+    console.warn('[profile/overview] analytics failed', err);
+  }
 
   return {
     profile,
     stats: {
       purchased_courses: purchasedCourses,
-      total_tests: analytics.summary.total_tests,
-      average_score: analytics.summary.average_score,
+      total_tests: totalTests,
+      average_score: averageScore,
     },
   };
 }

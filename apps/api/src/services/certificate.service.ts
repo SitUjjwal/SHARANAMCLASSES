@@ -304,6 +304,216 @@ export async function listAdminCertificates(filters?: {
   });
 }
 
+export type AdminStudentOption = {
+  id: string;
+  full_name: string;
+  email: string;
+  class_level: string;
+};
+
+/**
+ * searchStudentsForAdmin — pick a student when creating a certificate.
+ */
+export async function searchStudentsForAdmin(
+  query: string,
+  limit = 20,
+): Promise<AdminStudentOption[]> {
+  const supabase = getSupabaseAdmin();
+  const q = query.trim();
+  let builder = supabase
+    .from('profiles')
+    .select('id, full_name, email, class_level, role')
+    .order('full_name', { ascending: true })
+    .limit(Math.min(Math.max(limit, 1), 50));
+
+  if (q) {
+    builder = builder.or(
+      `full_name.ilike.%${q}%,email.ilike.%${q}%`,
+    );
+  }
+
+  const { data, error } = await builder;
+  if (error) {
+    throw new AppError(500, 'STUDENT_SEARCH_FAILED', error.message);
+  }
+
+  return (data ?? [])
+    .filter((row) => (row.role as string | null) !== 'admin')
+    .map((row) => ({
+      id: row.id as string,
+      full_name: (row.full_name as string) || 'Student',
+      email: (row.email as string) || '',
+      class_level: (row.class_level as string) || '',
+    }));
+}
+
+/**
+ * createAdminCertificate
+ * Admin manually creates a certificate (optionally issues PDF immediately).
+ */
+export async function createAdminCertificate(
+  adminUserId: string,
+  input: {
+    user_id: string;
+    course_id?: string | null;
+    student_name?: string;
+    course_title?: string;
+    description?: string;
+    issue_now?: boolean;
+  },
+): Promise<Certificate> {
+  const supabase = getSupabaseAdmin();
+
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('id, full_name, email')
+    .eq('id', input.user_id)
+    .maybeSingle();
+
+  if (profileError) {
+    throw new AppError(500, 'PROFILE_LOOKUP_FAILED', profileError.message);
+  }
+  if (!profile) {
+    throw new AppError(404, 'STUDENT_NOT_FOUND', 'Student profile not found');
+  }
+
+  let courseTitle = input.course_title?.trim() || '';
+  let courseId = input.course_id?.trim() || null;
+
+  if (courseId) {
+    const { data: course, error: courseError } = await supabase
+      .from('courses')
+      .select('id, title')
+      .eq('id', courseId)
+      .maybeSingle();
+    if (courseError) {
+      throw new AppError(500, 'COURSE_LOOKUP_FAILED', courseError.message);
+    }
+    if (!course) {
+      throw new AppError(404, 'COURSE_NOT_FOUND', 'Course not found');
+    }
+    if (!courseTitle) courseTitle = course.title as string;
+
+    const { data: existing } = await supabase
+      .from('certificates')
+      .select(COLUMNS)
+      .eq('user_id', input.user_id)
+      .eq('course_id', courseId)
+      .maybeSingle();
+
+    if (existing) {
+      const status = existing.status as CertificateStatus;
+      if (status === 'issued') {
+        return mapRow(existing as Record<string, unknown>, courseTitle);
+      }
+      if (status === 'pending_approval' && input.issue_now !== false) {
+        return approveCertificate(existing.id as string, adminUserId);
+      }
+      if (status === 'pending_approval') {
+        return mapRow(existing as Record<string, unknown>, courseTitle);
+      }
+      // rejected → recreate below by updating
+      if (status === 'rejected') {
+        const studentName =
+          input.student_name?.trim() ||
+          (profile.full_name as string)?.trim() ||
+          'Student';
+        const title = `Certificate — ${courseTitle}`;
+        const description =
+          input.description?.trim() ||
+          `Certificate of completion for ${courseTitle}`;
+        const now = new Date().toISOString();
+        const { data: revived, error: reviveError } = await supabase
+          .from('certificates')
+          .update({
+            status: 'pending_approval',
+            student_name: studentName,
+            title,
+            description,
+            rejected_reason: null,
+            requested_at: now,
+            approved_at: null,
+            approved_by: null,
+            certificate_number: null,
+            certificate_url: null,
+            storage_key: null,
+            issued_at: null,
+          })
+          .eq('id', existing.id)
+          .select(COLUMNS)
+          .maybeSingle();
+        if (reviveError || !revived) {
+          throw new AppError(
+            500,
+            'CERTIFICATE_CREATE_FAILED',
+            reviveError?.message ?? 'Could not recreate certificate',
+          );
+        }
+        if (input.issue_now !== false) {
+          return approveCertificate(revived.id as string, adminUserId);
+        }
+        return mapRow(revived as Record<string, unknown>, courseTitle);
+      }
+    }
+  }
+
+  if (!courseTitle) {
+    throw new AppError(400, 'COURSE_TITLE_REQUIRED', 'Course title is required');
+  }
+
+  const studentName =
+    input.student_name?.trim() ||
+    (profile.full_name as string)?.trim() ||
+    'Student';
+  const title = `Certificate — ${courseTitle}`;
+  const description =
+    input.description?.trim() ||
+    `Certificate of completion for ${courseTitle}`;
+  const now = new Date().toISOString();
+
+  const { data: created, error: createError } = await supabase
+    .from('certificates')
+    .insert({
+      user_id: input.user_id,
+      course_id: courseId,
+      title,
+      description,
+      student_name: studentName,
+      status: 'pending_approval',
+      requested_at: now,
+    })
+    .select(COLUMNS)
+    .maybeSingle();
+
+  if (createError || !created) {
+    if (createError?.code === '23505' && courseId) {
+      const { data: again } = await supabase
+        .from('certificates')
+        .select(COLUMNS)
+        .eq('user_id', input.user_id)
+        .eq('course_id', courseId)
+        .maybeSingle();
+      if (again) {
+        if (input.issue_now !== false && again.status === 'pending_approval') {
+          return approveCertificate(again.id as string, adminUserId);
+        }
+        return mapRow(again as Record<string, unknown>, courseTitle);
+      }
+    }
+    throw new AppError(
+      500,
+      'CERTIFICATE_CREATE_FAILED',
+      createError?.message ?? 'Could not create certificate',
+    );
+  }
+
+  if (input.issue_now !== false) {
+    return approveCertificate(created.id as string, adminUserId);
+  }
+
+  return mapRow(created as Record<string, unknown>, courseTitle);
+}
+
 /**
  * approveCertificate
  * Admin approval → assign number → generate PDF → upload R2 → status issued.

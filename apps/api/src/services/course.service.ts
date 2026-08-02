@@ -476,12 +476,97 @@ export async function updateCourse(
 
 export async function deleteCourse(courseId: string): Promise<void> {
   const supabase = getSupabaseAdmin();
+
+  // Unlink / remove rows that RESTRICT course deletion (payments & purchases).
+  const { data: product } = await supabase
+    .from('products')
+    .select('id')
+    .eq('product_type', 'course')
+    .eq('product_id', courseId)
+    .maybeSingle();
+
+  const productId = (product?.id as string | undefined) ?? null;
+
+  if (productId) {
+    const { error: purchasesError } = await supabase
+      .from('purchases')
+      .delete()
+      .eq('product_id', productId);
+    if (purchasesError) {
+      throw new AppError(
+        400,
+        'COURSE_DELETE_FAILED',
+        `Cannot clear purchases for this course: ${purchasesError.message}`,
+      );
+    }
+
+    const { error: orderProductError } = await supabase
+      .from('payment_orders')
+      .update({ product_id: null })
+      .eq('product_id', productId);
+    if (orderProductError) {
+      throw new AppError(
+        400,
+        'COURSE_DELETE_FAILED',
+        `Cannot unlink payment orders (product): ${orderProductError.message}`,
+      );
+    }
+  }
+
+  const { error: orderCourseError } = await supabase
+    .from('payment_orders')
+    .update({ course_id: null })
+    .eq('course_id', courseId);
+  if (orderCourseError) {
+    throw new AppError(
+      400,
+      'COURSE_DELETE_FAILED',
+      `Cannot unlink payment orders: ${orderCourseError.message}`,
+    );
+  }
+
+  const { error: purchasedError } = await supabase
+    .from('purchased_courses')
+    .delete()
+    .eq('course_id', courseId);
+  if (purchasedError) {
+    throw new AppError(
+      400,
+      'COURSE_DELETE_FAILED',
+      `Cannot clear purchased_courses: ${purchasedError.message}`,
+    );
+  }
+
+  if (productId) {
+    const { error: productError } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', productId);
+    if (productError) {
+      // Keep going — course delete may still succeed if product is only catalog metadata
+      console.warn('[courses] product delete skipped', productError.message);
+      await supabase
+        .from('products')
+        .update({ is_active: false, updated_at: new Date().toISOString() })
+        .eq('id', productId);
+    }
+  }
+
   const { error, count } = await supabase
     .from('courses')
     .delete({ count: 'exact' })
     .eq('id', courseId);
 
   if (error) {
+    const lower = error.message.toLowerCase();
+    if (lower.includes('foreign key') || lower.includes('violates') || error.code === '23503') {
+      throw new AppError(
+        409,
+        'COURSE_IN_USE',
+        'Course still linked to other data (tests, chapters, or payments). Remove those first or contact support.',
+        { supabase: error.message },
+      );
+    }
     throw new AppError(400, 'COURSE_DELETE_FAILED', error.message);
   }
   if (!count) {

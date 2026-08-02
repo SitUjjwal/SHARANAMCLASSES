@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { PageHeader } from '@/components/PageHeader';
+import { CertificateCreateForm } from '@/features/certificates/CertificateCreateForm';
 import { CertificateEditForm } from '@/features/certificates/CertificateEditForm';
 import {
   approveCertificate,
@@ -35,6 +36,7 @@ export function CertificatesPage() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [editing, setEditing] = useState<AdminCertificate | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -91,10 +93,17 @@ export function CertificatesPage() {
     <div className="page">
       <PageHeader
         title="Certificates"
-        description="Approve, reject, or edit course-completion certificates. Edit can regenerate the PDF."
+        description="Create, approve, reject, or edit course-completion certificates."
       />
 
       <div className="toolbar" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => setCreating(true)}
+        >
+          Create certificate
+        </button>
         {FILTERS.map((f) => (
           <button
             key={f.value}
@@ -188,6 +197,32 @@ export function CertificatesPage() {
           </tbody>
         </table>
       </div>
+
+      {creating ? (
+        <div
+          className="modal-backdrop"
+          role="presentation"
+          onClick={() => setCreating(false)}
+        >
+          <div
+            className="modal-panel modal-panel-wide"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Create certificate"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CertificateCreateForm
+              onCancel={() => setCreating(false)}
+              onSaved={() => {
+                setCreating(false);
+                setFilter('issued');
+                setMessage('Certificate created');
+                void load();
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
 
       {editing ? (
         <div

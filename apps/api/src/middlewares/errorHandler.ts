@@ -9,6 +9,9 @@ export function errorHandler(
   _next: NextFunction,
 ): void {
   if (err instanceof AppError) {
+    if (err.statusCode >= 500) {
+      console.error('[api]', err.code, err.message, err.details ?? '');
+    }
     res.status(err.statusCode).json({
       success: false,
       error: {

@@ -58,6 +58,8 @@ Certificate ID
 | `GET` | `/certificates/:id` | Student |
 | `POST` | `/certificates/request` | Student — `{ course_id }` (requires 100%) |
 | `GET` | `/admin/certificates?status=` | Admin |
+| `GET` | `/admin/certificates/students?q=` | Admin — student picker |
+| `POST` | `/admin/certificates` | Admin create (`issue_now` default true → PDF) |
 | `POST` | `/admin/certificates/:id/approve` | Admin → PDF |
 | `POST` | `/admin/certificates/:id/reject` | Admin |
 | `PATCH` | `/admin/certificates/:id` | Admin edit (name / course title / description; regenerates PDF if issued) |

@@ -12,7 +12,7 @@
 import type { NextFunction, Request, Response } from 'express';
 
 import {
-  getProfileByUserId,
+  ensureProfileForUser,
   updateProfileByUserId,
 } from '../services/profile.service';
 import { uploadProfileAvatar } from '../services/profileAvatar.service';
@@ -24,17 +24,17 @@ import { AppError } from '../utils/AppError';
  * assertAuthenticatedUser
  * Guards controllers against missing auth context.
  */
-function assertAuthenticatedUser(req: Request): string {
+function assertAuthenticatedUser(req: Request) {
   if (!req.user?.id) {
     throw new AppError(401, 'UNAUTHORIZED', 'Authenticated user missing on request');
   }
-  return req.user.id;
+  return req.user;
 }
 
 /**
  * getProfile
  * GET /profile
- * Returns the signed-in student's profile.
+ * Returns the signed-in student's profile (bootstraps row if missing).
  */
 export async function getProfile(
   req: Request,
@@ -42,8 +42,8 @@ export async function getProfile(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const userId = assertAuthenticatedUser(req);
-    const profile = await getProfileByUserId(userId);
+    const user = assertAuthenticatedUser(req);
+    const profile = await ensureProfileForUser(user);
 
     res.status(200).json({
       success: true,
@@ -65,8 +65,9 @@ export async function getOverview(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const userId = assertAuthenticatedUser(req);
-    const overview = await getProfileOverview(userId);
+    const user = assertAuthenticatedUser(req);
+    await ensureProfileForUser(user);
+    const overview = await getProfileOverview(user.id);
 
     res.status(200).json({
       success: true,
@@ -89,10 +90,11 @@ export async function updateProfile(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const userId = assertAuthenticatedUser(req);
+    const user = assertAuthenticatedUser(req);
+    await ensureProfileForUser(user);
     const input = req.body as UpdateProfileInput;
 
-    const profile = await updateProfileByUserId(userId, input);
+    const profile = await updateProfileByUserId(user.id, input);
 
     res.status(200).json({
       success: true,
@@ -116,13 +118,14 @@ export async function uploadAvatar(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const userId = assertAuthenticatedUser(req);
+    const user = assertAuthenticatedUser(req);
+    await ensureProfileForUser(user);
     const file = req.file;
     if (!file) {
       throw new AppError(400, 'IMAGE_REQUIRED', 'Attach an image file as field "image"');
     }
 
-    const data = await uploadProfileAvatar(userId, {
+    const data = await uploadProfileAvatar(user.id, {
       buffer: file.buffer,
       mimetype: file.mimetype,
       originalname: file.originalname,

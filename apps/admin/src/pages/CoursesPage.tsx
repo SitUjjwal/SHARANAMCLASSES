@@ -117,7 +117,9 @@ export function CoursesPage() {
   }
 
   async function onDelete(course: CourseSummary) {
-    const ok = window.confirm(`Delete “${course.title}”? This cannot be undone.`);
+    const ok = window.confirm(
+      `Delete “${course.title}”?\n\nThis removes the course and its chapters/content. Related free enrollments and catalog links are cleared. Payment history stays but is unlinked.`,
+    );
     if (!ok) return;
     try {
       await deleteAdminCourse(course.id);

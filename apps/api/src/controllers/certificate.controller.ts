@@ -6,11 +6,13 @@ import { z } from 'zod';
 
 import {
   approveCertificate,
+  createAdminCertificate,
   getCertificateForUser,
   listAdminCertificates,
   listCertificatesForUser,
   rejectCertificate,
   requestCertificateAfterCompletion,
+  searchStudentsForAdmin,
   updateAdminCertificate,
 } from '../services/certificate.service';
 import { requireParam } from '../utils/params';
@@ -35,6 +37,26 @@ export const rejectCertificateSchema = z
     reason: z.string().trim().max(500).optional(),
   })
   .strict();
+
+export const createCertificateSchema = z
+  .object({
+    user_id: z.string().uuid('user_id must be a UUID'),
+    course_id: z.string().uuid('course_id must be a UUID').nullable().optional(),
+    student_name: z.string().trim().min(1).max(120).optional(),
+    course_title: z.string().trim().min(1).max(200).optional(),
+    description: z.string().trim().max(1000).optional(),
+    issue_now: z.boolean().optional().default(true),
+  })
+  .strict()
+  .refine((v) => Boolean(v.course_id) || Boolean(v.course_title?.trim()), {
+    message: 'Provide course_id or course_title',
+    path: ['course_title'],
+  });
+
+export const studentSearchQuerySchema = z.object({
+  q: z.string().trim().optional().default(''),
+  limit: z.coerce.number().int().min(1).max(50).optional().default(20),
+});
 
 export const updateCertificateSchema = z
   .object({
@@ -182,6 +204,52 @@ export async function patchAdminCertificate(
         data.status === 'issued'
           ? 'Certificate updated and PDF regenerated'
           : 'Certificate updated',
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** GET /admin/certificates/students?q= */
+export async function searchCertificateStudents(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    assertUserId(req);
+    const query = req.query as unknown as { q?: string; limit?: number };
+    const data = await searchStudentsForAdmin(query.q ?? '', query.limit ?? 20);
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** POST /admin/certificates — create (+ optionally issue PDF) */
+export async function postCreateCertificate(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const adminId = assertUserId(req);
+    const body = req.body as {
+      user_id: string;
+      course_id?: string | null;
+      student_name?: string;
+      course_title?: string;
+      description?: string;
+      issue_now?: boolean;
+    };
+    const data = await createAdminCertificate(adminId, body);
+    res.status(201).json({
+      success: true,
+      data,
+      message:
+        data.status === 'issued'
+          ? `Certificate issued ${data.certificate_number}`
+          : 'Certificate created — pending approval',
     });
   } catch (error) {
     next(error);

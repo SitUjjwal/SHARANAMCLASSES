@@ -114,7 +114,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   {
     label: 'Students',
     path: '/students',
-    description: 'Student accounts and enrollments.',
+    description: 'Student profiles, class, medium, and enrollments.',
   },
   {
     label: 'Payments',
