@@ -37,7 +37,7 @@ import {
   removeNotification,
 } from '../controllers/notification.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { validate } from '../middlewares/validate';
 import {
   createNotificationSchema,
@@ -73,53 +73,53 @@ notificationRouter.delete(
 notificationRouter.get(
   '/admin/notifications/stats',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:read'),
   getAdminNotificationStats,
 );
 notificationRouter.get(
   '/admin/notifications/campaigns',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:read'),
   listAdminNotificationCampaigns,
 );
 notificationRouter.get(
   '/admin/notifications/export',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:read'),
   exportAdminNotifications,
 );
 
-notificationRouter.get('/notifications', requireAuth, requireAdmin, listNotifications);
+notificationRouter.get('/notifications', requireAuth, requirePermission('communications:read'), listNotifications);
 notificationRouter.post(
   '/notifications',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:create'),
   validate(createNotificationSchema),
   postNotification,
 );
 notificationRouter.post(
   '/notifications/send',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:create'),
   validate(sendNotificationSchema),
   postNotificationSend,
 );
 notificationRouter.get(
   '/notifications/:notificationId',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:read'),
   getNotification,
 );
 notificationRouter.put(
   '/notifications/:notificationId',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:update'),
   validate(updateNotificationSchema),
   putNotification,
 );
 notificationRouter.delete(
   '/notifications/:notificationId',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:delete'),
   removeNotification,
 );

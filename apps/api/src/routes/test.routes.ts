@@ -19,7 +19,7 @@ import {
   removeTest,
 } from '../controllers/test.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { validate } from '../middlewares/validate';
 import {
   createTestSchema,
@@ -32,23 +32,23 @@ export const testRouter = Router();
 testRouter.get(
   '/tests',
   requireAuth,
-  requireAdmin,
+  requirePermission('tests:read'),
   validate(listTestsQuerySchema, 'query'),
   listTests,
 );
 
-testRouter.post('/tests', requireAuth, requireAdmin, validate(createTestSchema), postTest);
+testRouter.post('/tests', requireAuth, requirePermission('tests:create'), validate(createTestSchema), postTest);
 
-testRouter.get('/tests/:id', requireAuth, requireAdmin, getTest);
+testRouter.get('/tests/:id', requireAuth, requirePermission('tests:read'), getTest);
 
 testRouter.put(
   '/tests/:id',
   requireAuth,
-  requireAdmin,
+  requirePermission('tests:update'),
   validate(updateTestSchema),
   putTest,
 );
 
-testRouter.delete('/tests/:id', requireAuth, requireAdmin, removeTest);
+testRouter.delete('/tests/:id', requireAuth, requirePermission('tests:delete'), removeTest);
 
 testRouter.get('/student/tests', requireAuth, listStudentTests);

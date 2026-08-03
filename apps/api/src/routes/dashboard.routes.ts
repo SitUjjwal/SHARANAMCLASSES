@@ -1,6 +1,6 @@
 /**
  * Dashboard routes.
- * GET /dashboard — authenticated home aggregate.
+ * GET /dashboard — staff admin overview OR student home (role-aware).
  */
 import { Router } from 'express';
 

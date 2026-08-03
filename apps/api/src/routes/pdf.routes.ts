@@ -16,7 +16,7 @@ import {
   removePdf,
 } from '../controllers/pdf.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { pdfUpload } from '../middlewares/upload';
 import { validate } from '../middlewares/validate';
 import {
@@ -30,23 +30,23 @@ export const pdfRouter = Router();
 pdfRouter.get(
   '/pdfs',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:read'),
   validate(listPdfsQuerySchema, 'query'),
   listPdfs,
 );
 
-pdfRouter.post('/pdfs/upload', requireAuth, requireAdmin, pdfUpload, postPdfUpload);
+pdfRouter.post('/pdfs/upload', requireAuth, requirePermission('courses:create'), pdfUpload, postPdfUpload);
 
-pdfRouter.post('/pdfs', requireAuth, requireAdmin, validate(createPdfSchema), postPdf);
+pdfRouter.post('/pdfs', requireAuth, requirePermission('courses:create'), validate(createPdfSchema), postPdf);
 
-pdfRouter.get('/pdfs/:id', requireAuth, requireAdmin, getPdf);
+pdfRouter.get('/pdfs/:id', requireAuth, requirePermission('courses:read'), getPdf);
 
 pdfRouter.put(
   '/pdfs/:id',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:update'),
   validate(updatePdfSchema),
   putPdf,
 );
 
-pdfRouter.delete('/pdfs/:id', requireAuth, requireAdmin, removePdf);
+pdfRouter.delete('/pdfs/:id', requireAuth, requirePermission('courses:delete'), removePdf);

@@ -28,7 +28,7 @@ import type {
 } from '../validators/course.validators';
 import { AppError } from '../utils/AppError';
 import { requireParam } from '../utils/params';
-import { isAdminUser } from '../services/role.service';
+import { hasStaffPermission } from '../services/role.service';
 
 function assertUserId(req: Request): string {
   if (!req.user?.id) {
@@ -53,7 +53,7 @@ export async function listCourses(
 ): Promise<void> {
   try {
     const userId = assertUserId(req);
-    const admin = await isAdminUser(userId, req.user?.email);
+    const admin = await hasStaffPermission(userId, 'courses:read', req.user?.email);
 
     if (admin) {
       const filters = req.query as unknown as AdminListCoursesQuery;
@@ -146,7 +146,7 @@ export async function getCourse(
   try {
     const courseId = courseIdParam(req);
     const userId = assertUserId(req);
-    const admin = await isAdminUser(userId, req.user?.email);
+    const admin = await hasStaffPermission(userId, 'courses:read', req.user?.email);
     if (admin) {
       const data = await getCourseForAdmin(courseId);
       res.status(200).json({ success: true, data });

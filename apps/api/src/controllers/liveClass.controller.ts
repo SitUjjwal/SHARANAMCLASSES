@@ -12,7 +12,7 @@ import {
   notifyLiveClass,
   updateLiveClass,
 } from '../services/liveClass.service';
-import { isAdminUser } from '../services/role.service';
+import { hasStaffPermission } from '../services/role.service';
 import { uploadCourseThumbnail } from '../services/upload.service';
 import type {
   CreateLiveClassInput,
@@ -38,7 +38,7 @@ export async function listLiveClasses(
       throw new AppError(401, 'UNAUTHORIZED', 'Authenticated user missing on request');
     }
 
-    const admin = await isAdminUser(req.user.id, req.user.email);
+    const admin = await hasStaffPermission(req.user.id, 'courses:read', req.user.email);
     if (admin) {
       const filters = req.query as unknown as ListLiveClassesQuery;
       const data = await listLiveClassesForAdmin(filters);

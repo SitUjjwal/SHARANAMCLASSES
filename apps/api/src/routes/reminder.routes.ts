@@ -11,20 +11,20 @@ import {
   postReminderEngineTick,
 } from '../controllers/reminder.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 
 export const reminderRouter = Router();
 
 reminderRouter.get(
   '/admin/reminders/status',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:read'),
   getReminderEngineStatus,
 );
 
 reminderRouter.post(
   '/admin/reminders/tick',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:create'),
   postReminderEngineTick,
 );

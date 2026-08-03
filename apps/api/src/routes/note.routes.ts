@@ -14,7 +14,7 @@ import {
   removeNote,
 } from '../controllers/note.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { validate } from '../middlewares/validate';
 import {
   createNoteSchema,
@@ -27,21 +27,21 @@ export const noteRouter = Router();
 noteRouter.get(
   '/notes',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:read'),
   validate(listNotesQuerySchema, 'query'),
   listNotes,
 );
 
-noteRouter.post('/notes', requireAuth, requireAdmin, validate(createNoteSchema), postNote);
+noteRouter.post('/notes', requireAuth, requirePermission('courses:create'), validate(createNoteSchema), postNote);
 
-noteRouter.get('/notes/:id', requireAuth, requireAdmin, getNote);
+noteRouter.get('/notes/:id', requireAuth, requirePermission('courses:read'), getNote);
 
 noteRouter.put(
   '/notes/:id',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:update'),
   validate(updateNoteSchema),
   putNote,
 );
 
-noteRouter.delete('/notes/:id', requireAuth, requireAdmin, removeNote);
+noteRouter.delete('/notes/:id', requireAuth, requirePermission('courses:delete'), removeNote);

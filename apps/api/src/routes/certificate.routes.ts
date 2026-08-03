@@ -30,7 +30,7 @@ import {
   updateCertificateSchema,
 } from '../controllers/certificate.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { validate } from '../middlewares/validate';
 
 export const certificateRouter = Router();
@@ -47,40 +47,40 @@ certificateRouter.post(
 certificateRouter.get(
   '/admin/certificates',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:read'),
   listAdminCertificatesHandler,
 );
 certificateRouter.get(
   '/admin/certificates/students',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:read'),
   validate(studentSearchQuerySchema, 'query'),
   searchCertificateStudents,
 );
 certificateRouter.post(
   '/admin/certificates',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:create'),
   validate(createCertificateSchema),
   postCreateCertificate,
 );
 certificateRouter.post(
   '/admin/certificates/:certificateId/approve',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:create'),
   postApproveCertificate,
 );
 certificateRouter.post(
   '/admin/certificates/:certificateId/reject',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:create'),
   validate(rejectCertificateSchema),
   postRejectCertificate,
 );
 certificateRouter.patch(
   '/admin/certificates/:certificateId',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:update'),
   validate(updateCertificateSchema),
   patchAdminCertificate,
 );

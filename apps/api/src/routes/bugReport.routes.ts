@@ -20,7 +20,7 @@ import {
   postCreateBugReport,
 } from '../controllers/bugReport.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { bugScreenshotUpload } from '../middlewares/upload';
 import { validate } from '../middlewares/validate';
 import {
@@ -53,14 +53,14 @@ bugReportRouter.get('/bug-reports/:reportId', requireAuth, getMyBugReportHandler
 bugReportRouter.get(
   '/admin/bug-reports',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:read'),
   validate(adminBugReportsQuerySchema, 'query'),
   listAdminBugReportsHandler,
 );
 bugReportRouter.patch(
   '/admin/bug-reports/:reportId',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:update'),
   validate(updateBugReportStatusSchema),
   patchAdminBugReport,
 );

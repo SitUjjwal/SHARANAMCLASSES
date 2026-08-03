@@ -13,7 +13,7 @@ import {
   listFeedbackDashboardHandler,
 } from '../controllers/feedbackDashboard.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { validate } from '../middlewares/validate';
 import {
   feedbackDashboardExportQuerySchema,
@@ -25,14 +25,14 @@ export const feedbackDashboardRouter = Router();
 feedbackDashboardRouter.get(
   '/admin/feedback-dashboard/stats',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:read'),
   getFeedbackDashboardStatsHandler,
 );
 
 feedbackDashboardRouter.get(
   '/admin/feedback-dashboard/export',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:read'),
   validate(feedbackDashboardExportQuerySchema, 'query'),
   exportFeedbackDashboardHandler,
 );
@@ -40,7 +40,7 @@ feedbackDashboardRouter.get(
 feedbackDashboardRouter.get(
   '/admin/feedback-dashboard',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:read'),
   validate(feedbackDashboardListQuerySchema, 'query'),
   listFeedbackDashboardHandler,
 );

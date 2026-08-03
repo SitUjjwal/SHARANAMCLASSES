@@ -8,6 +8,7 @@ import type { User } from '@supabase/supabase-js';
 import { getSupabaseAdmin } from '../config/supabase';
 import type { UpdateProfileInput } from '../validators/profile.validators';
 import { AppError } from '../utils/AppError';
+import { writeActivityLog } from './activityLog.service';
 
 export type StudentProfile = {
   id: string;
@@ -246,6 +247,16 @@ export async function updateProfileByUserId(
       await deleteR2Object(oldKey);
     }
   }
+
+  await writeActivityLog({
+    actor_id: userId,
+    actor_email: next.email || existing.email || null,
+    action: 'profile.update',
+    entity_type: 'profile',
+    entity_id: userId,
+    summary: `Profile updated (${Object.keys(input).join(', ') || 'fields'})`,
+    metadata: { fields: Object.keys(input) },
+  });
 
   return next;
 }

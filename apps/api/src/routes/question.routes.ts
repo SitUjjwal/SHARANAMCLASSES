@@ -21,7 +21,7 @@ import {
   removeQuestion,
 } from '../controllers/question.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { excelUpload } from '../middlewares/upload';
 import { validate } from '../middlewares/validate';
 import {
@@ -35,7 +35,7 @@ export const questionRouter = Router();
 questionRouter.get(
   '/tests/:testId/questions',
   requireAuth,
-  requireAdmin,
+  requirePermission('tests:read'),
   validate(listQuestionsPathQuerySchema, 'query'),
   listQuestions,
 );
@@ -43,7 +43,7 @@ questionRouter.get(
 questionRouter.post(
   '/tests/:testId/questions/import',
   requireAuth,
-  requireAdmin,
+  requirePermission('tests:create'),
   excelUpload,
   postQuestionsImport,
 );
@@ -51,22 +51,22 @@ questionRouter.post(
 questionRouter.post(
   '/tests/:testId/questions',
   requireAuth,
-  requireAdmin,
+  requirePermission('tests:create'),
   validate(createQuestionBodySchema),
   postQuestion,
 );
 
-questionRouter.get('/questions/:id', requireAuth, requireAdmin, getQuestion);
+questionRouter.get('/questions/:id', requireAuth, requirePermission('tests:read'), getQuestion);
 
 questionRouter.put(
   '/questions/:id',
   requireAuth,
-  requireAdmin,
+  requirePermission('tests:update'),
   validate(updateQuestionSchema),
   putQuestion,
 );
 
-questionRouter.delete('/questions/:id', requireAuth, requireAdmin, removeQuestion);
+questionRouter.delete('/questions/:id', requireAuth, requirePermission('tests:delete'), removeQuestion);
 
 questionRouter.get(
   '/student/tests/:testId/questions',

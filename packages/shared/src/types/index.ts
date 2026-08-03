@@ -3,7 +3,14 @@
  * Expand as entities (User, Course, Enrollment, Payment, …) are defined.
  */
 
-export type UserRole = 'student' | 'admin' | 'instructor';
+/** profiles.role values (includes legacy instructor + staff RBAC roles). */
+export type UserRole =
+  | 'student'
+  | 'super_admin'
+  | 'admin'
+  | 'teacher'
+  | 'instructor'
+  | 'support';
 
 export interface ApiSuccessResponse<T> {
   success: true;
@@ -36,3 +43,7 @@ export * from './faq';
 export * from './supportChat';
 export * from './contentReport';
 export * from './feedbackDashboard';
+export * from './adminOps';
+export * from './adminStudents';
+export * from './adminTeachers';
+export * from './adminAnalytics';

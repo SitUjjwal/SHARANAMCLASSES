@@ -5,9 +5,12 @@ import { FormEvent, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 
 import { useAuth } from '@/features/auth/AuthProvider';
+import { useBrandLogo, useBrandName } from '@/features/platform/PlatformProvider';
 
 export function LoginPage() {
   const { session, loading, signIn } = useAuth();
+  const logo = useBrandLogo();
+  const brandName = useBrandName();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from ?? '/';
 
@@ -36,9 +39,9 @@ export function LoginPage() {
   return (
     <div className="login-page">
       <form className="login-card" onSubmit={onSubmit}>
-        <img src="/logo.png" alt="SHARANAM CLASSES" className="login-logo" />
+        <img src={logo} alt={brandName} className="login-logo" />
         <h1>Admin Login</h1>
-        <p>Sign in with an account that has role = admin.</p>
+        <p>Staff portal: Super Admin, Admin, Teacher, or Support Staff.</p>
 
         <label>
           Email

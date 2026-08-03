@@ -1,13 +1,14 @@
 /**
- * Admin app routes — auth gate + sidebar menu.
+ * Admin app routes — auth gate + staff RBAC + sidebar menu.
+ * AuthProvider + ThemeProvider wrap the tree in main.tsx.
  */
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
-import { AuthProvider } from '@/features/auth/AuthProvider';
 import { LoginPage } from '@/features/auth/LoginPage';
-import { RequireAuth } from '@/features/auth/RequireAuth';
+import { RequireAuth, RequireStaff } from '@/features/auth/RequireAuth';
 import { AdminLayout } from '@/layouts/AdminLayout';
 import {
+  ActivityLogsPage,
   AnalyticsPage,
   AnnouncementsPage,
   BannersPage,
@@ -31,8 +32,12 @@ import {
   QuestionsHubPage,
   QuestionsPage,
   ReminderEnginePage,
+  ReportsPage,
   ResultsPage,
+  RevenuePage,
   ReviewsPage,
+  RolesPage,
+  SettingsPage,
   StudentsPage,
   SupportChatPage,
   TeachersPage,
@@ -43,11 +48,11 @@ import {
 
 export function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route element={<RequireAuth />}>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route element={<RequireAuth />}>
+          <Route element={<RequireStaff />}>
             <Route element={<AdminLayout />}>
               <Route index element={<DashboardPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
@@ -83,12 +88,17 @@ export function App() {
               <Route path="live-classes" element={<LiveClassesPage />} />
               <Route path="teachers" element={<TeachersPage />} />
               <Route path="students" element={<StudentsPage />} />
+              <Route path="revenue" element={<RevenuePage />} />
               <Route path="payments" element={<PaymentsPage />} />
+              <Route path="reports" element={<ReportsPage />} />
+              <Route path="activity-logs" element={<ActivityLogsPage />} />
+              <Route path="settings" element={<SettingsPage />} />
+              <Route path="roles" element={<RolesPage />} />
             </Route>
           </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

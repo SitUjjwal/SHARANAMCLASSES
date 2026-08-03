@@ -12,6 +12,7 @@ import morgan from 'morgan';
 
 import { env } from './config/env';
 import { errorHandler } from './middlewares/errorHandler';
+import { maintenanceModeGuard } from './middlewares/maintenanceMode';
 import { notFoundHandler } from './middlewares/notFoundHandler';
 import { rateLimiter } from './middlewares/rateLimiter';
 import { routes } from './routes';
@@ -44,6 +45,9 @@ export function createApp() {
   if (env.NODE_ENV !== 'development') {
     app.use(rateLimiter);
   }
+
+  // Block student/public traffic when maintenance_mode is enabled
+  app.use(maintenanceModeGuard);
 
   // Domain routes (/health, /database-status, later /api/v1/...)
   app.use(routes);

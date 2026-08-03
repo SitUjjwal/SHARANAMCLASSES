@@ -26,7 +26,7 @@ import {
   putVideoProgress,
 } from '../controllers/videoWatchProgress.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { thumbnailUpload } from '../middlewares/upload';
 import { validate } from '../middlewares/validate';
 import {
@@ -51,7 +51,7 @@ videoRouter.put(
 videoRouter.get(
   '/videos',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:read'),
   validate(listVideosQuerySchema, 'query'),
   listVideos,
 );
@@ -59,7 +59,7 @@ videoRouter.get(
 videoRouter.post(
   '/videos/upload-thumbnail',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:create'),
   thumbnailUpload,
   postVideoThumbnail,
 );
@@ -67,19 +67,19 @@ videoRouter.post(
 videoRouter.post(
   '/videos',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:create'),
   validate(createVideoSchema),
   postVideo,
 );
 
-videoRouter.get('/videos/:id', requireAuth, requireAdmin, getVideo);
+videoRouter.get('/videos/:id', requireAuth, requirePermission('courses:read'), getVideo);
 
 videoRouter.put(
   '/videos/:id',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:update'),
   validate(updateVideoSchema),
   putVideo,
 );
 
-videoRouter.delete('/videos/:id', requireAuth, requireAdmin, removeVideo);
+videoRouter.delete('/videos/:id', requireAuth, requirePermission('courses:delete'), removeVideo);

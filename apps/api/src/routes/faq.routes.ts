@@ -22,7 +22,7 @@ import {
   putReorderFaqs,
 } from '../controllers/faq.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { validate } from '../middlewares/validate';
 import {
   createFaqSchema,
@@ -47,11 +47,11 @@ faqRouter.get(
   listFaqsHandler,
 );
 
-faqRouter.get('/admin/faqs', requireAuth, requireAdmin, listAdminFaqsHandler);
+faqRouter.get('/admin/faqs', requireAuth, requirePermission('feedback:read'), listAdminFaqsHandler);
 faqRouter.post(
   '/admin/faqs',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:create'),
   validate(createFaqSchema),
   postFaq,
 );
@@ -59,20 +59,20 @@ faqRouter.post(
 faqRouter.put(
   '/admin/faqs/reorder',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:update'),
   validate(reorderFaqsSchema),
   putReorderFaqs,
 );
 faqRouter.patch(
   '/admin/faqs/:faqId',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:update'),
   validate(updateFaqSchema),
   patchFaq,
 );
 faqRouter.delete(
   '/admin/faqs/:faqId',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:delete'),
   deleteFaqHandler,
 );

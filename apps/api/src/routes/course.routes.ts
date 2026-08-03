@@ -46,7 +46,7 @@ import {
   removeContent,
 } from '../controllers/chapter.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import {
   attachCourseAccessFromChapter,
   attachCourseAccessFromCourse,
@@ -80,25 +80,25 @@ courseRouter.get(
 courseRouter.post(
   '/courses',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:create'),
   validate(createCourseSchema),
   postCourse,
 );
 courseRouter.post(
   '/courses/upload-thumbnail',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:create'),
   thumbnailUpload,
   postCourseThumbnail,
 );
 courseRouter.put(
   '/courses/:id',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:update'),
   validate(updateCourseSchema),
   patchCourse,
 );
-courseRouter.delete('/courses/:id', requireAuth, requireAdmin, removeCourse);
+courseRouter.delete('/courses/:id', requireAuth, requirePermission('courses:delete'), removeCourse);
 
 // Student / shared detail + enroll (content gated by course-access middleware)
 courseRouter.get('/courses/:id', requireAuth, getCourse);
@@ -126,28 +126,28 @@ courseRouter.get(
 courseRouter.get(
   '/chapters',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:read'),
   validate(adminListChaptersQuerySchema, 'query'),
   listAdminChapters,
 );
 courseRouter.post(
   '/chapters',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:create'),
   validate(createChapterWithCourseSchema),
   postChapterFlat,
 );
 courseRouter.put(
   '/chapters/reorder',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:update'),
   validate(reorderChaptersFlatSchema),
   putReorderChaptersFlat,
 );
 courseRouter.post(
   '/chapters/upload-material',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:create'),
   materialUpload,
   postChapterMaterial,
 );
@@ -172,115 +172,115 @@ courseRouter.get(
 courseRouter.put(
   '/chapters/:id',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:update'),
   validate(updateChapterSchema),
   patchChapter,
 );
-courseRouter.delete('/chapters/:id', requireAuth, requireAdmin, removeChapter);
+courseRouter.delete('/chapters/:id', requireAuth, requirePermission('courses:delete'), removeChapter);
 
 courseRouter.get(
   '/chapters/:id/contents',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:read'),
   listContents,
 );
 courseRouter.post(
   '/chapters/:id/contents',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:create'),
   validate(createChapterContentSchema),
   postContent,
 );
 courseRouter.put(
   '/contents/:id',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:update'),
   validate(updateChapterContentSchema),
   patchContent,
 );
-courseRouter.delete('/contents/:id', requireAuth, requireAdmin, removeContent);
+courseRouter.delete('/contents/:id', requireAuth, requirePermission('courses:delete'), removeContent);
 
 // ---- Legacy /admin aliases (same handlers) ----
 courseRouter.get(
   '/admin/courses',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:read'),
   validate(adminListCoursesQuerySchema, 'query'),
   listAdminCourses,
 );
 courseRouter.post(
   '/admin/courses/upload-thumbnail',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:create'),
   thumbnailUpload,
   postCourseThumbnail,
 );
-courseRouter.get('/admin/courses/:courseId', requireAuth, requireAdmin, getAdminCourse);
+courseRouter.get('/admin/courses/:courseId', requireAuth, requirePermission('courses:read'), getAdminCourse);
 courseRouter.post(
   '/admin/courses',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:create'),
   validate(createCourseSchema),
   postCourse,
 );
 courseRouter.patch(
   '/admin/courses/:courseId',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:update'),
   validate(updateCourseSchema),
   patchCourse,
 );
 courseRouter.put(
   '/admin/courses/:courseId',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:update'),
   validate(updateCourseSchema),
   patchCourse,
 );
 courseRouter.delete(
   '/admin/courses/:courseId',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:delete'),
   removeCourse,
 );
 courseRouter.get(
   '/admin/courses/:courseId/chapters',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:read'),
   validate(adminListChaptersQuerySchema, 'query'),
   listAdminChapters,
 );
 courseRouter.put(
   '/admin/courses/:courseId/chapters/reorder',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:update'),
   validate(reorderChaptersSchema),
   putReorderChapters,
 );
 courseRouter.post(
   '/admin/courses/:courseId/chapters',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:create'),
   validate(createChapterSchema),
   postChapter,
 );
 courseRouter.patch(
   '/admin/chapters/:chapterId',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:update'),
   validate(updateChapterSchema),
   patchChapter,
 );
 courseRouter.put(
   '/admin/chapters/:chapterId',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:update'),
   validate(updateChapterSchema),
   patchChapter,
 );
 courseRouter.delete(
   '/admin/chapters/:chapterId',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:delete'),
   removeChapter,
 );

@@ -1,5 +1,5 @@
 /**
- * Zod validators for admin teacher create / update.
+ * Zod validators for admin teacher create / update / assign.
  */
 import { z } from 'zod';
 
@@ -28,5 +28,15 @@ export const updateTeacherSchema = z.object({
     .optional(),
 });
 
+export const assignCoursesSchema = z.object({
+  course_ids: z.array(z.string().uuid()).max(200),
+});
+
+export const assignLiveClassesSchema = z.object({
+  live_class_ids: z.array(z.string().uuid()).max(200),
+});
+
 export type CreateTeacherInput = z.infer<typeof createTeacherSchema>;
 export type UpdateTeacherInput = z.infer<typeof updateTeacherSchema>;
+export type AssignCoursesInput = z.infer<typeof assignCoursesSchema>;
+export type AssignLiveClassesInput = z.infer<typeof assignLiveClassesSchema>;

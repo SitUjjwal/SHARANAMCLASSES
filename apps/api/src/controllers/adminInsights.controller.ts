@@ -4,6 +4,7 @@
 import type { NextFunction, Request, Response } from 'express';
 
 import { getAdminTestAnalytics } from '../services/adminAnalytics.service';
+import { getAdminAnalyticsOverview } from '../services/analyticsOverview.service';
 import { listAdminResults } from '../services/adminResults.service';
 
 /** GET /admin/results */
@@ -30,6 +31,20 @@ export async function getAdminAnalyticsHandler(
 ): Promise<void> {
   try {
     const data = await getAdminTestAnalytics();
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** GET /admin/analytics/overview */
+export async function getAdminAnalyticsOverviewHandler(
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const data = await getAdminAnalyticsOverview();
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);

@@ -133,3 +133,21 @@ export const pdfUpload = multer({
     cb(null, true);
   },
 }).single('file');
+
+/** Platform logo — multipart field `logo` (JPEG/PNG/WebP/SVG, max 2MB). */
+export const logoUpload = multer({
+  storage,
+  limits: { fileSize: 2 * 1024 * 1024, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    const ok =
+      file.mimetype === 'image/jpeg' ||
+      file.mimetype === 'image/png' ||
+      file.mimetype === 'image/webp' ||
+      file.mimetype === 'image/svg+xml';
+    if (!ok) {
+      cb(new AppError(400, 'INVALID_IMAGE_TYPE', 'Use JPEG, PNG, WebP, or SVG for the logo'));
+      return;
+    }
+    cb(null, true);
+  },
+}).single('logo');

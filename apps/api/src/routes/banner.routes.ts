@@ -22,7 +22,7 @@ import {
   removeBanner,
 } from '../controllers/banner.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { bannerImageUpload } from '../middlewares/upload';
 import { validate } from '../middlewares/validate';
 import {
@@ -34,31 +34,31 @@ export const bannerRouter = Router();
 
 bannerRouter.get('/banners', requireAuth, listBanners);
 
-bannerRouter.get('/admin/banners', requireAuth, requireAdmin, listAdminBanners);
+bannerRouter.get('/admin/banners', requireAuth, requirePermission('communications:read'), listAdminBanners);
 bannerRouter.post(
   '/admin/banners/upload-image',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:create'),
   bannerImageUpload,
   postBannerImage,
 );
 bannerRouter.post(
   '/admin/banners',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:create'),
   validate(createBannerSchema),
   postBanner,
 );
 bannerRouter.patch(
   '/admin/banners/:bannerId',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:update'),
   validate(updateBannerSchema),
   patchBanner,
 );
 bannerRouter.delete(
   '/admin/banners/:bannerId',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:delete'),
   removeBanner,
 );

@@ -1,68 +1,54 @@
 /**
- * Admin sidebar — sectioned nav (Feedback & Support cluster first).
+ * Admin sidebar — primary flat nav + Logout.
  */
 import { NavLink } from 'react-router-dom';
 
-import {
-  ADMIN_NAV,
-  ADMIN_NAV_SECTION_LABELS,
-  APP_NAME,
-  type AdminNavSection,
-} from '@/constants';
-
-const SECTION_ORDER: AdminNavSection[] = [
-  'main',
-  'feedback',
-  'comms',
-  'catalog',
-  'tests',
-  'people',
-  'billing',
-];
+import { ADMIN_NAV, APP_NAME } from '@/constants';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { useBrandLogo, useBrandName } from '@/features/platform/PlatformProvider';
 
 export function AdminSidebar() {
+  const { can, signOut } = useAuth();
+  const logo = useBrandLogo();
+  const brandName = useBrandName();
+
+  const items = ADMIN_NAV.filter((item) => can(item.permission));
+
   return (
     <aside className="admin-sidebar">
       <div className="admin-brand">
-        <img
-          src="/logo.png"
-          alt="SHARANAM CLASSES"
-          className="admin-brand-logo"
-        />
+        <img src={logo} alt={brandName} className="admin-brand-logo" />
         <div>
-          <strong>SHARANAM</strong>
+          <strong>{brandName.split(' ')[0] || 'SHARANAM'}</strong>
           <span>Admin Panel</span>
         </div>
       </div>
 
       <nav className="admin-nav" aria-label="Admin">
-        {SECTION_ORDER.map((section) => {
-          const items = ADMIN_NAV.filter((item) => item.section === section);
-          if (!items.length) return null;
-          const label = ADMIN_NAV_SECTION_LABELS[section];
-          return (
-            <div key={section} className="admin-nav-section">
-              {label ? (
-                <p className="admin-nav-section-label">{label}</p>
-              ) : null}
-              {items.map((item) => (
-                <NavLink
-                  key={item.path}
-                  to={item.path}
-                  end={item.path === '/'}
-                  className={({ isActive }) =>
-                    isActive ? 'admin-nav-link is-active' : 'admin-nav-link'
-                  }
-                >
-                  {item.label}
-                </NavLink>
-              ))}
-            </div>
-          );
-        })}
+        {items.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            end={item.path === '/'}
+            className={({ isActive }) =>
+              isActive ? 'admin-nav-link is-active' : 'admin-nav-link'
+            }
+          >
+            {item.label}
+          </NavLink>
+        ))}
       </nav>
 
-      <p className="admin-sidebar-foot">{APP_NAME}</p>
+      <div className="admin-sidebar-foot">
+        <button
+          type="button"
+          className="admin-nav-link admin-logout-btn"
+          onClick={() => void signOut()}
+        >
+          Logout
+        </button>
+        <p className="admin-sidebar-foot-brand">{APP_NAME}</p>
+      </div>
     </aside>
   );
 }

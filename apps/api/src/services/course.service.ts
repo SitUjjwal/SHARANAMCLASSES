@@ -11,6 +11,7 @@ import type {
   UpdateCourseInput,
 } from '../validators/course.validators';
 import { listChaptersForCourse } from './chapter.service';
+import { resolveActorEmail, writeActivityLog } from './activityLog.service';
 
 export const COURSE_COLUMNS =
   'id, category_id, title, slug, description, thumbnail_url, class_level, medium, stream, board, academic_year, subject, teacher_id, language, teacher_name, price, rating, review_count, is_free, is_featured, is_published, sort_order, features';
@@ -400,6 +401,17 @@ export async function enrollInCourse(
   if (error) {
     throw new AppError(400, 'ENROLLMENT_FAILED', error.message);
   }
+
+  const email = await resolveActorEmail(userId);
+  await writeActivityLog({
+    actor_id: userId,
+    actor_email: email,
+    action: 'course.enroll',
+    entity_type: 'course',
+    entity_id: courseId,
+    summary: `Enrolled in free course ${courseId}`,
+    metadata: { course_id: courseId },
+  });
 
   return {
     course_id: data.course_id as string,

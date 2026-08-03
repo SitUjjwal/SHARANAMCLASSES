@@ -29,3 +29,8 @@ export { QuestionsHubPage } from './QuestionsHubPage';
 export { ResultsPage } from './ResultsPage';
 export { LeaderboardPage } from './LeaderboardPage';
 export { AnalyticsPage } from './AnalyticsPage';
+export { RevenuePage } from './RevenuePage';
+export { ReportsPage } from './ReportsPage';
+export { ActivityLogsPage } from './ActivityLogsPage';
+export { SettingsPage } from './SettingsPage';
+export { RolesPage } from './RolesPage';

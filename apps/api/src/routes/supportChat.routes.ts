@@ -28,7 +28,7 @@ import {
   postStudentChatRead,
 } from '../controllers/supportChat.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { validate } from '../middlewares/validate';
 import {
   adminTypingSchema,
@@ -59,32 +59,32 @@ supportChatRouter.post('/support/chat/read', requireAuth, postStudentChatRead);
 supportChatRouter.get(
   '/admin/support/chats',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:read'),
   listAdminChats,
 );
 supportChatRouter.get(
   '/admin/support/chats/:conversationId',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:read'),
   getAdminChat,
 );
 supportChatRouter.post(
   '/admin/support/chats/:conversationId/messages',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:create'),
   validate(sendSupportChatMessageSchema),
   postAdminChatMessage,
 );
 supportChatRouter.post(
   '/admin/support/chats/:conversationId/read',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:create'),
   postAdminChatRead,
 );
 supportChatRouter.post(
   '/admin/support/chats/:conversationId/typing',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:create'),
   validate(adminTypingSchema),
   postAdminTyping,
 );

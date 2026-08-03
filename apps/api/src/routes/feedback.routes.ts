@@ -28,7 +28,7 @@ import {
   postCreateFeedback,
 } from '../controllers/feedback.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { validate } from '../middlewares/validate';
 import {
   adminFeedbackQuerySchema,
@@ -59,20 +59,20 @@ feedbackRouter.delete('/feedback/:feedbackId', requireAuth, deleteMyFeedbackHand
 feedbackRouter.get(
   '/admin/feedback',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:read'),
   validate(adminFeedbackQuerySchema, 'query'),
   listAdminFeedbackHandler,
 );
 feedbackRouter.patch(
   '/admin/feedback/:feedbackId',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:update'),
   validate(updateFeedbackStatusSchema),
   patchAdminFeedback,
 );
 feedbackRouter.delete(
   '/admin/feedback/:feedbackId',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:delete'),
   deleteAdminFeedbackHandler,
 );

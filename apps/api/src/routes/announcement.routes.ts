@@ -22,7 +22,7 @@ import {
   removeAnnouncement,
 } from '../controllers/announcement.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { bannerImageUpload } from '../middlewares/upload';
 import { validate } from '../middlewares/validate';
 import {
@@ -37,33 +37,33 @@ announcementRouter.get('/announcements', requireAuth, listAnnouncements);
 announcementRouter.get(
   '/admin/announcements',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:read'),
   listAdminAnnouncements,
 );
 announcementRouter.post(
   '/admin/announcements/upload-image',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:create'),
   bannerImageUpload,
   postAnnouncementImage,
 );
 announcementRouter.post(
   '/admin/announcements',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:create'),
   validate(createAnnouncementSchema),
   postAnnouncement,
 );
 announcementRouter.patch(
   '/admin/announcements/:announcementId',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:update'),
   validate(updateAnnouncementSchema),
   patchAnnouncement,
 );
 announcementRouter.delete(
   '/admin/announcements/:announcementId',
   requireAuth,
-  requireAdmin,
+  requirePermission('communications:delete'),
   removeAnnouncement,
 );

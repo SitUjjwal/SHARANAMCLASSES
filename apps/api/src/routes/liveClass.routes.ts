@@ -24,7 +24,7 @@ import {
   removeLiveClass,
 } from '../controllers/liveClass.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { thumbnailUpload } from '../middlewares/upload';
 import { validate } from '../middlewares/validate';
 import {
@@ -57,7 +57,7 @@ liveClassRouter.get(
 liveClassRouter.post(
   '/live-classes/upload-thumbnail',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:create'),
   thumbnailUpload,
   postLiveClassThumbnail,
 );
@@ -65,7 +65,7 @@ liveClassRouter.post(
 liveClassRouter.post(
   '/live-classes',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:create'),
   validate(createLiveClassSchema),
   postLiveClass,
 );
@@ -73,19 +73,19 @@ liveClassRouter.post(
 liveClassRouter.post(
   '/live-classes/:id/notify',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:create'),
   validate(notifyLiveClassSchema),
   postLiveClassNotify,
 );
 
-liveClassRouter.get('/live-classes/:id', requireAuth, requireAdmin, getLiveClass);
+liveClassRouter.get('/live-classes/:id', requireAuth, requirePermission('courses:read'), getLiveClass);
 
 liveClassRouter.put(
   '/live-classes/:id',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:update'),
   validate(updateLiveClassSchema),
   putLiveClass,
 );
 
-liveClassRouter.delete('/live-classes/:id', requireAuth, requireAdmin, removeLiveClass);
+liveClassRouter.delete('/live-classes/:id', requireAuth, requirePermission('courses:delete'), removeLiveClass);

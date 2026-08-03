@@ -92,6 +92,17 @@ export async function loginWithEmail(values: LoginFormValues): Promise<LoginResu
       throw new Error('Login failed. No session returned.');
     }
 
+    // Attach token so activity log can be posted immediately
+    apiClient.defaults.headers.common.Authorization = `Bearer ${data.session.access_token}`;
+    try {
+      await apiClient.post('/activity/events', {
+        action: 'auth.login',
+        metadata: { client: 'mobile' },
+      });
+    } catch {
+      // best-effort audit
+    }
+
     // Session is already saved by supabase-js → expo-secure-store adapter.
     return {
       userId: data.user.id,
@@ -176,6 +187,15 @@ export async function changePassword(
  */
 export async function logout(): Promise<void> {
   try {
+    try {
+      await apiClient.post('/activity/events', {
+        action: 'auth.logout',
+        metadata: { client: 'mobile' },
+      });
+    } catch {
+      // best-effort audit
+    }
+
     const { error } = await supabase.auth.signOut({ scope: 'local' });
 
     if (error) {

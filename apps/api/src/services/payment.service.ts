@@ -23,6 +23,7 @@ import {
   getRazorpayKeyId,
   verifyPaymentSignature,
 } from '../integrations/razorpay';
+import { resolveActorEmail, writeActivityLog } from './activityLog.service';
 import {
   paymentOrderRepository,
   type IPaymentOrderRepository,
@@ -530,6 +531,39 @@ export async function verifyPayment(
     currency: updated.currency,
     enrolled: unlocked.enrolled,
   });
+
+  const actorEmail = await resolveActorEmail(userId);
+  await writeActivityLog({
+    actor_id: userId,
+    actor_email: actorEmail,
+    action: 'payment.completed',
+    entity_type: 'payment_order',
+    entity_id: updated.id,
+    summary: `Payment completed · ${productTitle} · ${formatInrFromPaise(updated.amount_paise)}`,
+    metadata: {
+      amount_paise: updated.amount_paise,
+      currency: updated.currency,
+      product_type: product.product_type,
+      course_id: updated.course_id,
+    },
+  });
+
+  if (unlocked.enrolled && (updated.course_id || product.product_type === 'course')) {
+    await writeActivityLog({
+      actor_id: userId,
+      actor_email: actorEmail,
+      action: 'course.purchase',
+      entity_type: 'course',
+      entity_id:
+        updated.course_id ??
+        (product.product_type === 'course' ? product.product_id : null),
+      summary: `Course purchased · ${productTitle}`,
+      metadata: {
+        payment_order_id: updated.id,
+        amount_paise: updated.amount_paise,
+      },
+    });
+  }
 
   return buildVerifySuccess(
     updated,

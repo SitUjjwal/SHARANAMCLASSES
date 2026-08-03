@@ -1,30 +1,45 @@
 /**
  * Admin insights routes.
  *
- *   GET /admin/results
- *   GET /admin/analytics
+ * Canonical: GET /analytics
+ * Also: /admin/analytics, /admin/analytics/overview, /admin/results
  */
 import { Router } from 'express';
 
 import {
   getAdminAnalyticsHandler,
+  getAdminAnalyticsOverviewHandler,
   listAdminResultsHandler,
 } from '../controllers/adminInsights.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 
 export const adminInsightsRouter = Router();
 
 adminInsightsRouter.get(
+  '/analytics',
+  requireAuth,
+  requirePermission('analytics:read'),
+  getAdminAnalyticsOverviewHandler,
+);
+
+adminInsightsRouter.get(
   '/admin/results',
   requireAuth,
-  requireAdmin,
+  requirePermission('analytics:read'),
   listAdminResultsHandler,
+);
+
+adminInsightsRouter.get(
+  '/admin/analytics/overview',
+  requireAuth,
+  requirePermission('analytics:read'),
+  getAdminAnalyticsOverviewHandler,
 );
 
 adminInsightsRouter.get(
   '/admin/analytics',
   requireAuth,
-  requireAdmin,
+  requirePermission('analytics:read'),
   getAdminAnalyticsHandler,
 );

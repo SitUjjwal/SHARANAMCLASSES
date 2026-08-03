@@ -1,167 +1,144 @@
 /**
- * Admin Analytics — platform-wide Test Series stats.
+ * AnalyticsPage — platform analytics with Recharts.
  */
 import { useCallback, useEffect, useState } from 'react';
 
-import type { StudentTestAnalytics } from '@sharanam/shared';
+import type { AdminAnalyticsOverview } from '@sharanam/shared';
 
+import {
+  AverageTestScoresChart,
+  RankingBarChart,
+  RevenueGrowthChart,
+  StudentGrowthChart,
+} from '@/components/AnalyticsCharts';
+import { DashboardCard } from '@/components/DashboardCard';
 import { PageHeader } from '@/components/PageHeader';
-import { fetchAdminAnalytics } from '@/features/admin-insights/api';
+import { useAuth } from '@/features/auth/AuthProvider';
+import { fetchAnalyticsOverview } from '@/services/analyticsService';
 import { ApiClientError } from '@/services/api';
 
 export function AnalyticsPage() {
-  const [data, setData] = useState<StudentTestAnalytics | null>(null);
+  const { can } = useAuth();
+  const [data, setData] = useState<AdminAnalyticsOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    if (!can('analytics:view')) {
+      setLoading(false);
+      setError('You do not have permission to view analytics.');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      setData(await fetchAdminAnalytics());
+      setData(await fetchAnalyticsOverview());
     } catch (err) {
       setError(
-        err instanceof ApiClientError
-          ? err.message
-          : 'Failed to load analytics',
+        err instanceof ApiClientError ? err.message : 'Failed to load analytics',
       );
+      setData(null);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [can]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
+  if (!can('analytics:view')) {
+    return (
+      <div className="page">
+        <PageHeader title="Analytics" description="Access restricted." />
+        <p className="form-error">{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="page">
       <PageHeader
         title="Analytics"
-        description="Average score, pass rate, strong/weak subjects, and recent activity."
+        description={`Growth, popularity, engagement, and test performance · ${data?.timezone ?? 'Asia/Kolkata'}`}
+        actions={
+          <button type="button" className="btn" onClick={() => void load()} disabled={loading}>
+            Refresh
+          </button>
+        }
       />
 
       {error ? <p className="form-error">{error}</p> : null}
-      {loading ? <p className="muted">Loading…</p> : null}
+      {loading && !data ? <p className="hint">Loading analytics…</p> : null}
 
       {data ? (
         <>
-          <div className="dashboard-grid" style={{ marginBottom: 24 }}>
-            <div className="dashboard-tile">
-              <strong>{data.summary.average_score}%</strong>
-              <span>Average score</span>
-            </div>
-            <div className="dashboard-tile">
-              <strong>{data.summary.total_tests}</strong>
-              <span>Total tests taken</span>
-            </div>
-            <div className="dashboard-tile">
-              <strong>{data.summary.total_attempts}</strong>
-              <span>Total attempts</span>
-            </div>
-            <div className="dashboard-tile">
-              <strong>{data.summary.pass_percentage}%</strong>
-              <span>Pass percentage</span>
-            </div>
-          </div>
+          <section className="dash-kpi-grid" aria-label="Analytics KPIs">
+            <DashboardCard label="Total Students" value={data.kpis.total_students} />
+            <DashboardCard
+              label="Active Students"
+              value={data.kpis.active_students}
+              tone="success"
+            />
+            <DashboardCard label="Enrollments" value={data.kpis.total_enrollments} />
+            {can('payments:view') ? (
+              <DashboardCard
+                label="Revenue This Month"
+                value={data.kpis.monthly_revenue_display}
+                tone="accent"
+              />
+            ) : null}
+            <DashboardCard
+              label="Avg Test Score"
+              value={`${data.kpis.avg_test_score}%`}
+            />
+            <DashboardCard label="Pass Rate" value={`${data.kpis.pass_rate}%`} />
+            <DashboardCard
+              label="Live Classes Today"
+              value={data.kpis.live_classes_today}
+            />
+          </section>
 
-          <div className="data-table-wrap" style={{ marginBottom: 24 }}>
-            <h3>Strong subjects</h3>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Subject</th>
-                  <th>Avg %</th>
-                  <th>Attempts</th>
-                  <th>Pass %</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.strong_subjects.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="muted">
-                      No data
-                    </td>
-                  </tr>
-                ) : (
-                  data.strong_subjects.map((s) => (
-                    <tr key={`s-${s.subject}`}>
-                      <td>{s.subject}</td>
-                      <td>{s.average_percentage}%</td>
-                      <td>{s.attempts}</td>
-                      <td>{s.pass_percent}%</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <section className="dash-charts-grid" aria-label="Growth charts">
+            <StudentGrowthChart data={data.student_growth} />
+            {can('payments:view') ? (
+              <RevenueGrowthChart data={data.revenue_growth} />
+            ) : null}
+          </section>
 
-          <div className="data-table-wrap" style={{ marginBottom: 24 }}>
-            <h3>Weak subjects</h3>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Subject</th>
-                  <th>Avg %</th>
-                  <th>Attempts</th>
-                  <th>Pass %</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.weak_subjects.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="muted">
-                      No data
-                    </td>
-                  </tr>
-                ) : (
-                  data.weak_subjects.map((s) => (
-                    <tr key={`w-${s.subject}`}>
-                      <td>{s.subject}</td>
-                      <td>{s.average_percentage}%</td>
-                      <td>{s.attempts}</td>
-                      <td>{s.pass_percent}%</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <section className="dash-charts-grid" aria-label="Popularity charts">
+            <RankingBarChart
+              title="Course Popularity"
+              subtitle="Top courses by enrollments"
+              data={data.course_popularity}
+              color="#0b1f3a"
+            />
+            <RankingBarChart
+              title="Most Viewed Videos"
+              subtitle="Unique watch-progress rows per video"
+              data={data.most_viewed_videos}
+              color="#1e4d7b"
+              emptyMessage="No video watch data yet."
+            />
+            <RankingBarChart
+              title="Most Downloaded PDFs"
+              subtitle="Requires pdf_download_events (migration 20260803040000)"
+              data={data.most_downloaded_pdfs}
+              color="#5b4a1f"
+              emptyMessage="No PDF downloads tracked yet. Apply analytics events migration and wire download logging."
+            />
+            <RankingBarChart
+              title="Live Class Attendance"
+              subtitle="Joins per live class"
+              data={data.live_class_attendance}
+              color="#1f7a4d"
+              emptyMessage="No attendance records yet. Apply analytics events migration and record joins."
+            />
+          </section>
 
-          <div className="data-table-wrap">
-            <h3>Recent activity</h3>
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Test</th>
-                  <th>Subject</th>
-                  <th>%</th>
-                  <th>Result</th>
-                  <th>When</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.recent_activity.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="muted">
-                      No recent attempts
-                    </td>
-                  </tr>
-                ) : (
-                  data.recent_activity.map((a) => (
-                    <tr key={a.attempt_id}>
-                      <td>{a.test_title}</td>
-                      <td>{a.subject}</td>
-                      <td>{a.percentage}%</td>
-                      <td>{a.is_passed ? 'Pass' : 'Fail'}</td>
-                      <td>{new Date(a.submitted_at).toLocaleString()}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <section className="dash-charts-grid" aria-label="Test charts">
+            <AverageTestScoresChart data={data.average_test_scores} />
+          </section>
         </>
       ) : null}
     </div>

@@ -30,7 +30,7 @@ import {
   postRejectReview,
 } from '../controllers/review.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { validate } from '../middlewares/validate';
 import {
   adminReviewsQuerySchema,
@@ -71,32 +71,32 @@ reviewRouter.get('/reviews/:courseId', requireAuth, listCourseReviews);
 reviewRouter.get(
   '/admin/reviews',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:read'),
   validate(adminReviewsQuerySchema, 'query'),
   listAdminReviewsHandler,
 );
 reviewRouter.post(
   '/admin/reviews/:reviewId/approve',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:create'),
   postApproveReview,
 );
 reviewRouter.post(
   '/admin/reviews/:reviewId/reject',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:create'),
   validate(rejectReviewSchema),
   postRejectReview,
 );
 reviewRouter.patch(
   '/admin/reviews/:reviewId/testimonial',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:update'),
   patchReviewTestimonial,
 );
 reviewRouter.get(
   '/admin/testimonials',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:read'),
   listAdminTestimonialsHandler,
 );

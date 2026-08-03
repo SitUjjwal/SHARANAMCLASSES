@@ -32,7 +32,7 @@ import {
   postVerifyPayment,
 } from '../controllers/payment.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { validate } from '../middlewares/validate';
 import {
   createPaymentOrderSchema,
@@ -86,14 +86,14 @@ paymentRouter.get(
 paymentRouter.get(
   '/admin/payments/stats',
   requireAuth,
-  requireAdmin,
+  requirePermission('payments:read'),
   getAdminPaymentsStats,
 );
 
 paymentRouter.get(
   '/admin/payments/export',
   requireAuth,
-  requireAdmin,
+  requirePermission('payments:read'),
   validate(adminExportPaymentsQuerySchema, 'query'),
   getAdminPaymentsExport,
 );
@@ -101,7 +101,7 @@ paymentRouter.get(
 paymentRouter.get(
   '/admin/payments',
   requireAuth,
-  requireAdmin,
+  requirePermission('payments:read'),
   validate(adminListPaymentsQuerySchema, 'query'),
   getAdminPaymentsList,
 );

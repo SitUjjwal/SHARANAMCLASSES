@@ -10,7 +10,7 @@ import {
   listAllCategoriesForAdmin,
   updateCategory,
 } from '../services/category.service';
-import { isAdminUser } from '../services/role.service';
+import { hasStaffPermission } from '../services/role.service';
 import type {
   CreateCategoryInput,
   UpdateCategoryInput,
@@ -34,7 +34,7 @@ export async function listCategories(
       throw new AppError(401, 'UNAUTHORIZED', 'Authenticated user missing on request');
     }
 
-    const admin = await isAdminUser(userId, req.user?.email);
+    const admin = await hasStaffPermission(userId, 'courses:read', req.user?.email);
     if (admin) {
       const data = await listAllCategoriesForAdmin();
       res.status(200).json({ success: true, data });

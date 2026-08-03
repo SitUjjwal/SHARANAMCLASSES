@@ -1,26 +1,35 @@
 /**
- * Teacher management — list / create / edit / remove instructors.
+ * Teacher management — list / create / edit / delete / view stats & assignments.
  */
 import { useCallback, useEffect, useState } from 'react';
 
 import { PageHeader } from '@/components/PageHeader';
+import { TeacherDetailPanel } from '@/features/teachers/TeacherDetailPanel';
 import { TeacherForm } from '@/features/teachers/TeacherForm';
 import {
   deleteAdminTeacher,
   fetchAdminTeachers,
   type TeacherRecord,
 } from '@/features/teachers/api';
+import { useAuth } from '@/features/auth/AuthProvider';
 import { ApiClientError } from '@/services/api';
 
 export function TeachersPage() {
+  const { can } = useAuth();
   const [items, setItems] = useState<TeacherRecord[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<TeacherRecord | null>(null);
+  const [viewingId, setViewingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
+    if (!can('teachers:manage')) {
+      setLoading(false);
+      setError('You do not have permission to manage teachers.');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -36,7 +45,7 @@ export function TeachersPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [can]);
 
   useEffect(() => {
     void load();
@@ -58,7 +67,7 @@ export function TeachersPage() {
       return;
     }
     const ok = window.confirm(
-      `Remove “${teacher.full_name}” from teachers? (Account stays as student)`,
+      `Remove “${teacher.full_name}” from teachers? Course and live-class assignments will be cleared. Account stays as student.`,
     );
     if (!ok) return;
     try {
@@ -79,11 +88,20 @@ export function TeachersPage() {
       )
     : items;
 
+  if (!can('teachers:manage')) {
+    return (
+      <div className="page">
+        <PageHeader title="Teachers" description="Access restricted." />
+        <p className="form-error">{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="page">
       <PageHeader
         title="Teachers"
-        description="Add instructors for course assignment. They appear in the Course form teacher dropdown."
+        description="Add, edit, delete instructors; assign courses and live classes; view statistics."
         actions={
           <button type="button" className="btn primary" onClick={openCreate}>
             + Add Teacher
@@ -98,6 +116,9 @@ export function TeachersPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
+        <button type="button" className="btn" onClick={() => void load()} disabled={loading}>
+          Refresh
+        </button>
       </div>
 
       {error ? <p className="form-error">{error}</p> : null}
@@ -121,6 +142,8 @@ export function TeachersPage() {
                 <th>Email</th>
                 <th>Phone</th>
                 <th>Role</th>
+                <th>Courses</th>
+                <th>Live</th>
                 <th />
               </tr>
             </thead>
@@ -131,8 +154,21 @@ export function TeachersPage() {
                   <td>{teacher.email}</td>
                   <td>{teacher.phone_number || '—'}</td>
                   <td>{teacher.role}</td>
+                  <td>{teacher.course_count ?? 0}</td>
+                  <td>{teacher.live_class_count ?? 0}</td>
                   <td className="row-actions">
-                    <button type="button" className="btn ghost" onClick={() => openEdit(teacher)}>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() => setViewingId(teacher.id)}
+                    >
+                      View
+                    </button>
+                    <button
+                      type="button"
+                      className="btn ghost"
+                      onClick={() => openEdit(teacher)}
+                    >
                       Edit
                     </button>
                     {teacher.role === 'instructor' ? (
@@ -141,7 +177,7 @@ export function TeachersPage() {
                         className="btn ghost danger"
                         onClick={() => void onRemove(teacher)}
                       >
-                        Remove
+                        Delete
                       </button>
                     ) : null}
                   </td>
@@ -150,6 +186,18 @@ export function TeachersPage() {
             </tbody>
           </table>
         </div>
+      ) : null}
+
+      {viewingId ? (
+        <TeacherDetailPanel
+          teacherId={viewingId}
+          onClose={() => setViewingId(null)}
+          onChanged={() => void load()}
+          onEdit={(teacher) => {
+            setViewingId(null);
+            openEdit(teacher);
+          }}
+        />
       ) : null}
 
       {editorOpen ? (

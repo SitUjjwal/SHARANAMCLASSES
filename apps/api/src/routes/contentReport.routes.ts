@@ -20,7 +20,7 @@ import {
   postCreateContentReport,
 } from '../controllers/contentReport.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { validate } from '../middlewares/validate';
 import {
   adminContentReportsQuerySchema,
@@ -53,14 +53,14 @@ contentReportRouter.get(
 contentReportRouter.get(
   '/admin/content-reports',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:read'),
   validate(adminContentReportsQuerySchema, 'query'),
   listAdminContentReportsHandler,
 );
 contentReportRouter.patch(
   '/admin/content-reports/:reportId',
   requireAuth,
-  requireAdmin,
+  requirePermission('feedback:update'),
   validate(updateContentReportStatusSchema),
   patchAdminContentReport,
 );

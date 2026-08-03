@@ -17,7 +17,7 @@ import {
   removeCategory,
 } from '../controllers/category.controller';
 import { requireAuth } from '../middlewares/auth';
-import { requireAdmin } from '../middlewares/requireAdmin';
+import { requirePermission } from '../middlewares/requirePermission';
 import { validate } from '../middlewares/validate';
 import {
   createCategorySchema,
@@ -30,16 +30,16 @@ categoryRouter.get('/categories', requireAuth, listCategories);
 categoryRouter.post(
   '/categories',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:create'),
   validate(createCategorySchema),
   postCategory,
 );
 categoryRouter.patch(
   '/categories/:id',
   requireAuth,
-  requireAdmin,
+  requirePermission('courses:update'),
   validate(updateCategorySchema),
   patchCategory,
 );
-categoryRouter.delete('/categories/:id', requireAuth, requireAdmin, removeCategory);
-categoryRouter.get('/admin/categories', requireAuth, requireAdmin, listAdminCategories);
+categoryRouter.delete('/categories/:id', requireAuth, requirePermission('courses:delete'), removeCategory);
+categoryRouter.get('/admin/categories', requireAuth, requirePermission('courses:read'), listAdminCategories);
