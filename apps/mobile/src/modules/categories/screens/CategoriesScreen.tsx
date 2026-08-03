@@ -8,7 +8,7 @@ import type { CompositeNavigationProp } from '@react-navigation/native';
 import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
-import { CategoriesGrid, useCategoriesQuery } from '@/modules/categories';
+import { CategoriesGrid, useCategoriesQuery, openCategoryExternalLink } from '@/modules/categories';
 import { AppTextField } from '@/components/ui/AppTextField';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Screen } from '@/components/ui/Screen';
@@ -30,7 +30,8 @@ export function CategoriesScreen({ navigation }: Props) {
   const [search, setSearch] = useState('');
   const categoriesQuery = useCategoriesQuery();
 
-  function onSelect(category: Category) {
+  async function onSelect(category: Category) {
+    if (await openCategoryExternalLink(category)) return;
     navigation.navigate('CoursesTab', { categoryId: category.id });
   }
 

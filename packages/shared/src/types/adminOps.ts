@@ -100,6 +100,12 @@ export type PlatformGeneralSettings = {
   /** Minimum client version recommended/required (semver-ish string). */
   min_app_version: string;
   timezone: string;
+  /** Public social / contact links shown in the student app drawer. */
+  social_facebook: string;
+  social_instagram: string;
+  social_telegram: string;
+  social_youtube: string;
+  social_whatsapp: string;
 };
 
 /** Public subset for mobile/web bootstrap (no secrets). */
@@ -115,6 +121,11 @@ export type PublicPlatformConfig = {
   app_version: string;
   min_app_version: string;
   timezone: string;
+  social_facebook: string;
+  social_instagram: string;
+  social_telegram: string;
+  social_youtube: string;
+  social_whatsapp: string;
   updated_at: string | null;
 };
 

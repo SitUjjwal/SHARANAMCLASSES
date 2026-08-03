@@ -1,23 +1,5 @@
 /**
- * payment.routes.ts
- *
- * Student (canonical):
- *   POST /payments/create-order
- *   POST /payments/verify
- *   GET  /payments/history
- *   GET  /orders
- *   GET  /receipt/:paymentId
- *
- * Legacy aliases (kept for older clients):
- *   POST /payments/orders
- *   GET  /payments/history/:orderId/receipt
- *
- * Admin Payment Management:
- *   GET  /admin/payments/stats
- *   GET  /admin/payments
- *   GET  /admin/payments/export
- *
- * Also: GET /my-courses (see myCourse.routes.ts)
+ * payment.routes.ts — all mutating + key query/param paths use Zod validate().
  */
 import { Router } from 'express';
 
@@ -34,8 +16,10 @@ import {
 import { requireAuth } from '../middlewares/auth';
 import { requirePermission } from '../middlewares/requirePermission';
 import { validate } from '../middlewares/validate';
+import { orderIdParamSchema, paymentIdParamSchema } from '../validators/common.validators';
 import {
   createPaymentOrderSchema,
+  paymentHistoryQuerySchema,
   verifyPaymentSchema,
 } from '../validators/payment.validators';
 import {
@@ -45,7 +29,6 @@ import {
 
 export const paymentRouter = Router();
 
-/** Canonical create-order */
 paymentRouter.post(
   '/payments/create-order',
   requireAuth,
@@ -53,7 +36,6 @@ paymentRouter.post(
   postCreatePaymentOrder,
 );
 
-/** Legacy alias */
 paymentRouter.post(
   '/payments/orders',
   requireAuth,
@@ -68,18 +50,31 @@ paymentRouter.post(
   postVerifyPayment,
 );
 
-paymentRouter.get('/payments/history', requireAuth, getPaymentHistory);
+paymentRouter.get(
+  '/payments/history',
+  requireAuth,
+  validate(paymentHistoryQuerySchema, 'query'),
+  getPaymentHistory,
+);
 
-/** Student orders list (same payload as purchase history) */
-paymentRouter.get('/orders', requireAuth, getPaymentHistory);
+paymentRouter.get(
+  '/orders',
+  requireAuth,
+  validate(paymentHistoryQuerySchema, 'query'),
+  getPaymentHistory,
+);
 
-/** Receipt by Razorpay payment id (or order UUID) */
-paymentRouter.get('/receipt/:paymentId', requireAuth, getReceiptByPaymentId);
+paymentRouter.get(
+  '/receipt/:paymentId',
+  requireAuth,
+  validate(paymentIdParamSchema, 'params'),
+  getReceiptByPaymentId,
+);
 
-/** Legacy receipt path */
 paymentRouter.get(
   '/payments/history/:orderId/receipt',
   requireAuth,
+  validate(orderIdParamSchema, 'params'),
   getPaymentReceipt,
 );
 

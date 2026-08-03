@@ -6,13 +6,23 @@
 import { createApp } from './app';
 import { env } from './config/env';
 import { registerDomainEventHandlers } from './events/register';
+import { startBackupScheduler } from './jobs/backupEngine/scheduler';
 import { startReminderScheduler } from './jobs/reminderEngine/scheduler';
+import { initLogger, logger } from './logging';
+import { startMonitoringSampler } from './monitoring';
 
+initLogger();
 registerDomainEventHandlers();
 
 const app = createApp();
 
 app.listen(env.PORT, () => {
-  console.log(`[api] SHARANAM CLASSES listening on :${env.PORT} (${env.NODE_ENV})`);
+  logger.info(`SHARANAM CLASSES listening on :${env.PORT}`, {
+    port: env.PORT,
+    node_env: env.NODE_ENV,
+    log_dir: logger.getLogDir(),
+  });
   startReminderScheduler();
+  startBackupScheduler();
+  startMonitoringSampler();
 });

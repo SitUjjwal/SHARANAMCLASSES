@@ -1,7 +1,8 @@
 /**
  * AnnouncementsList — Home feed (pinned, image, rich-text excerpt).
  */
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
+import { StyleSheet, Text, View } from 'react-native';
 
 import type { Announcement } from '@sharanam/shared';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -38,7 +39,12 @@ export function AnnouncementsList({ announcements }: AnnouncementsListProps) {
           <View key={item.id} style={[styles.row, item.is_pinned ? styles.pinned : null]}>
             {item.is_pinned ? <Text style={styles.pinBadge}>Pinned</Text> : null}
             {item.image_url ? (
-              <Image source={{ uri: item.image_url }} style={styles.image} />
+              <Image
+                source={{ uri: item.image_url }}
+                style={styles.image}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+              />
             ) : null}
             <Text style={styles.title}>📢 {item.title}</Text>
             {excerpt ? (

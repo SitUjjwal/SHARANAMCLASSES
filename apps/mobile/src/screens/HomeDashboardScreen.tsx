@@ -1,10 +1,10 @@
 /**
  * Home Dashboard — production layout:
  * Greeting → Banner → Categories → Featured → My Courses →
- * Latest Updates → Live Classes → Quote of the Day (bottom)
+ * Live Classes → Quote of the Day (bottom)
  *
- * Data: GET /dashboard via useDashboardQuery (React Query).
- * Bottom tabs: Home | Courses | Tests | Live | My Learning | Profile.
+ * Announcements / holiday notices live in Notification Center only.
+ * Continue Watching is intentionally not shown on Home.
  */
 import { useCallback, useMemo } from 'react';
 import { Alert, RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
@@ -14,10 +14,8 @@ import type { DrawerNavigationProp } from '@react-navigation/drawer';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import {
-  AnnouncementsList,
   BannerSlider,
   CategoriesGrid,
-  ContinueWatchingCard,
   CourseHorizontalList,
   GreetingHeader,
   HomeDashboardSkeleton,
@@ -32,6 +30,7 @@ import { LiveClassCard } from '@/modules/live-classes/components/LiveClassCard';
 import { useLiveClassesQuery } from '@/modules/live-classes/hooks/useLiveClassesQuery';
 import { useUnreadNotificationCountQuery } from '@/modules/notifications/hooks/useUnreadNotificationCountQuery';
 import { openBannerRedirect } from '@/modules/banners/openBannerRedirect';
+import { openCategoryExternalLink } from '@/modules/categories/utils/openCategoryAction';
 import { openInYouTubeApp } from '@/modules/videos/utils/openYouTube';
 import { extractYouTubeVideoId } from '@/modules/videos/utils/youtube';
 import type {
@@ -81,7 +80,8 @@ export function HomeDashboardScreen({ navigation }: Props) {
     navigation.navigate('CourseDetail', { courseId: course.id });
   }
 
-  function openCategory(category: Category) {
+  async function openCategory(category: Category) {
+    if (await openCategoryExternalLink(category)) return;
     navigation.navigate('CoursesTab', { categoryId: category.id });
   }
 
@@ -161,26 +161,10 @@ export function HomeDashboardScreen({ navigation }: Props) {
         <GreetingHeader
           name={data?.greeting_name ?? 'Student'}
           onMenuPress={openMenu}
+          onSearchPress={openCoursesTab}
           onNotificationsPress={openNotifications}
           unreadCount={unreadQuery.data ?? 0}
         />
-
-        {data?.continue_watching ? (
-          <View style={styles.section}>
-            <ContinueWatchingCard
-              item={data.continue_watching}
-              onContinue={() => {
-                const item = data.continue_watching;
-                if (!item) return;
-                navigation.navigate('VideoPlayer', {
-                  courseId: item.course_id,
-                  chapterId: item.chapter_id,
-                  videoId: item.video_id,
-                });
-              }}
-            />
-          </View>
-        ) : null}
 
         <View style={styles.section}>
           <BannerSlider
@@ -221,27 +205,6 @@ export function HomeDashboardScreen({ navigation }: Props) {
             emptyTitle="No enrollments yet"
             emptyMessage="When you enroll in a course, it will show up here."
             onPressCourse={openCourse}
-          />
-        </View>
-
-            <View style={styles.section}>
-          <SectionHeader title="Latest Announcements" />
-          <AnnouncementsList
-            announcements={
-              data?.announcements?.length
-                ? data.announcements
-                : (data?.latest_updates ?? []).map((u) => ({
-                    id: u.id,
-                    title: u.title,
-                    body: u.body,
-                    image_url: null,
-                    is_pinned: false,
-                    is_published: true,
-                    scheduled_at: u.published_at,
-                    published_at: u.published_at,
-                    sort_order: 0,
-                  }))
-            }
           />
         </View>
 

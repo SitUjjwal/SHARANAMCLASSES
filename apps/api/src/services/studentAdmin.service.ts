@@ -15,6 +15,7 @@ import type {
 
 import { getSupabaseAdmin } from '../config/supabase';
 import { AppError } from '../utils/AppError';
+import { sanitizeSearchTerm } from '../utils/postgrestSafe';
 import { writeAdminActivityLog } from './adminOps.service';
 import type {
   ListStudentsQuery,
@@ -98,7 +99,7 @@ async function enrollmentCounts(userIds: string[]): Promise<Map<string, number>>
 function applyListFilters(builder: any, query: ListStudentsQuery): any {
   let next = builder.eq('role', 'student');
 
-  const search = query.search.trim();
+  const search = sanitizeSearchTerm(query.search);
   if (search) {
     next = next.or(
       `full_name.ilike.%${search}%,email.ilike.%${search}%,phone_number.ilike.%${search}%`,
@@ -182,7 +183,7 @@ async function listAdminStudentsLegacy(
     .order('created_at', { ascending: false })
     .range(from, to);
 
-  const search = query.search.trim();
+  const search = sanitizeSearchTerm(query.search);
   if (search) {
     builder = builder.or(
       `full_name.ilike.%${search}%,email.ilike.%${search}%,phone_number.ilike.%${search}%`,

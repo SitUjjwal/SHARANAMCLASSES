@@ -2,11 +2,12 @@
  * Live class catalog — YouTube Live URL + schedule in PostgreSQL.
  * Notify → app_updates (in-app) + notification_sent_at.
  */
-import type { LiveClass, LiveClassPublic, LiveClassStatus } from '@sharanam/shared';
+import type { LiveClass, LiveClassStatus } from '@sharanam/shared';
 
 import { getSupabaseAdmin } from '../config/supabase';
 import { emitLiveClassScheduled } from '../events';
 import { AppError } from '../utils/AppError';
+import { sanitizeSearchTerm } from '../utils/postgrestSafe';
 import { parseYouTubeUrl, youtubeThumbnailUrl } from '../utils/youtube';
 import type {
   CreateLiveClassInput,
@@ -16,7 +17,7 @@ import type {
 } from '../validators/liveClass.validators';
 
 const LIVE_COLUMNS =
-  'id, course_id, title, description, youtube_url, youtube_video_id, thumbnail_url, start_time, end_time, is_published, notification_sent_at, created_at, updated_at';
+  'id, course_id, title, description, youtube_url, youtube_video_id, thumbnail_url, start_time, end_time, is_published, notification_sent_at, archived_video_id, created_at, updated_at';
 
 export type LiveClassListPage = {
   items: LiveClass[];
@@ -77,6 +78,7 @@ function toLiveClass(
     end_time,
     is_published: Boolean(row.is_published),
     notification_sent_at: (row.notification_sent_at as string | null) ?? null,
+    archived_video_id: (row.archived_video_id as string | null | undefined) ?? null,
     created_at: row.created_at as string | undefined,
     updated_at: row.updated_at as string | undefined,
     course_title: courseTitle ?? null,
@@ -108,14 +110,11 @@ export async function listLiveClassesForAdmin(
     query = query.eq('is_published', false);
   }
 
-  const search = filters.search?.trim();
-  if (search) {
-    const safe = search.replace(/[%_,.()']/g, '');
-    if (safe) {
-      query = query.or(
-        `title.ilike.%${safe}%,description.ilike.%${safe}%,youtube_video_id.ilike.%${safe}%`,
-      );
-    }
+  const safe = sanitizeSearchTerm(filters.search?.trim() ?? '');
+  if (safe) {
+    query = query.or(
+      `title.ilike.%${safe}%,description.ilike.%${safe}%,youtube_video_id.ilike.%${safe}%`,
+    );
   }
 
   const { data, error, count } = await query;
@@ -400,22 +399,42 @@ export async function notifyLiveClass(
   return toLiveClass(data as Record<string, unknown>, live.course_title ?? null);
 }
 
-/** Published live classes for students (optional course filter). */
+/** Published live / upcoming classes for students (ended removed from Live feed). */
 export async function listLiveClassesPublic(options?: {
   courseId?: string;
-}): Promise<LiveClassPublic[]> {
+  page?: number;
+  pageSize?: number;
+  /** When true, include ended rows (admin/debug). Default false for students. */
+  includeEnded?: boolean;
+}): Promise<import('@sharanam/shared').LiveClassesPublicPage> {
   const supabase = getSupabaseAdmin();
+  const page = Math.max(1, options?.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, options?.pageSize ?? 50));
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+  const nowIso = new Date().toISOString();
+
+  // Best-effort: move recently ended links onto the related course.
+  void import('./archiveEndedLive.service')
+    .then((m) => m.archiveEndedLiveClasses(10))
+    .catch(() => undefined);
+
   let query = supabase
     .from('live_classes')
-    .select(LIVE_COLUMNS)
+    .select(LIVE_COLUMNS, { count: 'exact' })
     .eq('is_published', true)
     .order('start_time', { ascending: true });
+
+  if (!options?.includeEnded) {
+    // Live section: only live + upcoming
+    query = query.gte('end_time', nowIso);
+  }
 
   if (options?.courseId) {
     query = query.eq('course_id', options.courseId);
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query.range(from, to);
   if (error) {
     throw new AppError(500, 'LIVE_CLASSES_FETCH_FAILED', error.message);
   }
@@ -438,7 +457,7 @@ export async function listLiveClassesPublic(options?: {
     ]),
   );
 
-  return rows.map((row) => {
+  const items = rows.map((row) => {
     const status = deriveLiveClassStatus(
       row.start_time as string,
       row.end_time as string,
@@ -446,7 +465,6 @@ export async function listLiveClassesPublic(options?: {
     const course = row.course_id
       ? courseMap.get(row.course_id as string)
       : undefined;
-    // Hide stream URL after class ends
     const showUrl = status === 'live' || status === 'upcoming';
     return {
       id: row.id as string,
@@ -462,4 +480,13 @@ export async function listLiveClassesPublic(options?: {
       youtube_url: showUrl ? (row.youtube_url as string) : null,
     };
   });
+
+  const total = count ?? items.length;
+  return {
+    items,
+    page,
+    pageSize,
+    total,
+    hasMore: page * pageSize < total,
+  };
 }

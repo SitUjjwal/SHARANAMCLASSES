@@ -8,20 +8,21 @@ import type {
   PlatformSettingsBundle,
   PublicPlatformConfig,
 } from '@sharanam/shared';
-import { randomUUID } from 'node:crypto';
-import path from 'node:path';
 
 import { env, isR2Configured } from '../config/env';
 import { getSupabaseAdmin } from '../config/supabase';
-import { putR2Object } from '../integrations/r2/client';
+import { securePutToR2 } from '../integrations/r2/client';
+import {
+  buildContentAddressedKey,
+  UPLOAD_PROFILES,
+  validateSecureUpload,
+} from '../integrations/r2/fileSecurity';
 import { AppError } from '../utils/AppError';
 import { writeActivityLog } from './activityLog.service';
 
 const SETTINGS_KEY = 'general';
 const TZ = 'Asia/Kolkata';
 const FALLBACK_BUCKET = 'course-thumbnails';
-const LOGO_ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/svg+xml']);
-const LOGO_MAX_BYTES = 2 * 1024 * 1024;
 
 const HEX_COLOR = /^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$/;
 
@@ -38,6 +39,11 @@ export const DEFAULT_GENERAL: PlatformGeneralSettings = {
   app_version: '1.0.0',
   min_app_version: '1.0.0',
   timezone: TZ,
+  social_facebook: '',
+  social_instagram: '',
+  social_telegram: '',
+  social_youtube: '',
+  social_whatsapp: '',
 };
 
 /** Short-lived in-memory cache for public/maintenance reads. */
@@ -81,6 +87,11 @@ export function parseGeneral(value: unknown): PlatformGeneralSettings {
       asString(v.min_app_version, DEFAULT_GENERAL.min_app_version) ||
       DEFAULT_GENERAL.min_app_version,
     timezone: asString(v.timezone, DEFAULT_GENERAL.timezone) || DEFAULT_GENERAL.timezone,
+    social_facebook: asString(v.social_facebook, DEFAULT_GENERAL.social_facebook),
+    social_instagram: asString(v.social_instagram, DEFAULT_GENERAL.social_instagram),
+    social_telegram: asString(v.social_telegram, DEFAULT_GENERAL.social_telegram),
+    social_youtube: asString(v.social_youtube, DEFAULT_GENERAL.social_youtube),
+    social_whatsapp: asString(v.social_whatsapp, DEFAULT_GENERAL.social_whatsapp),
   };
 }
 
@@ -98,6 +109,11 @@ export function toPublicConfig(bundle: PlatformSettingsBundle): PublicPlatformCo
     app_version: g.app_version,
     min_app_version: g.min_app_version,
     timezone: g.timezone,
+    social_facebook: g.social_facebook,
+    social_instagram: g.social_instagram,
+    social_telegram: g.social_telegram,
+    social_youtube: g.social_youtube,
+    social_whatsapp: g.social_whatsapp,
     updated_at: bundle.updated_at,
   };
 }
@@ -202,20 +218,9 @@ export async function updatePlatformSettings(input: {
   return bundle;
 }
 
-function extensionFor(mimetype: string, originalname: string): string {
-  const fromName = path.extname(originalname).replace('.', '').toLowerCase();
-  if (['jpg', 'jpeg', 'png', 'webp', 'svg'].includes(fromName)) {
-    return fromName === 'jpeg' ? 'jpg' : fromName;
-  }
-  if (mimetype === 'image/png') return 'png';
-  if (mimetype === 'image/webp') return 'webp';
-  if (mimetype === 'image/svg+xml') return 'svg';
-  return 'jpg';
-}
-
 /**
  * Upload platform logo → R2 (Supabase fallback in non-production).
- * Persists logo_url + logo_storage_key into settings.
+ * SVG rejected (XSS). JPEG/PNG/WebP only after magic + metadata scan.
  */
 export async function uploadPlatformLogo(input: {
   actor_id: string;
@@ -228,26 +233,15 @@ export async function uploadPlatformLogo(input: {
   };
 }): Promise<PlatformSettingsBundle> {
   const { file } = input;
-  if (!LOGO_ALLOWED.has(file.mimetype)) {
-    throw new AppError(400, 'INVALID_IMAGE_TYPE', 'Use JPEG, PNG, WebP, or SVG for the logo');
-  }
-  if (file.size <= 0) {
-    throw new AppError(400, 'EMPTY_IMAGE', 'Logo file is empty');
-  }
-  if (file.size > LOGO_MAX_BYTES) {
-    throw new AppError(400, 'IMAGE_TOO_LARGE', 'Logo must be 2MB or smaller');
-  }
-
-  const ext = extensionFor(file.mimetype, file.originalname);
-  const objectKey = `branding/logo/${Date.now()}-${randomUUID()}.${ext}`;
+  const validated = validateSecureUpload(file, UPLOAD_PROFILES.logo);
 
   let uploaded: PlatformLogoUploadResult;
 
   if (isR2Configured()) {
-    const result = await putR2Object({
-      key: objectKey,
-      body: file.buffer,
-      contentType: file.mimetype,
+    const result = await securePutToR2({
+      file,
+      kind: 'logo',
+      prefix: 'branding/logo',
       cacheControl: 'public, max-age=86400',
     });
     uploaded = {
@@ -262,15 +256,23 @@ export async function uploadPlatformLogo(input: {
     );
   } else {
     console.warn('[settings] R2 not configured — storing logo in Supabase course-thumbnails');
+    const objectKey = buildContentAddressedKey(
+      'branding/logo',
+      validated.contentHash,
+      validated.extension,
+    );
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.storage
       .from(FALLBACK_BUCKET)
-      .upload(objectKey, file.buffer, {
-        contentType: file.mimetype,
+      .upload(objectKey, validated.buffer, {
+        contentType: validated.mimeType,
         upsert: false,
       });
     if (error) {
-      throw new AppError(500, 'LOGO_UPLOAD_FAILED', error.message);
+      const msg = error.message.toLowerCase();
+      if (!msg.includes('already exists') && !msg.includes('duplicate')) {
+        throw new AppError(500, 'LOGO_UPLOAD_FAILED', error.message);
+      }
     }
     const { data } = supabase.storage.from(FALLBACK_BUCKET).getPublicUrl(objectKey);
     uploaded = {

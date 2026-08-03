@@ -5,6 +5,7 @@ import type { Video, VideoPublic } from '@sharanam/shared';
 
 import { getSupabaseAdmin } from '../config/supabase';
 import { AppError } from '../utils/AppError';
+import { sanitizeSearchTerm } from '../utils/postgrestSafe';
 import { parseYouTubeUrl, youtubeThumbnailUrl } from '../utils/youtube';
 import type {
   CreateVideoInput,
@@ -175,7 +176,7 @@ export async function listVideosForAdmin(filters: ListVideosQuery): Promise<Vide
 
   const search = filters.search?.trim();
   if (search) {
-    const safe = search.replace(/[%_,.()]/g, '');
+    const safe = sanitizeSearchTerm(search);
     if (safe) {
       query = query.or(
         `title.ilike.%${safe}%,description.ilike.%${safe}%,youtube_video_id.ilike.%${safe}%`,

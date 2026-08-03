@@ -78,7 +78,12 @@ export async function getPaymentHistory(
 ): Promise<void> {
   try {
     const userId = assertUserId(req);
-    const data = await listPurchaseHistory(userId);
+    const query = req.query as {
+      page?: number;
+      pageSize?: number;
+      status?: string;
+    };
+    const data = await listPurchaseHistory(userId, query);
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);

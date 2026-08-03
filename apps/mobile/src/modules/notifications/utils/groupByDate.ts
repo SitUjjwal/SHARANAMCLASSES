@@ -80,3 +80,36 @@ export function notificationTypeEmoji(type: string): string {
       return '🔔';
   }
 }
+
+/** Ionicons glyph for modern inbox rows (replaces emoji in UI). */
+export function notificationTypeIcon(
+  type: string,
+):
+  | 'videocam'
+  | 'book-outline'
+  | 'document-text-outline'
+  | 'megaphone-outline'
+  | 'time-outline'
+  | 'alert-circle-outline'
+  | 'card-outline'
+  | 'notifications-outline' {
+  switch (type) {
+    case 'live_class':
+    case 'missed_class':
+      return 'videocam';
+    case 'course_update':
+      return 'book-outline';
+    case 'test_reminder':
+      return 'document-text-outline';
+    case 'announcement':
+      return 'megaphone-outline';
+    case 'course_expiry':
+      return 'time-outline';
+    case 'payment':
+      return 'card-outline';
+    case 'general':
+      return 'notifications-outline';
+    default:
+      return 'notifications-outline';
+  }
+}

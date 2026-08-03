@@ -4,6 +4,7 @@
 import { getSupabaseAdmin } from '../config/supabase';
 import { emitChapterPublished } from '../events';
 import { AppError } from '../utils/AppError';
+import { sanitizeSearchTerm } from '../utils/postgrestSafe';
 import type { Chapter, ChapterContentItem, ChapterDetail } from '@sharanam/shared';
 import type {
   CreateChapterInput,
@@ -84,7 +85,7 @@ export async function listChaptersForCourse(
 
   const search = options.search?.trim();
   if (search) {
-    const safe = search.replace(/[%_,.()]/g, '');
+    const safe = sanitizeSearchTerm(search);
     if (safe) {
       query = query.or(`title.ilike.%${safe}%,description.ilike.%${safe}%`);
     }
@@ -218,12 +219,14 @@ export async function getChapterDetail(
   const chapter = toChapter(chapterRow, index + 1, unlocked);
 
   // Always load catalogs so free-preview rows appear with lock / free badges
-  const [videos, pdfs, notes, liveClasses] = await Promise.all([
+  const [videos, pdfs, notes, liveClassesPage] = await Promise.all([
     listVideosForChapterPublic(chapterId, { enrolled: unlocked }),
     listPdfsForChapterPublic(chapterId, { enrolled: unlocked }),
     listNotesForChapterPublic(chapterId, { enrolled: unlocked }),
-    listLiveClassesPublic({ courseId }),
+    listLiveClassesPublic({ courseId, page: 1, pageSize: 100 }),
   ]);
+
+  const liveClasses = liveClassesPage.items;
 
   const videoAsContents: ChapterContentItem[] = videos.map((video) => ({
     id: video.id,
@@ -746,7 +749,9 @@ export async function getCourseContent(
     }),
   );
 
-  const live_classes = await listLiveClassesPublic({ courseId });
+  const live_classes = (
+    await listLiveClassesPublic({ courseId, page: 1, pageSize: 100 })
+  ).items;
 
   return {
     course_id: course.id as string,

@@ -6,10 +6,11 @@
  */
 import { useCallback, useMemo } from 'react';
 import {
+  ActivityIndicator,
   Alert,
+  FlatList,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -22,30 +23,39 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { Screen } from '@/components/ui/Screen';
 import { SkeletonBlock } from '@/components/ui/SkeletonBlock';
 import { LiveClassCard } from '@/modules/live-classes/components/LiveClassCard';
-import { useLiveClassesQuery } from '@/modules/live-classes/hooks/useLiveClassesQuery';
+import { useLiveClassesInfiniteQuery } from '@/modules/live-classes/hooks/useLiveClassesInfiniteQuery';
 import { openInYouTubeApp } from '@/modules/videos/utils/openYouTube';
 import { extractYouTubeVideoId } from '@/modules/videos/utils/youtube';
 import { getApiErrorMessage } from '@/utils/apiErrors';
 import { colors, spacing, typography } from '@/theme';
 import type { LiveClassPublic } from '@sharanam/shared';
 
+type Row =
+  | { type: 'header'; title: string; key: string }
+  | { type: 'item'; liveClass: LiveClassPublic; key: string };
+
 export function LiveClassesScreen() {
   const insets = useSafeAreaInsets();
-  const liveQuery = useLiveClassesQuery();
+  const liveQuery = useLiveClassesInfiniteQuery(20);
 
-  const { liveNow, upcoming, ended } = useMemo(() => {
-    const items = liveQuery.data ?? [];
+  const items = useMemo(
+    () => liveQuery.data?.pages.flatMap((p) => p.items) ?? [],
+    [liveQuery.data],
+  );
+
+  const { liveNow, upcoming } = useMemo(() => {
     const now = Date.now();
     const liveNowList: LiveClassPublic[] = [];
     const upcomingList: LiveClassPublic[] = [];
-    const endedList: LiveClassPublic[] = [];
 
     for (const item of items) {
       const start = Date.parse(item.start_time);
       const end = Date.parse(item.end_time);
+      // Ended lives are archived onto the related course — hide from Live tab.
       if (!Number.isNaN(end) && now > end) {
-        endedList.push({ ...item, status: 'ended' });
-      } else if (!Number.isNaN(start) && now >= start) {
+        continue;
+      }
+      if (!Number.isNaN(start) && now >= start) {
         liveNowList.push({ ...item, status: 'live' });
       } else {
         upcomingList.push({ ...item, status: 'upcoming' });
@@ -55,8 +65,25 @@ export function LiveClassesScreen() {
     upcomingList.sort(
       (a, b) => Date.parse(a.start_time) - Date.parse(b.start_time),
     );
-    return { liveNow: liveNowList, upcoming: upcomingList, ended: endedList };
-  }, [liveQuery.data]);
+    return { liveNow: liveNowList, upcoming: upcomingList };
+  }, [items]);
+
+  const rows = useMemo(() => {
+    const out: Row[] = [];
+    if (liveNow.length) {
+      out.push({ type: 'header', title: 'Live now', key: 'h-live' });
+      for (const liveClass of liveNow) {
+        out.push({ type: 'item', liveClass, key: liveClass.id });
+      }
+    }
+    if (upcoming.length) {
+      out.push({ type: 'header', title: 'Upcoming', key: 'h-up' });
+      for (const liveClass of upcoming) {
+        out.push({ type: 'item', liveClass, key: liveClass.id });
+      }
+    }
+    return out;
+  }, [liveNow, upcoming]);
 
   const onJoin = useCallback(async (liveClass: LiveClassPublic) => {
     if (!liveClass.youtube_url) {
@@ -101,11 +128,11 @@ export function LiveClassesScreen() {
     );
   }
 
-  const hasAny = liveNow.length + upcoming.length + ended.length > 0;
-
   return (
     <Screen style={styles.screen}>
-      <ScrollView
+      <FlatList
+        data={rows}
+        keyExtractor={(row) => row.key}
         contentContainerStyle={[styles.scroll, { paddingTop: insets.top + spacing.sm }]}
         refreshControl={
           <RefreshControl
@@ -116,61 +143,58 @@ export function LiveClassesScreen() {
             tintColor={colors.accent}
           />
         }
-      >
-        <Text style={styles.screenTitle}>Live Classes</Text>
-        <Text style={styles.screenSubtitle}>Join live sessions or wait for the countdown.</Text>
-
-        {!hasAny ? (
+        ListHeaderComponent={
+          <View>
+            <Text style={styles.screenTitle}>Live Classes</Text>
+            <Text style={styles.screenSubtitle}>
+              Join live sessions or wait for the countdown. Ended classes move to the course.
+            </Text>
+          </View>
+        }
+        ListEmptyComponent={
           <EmptyState
             icon="radio-outline"
             title="No live classes"
             message="When a live class is scheduled, it will appear here."
           />
-        ) : null}
-
-        {liveNow.length ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Live now</Text>
-            {liveNow.map((item) => (
-              <LiveClassCard key={item.id} liveClass={item} onJoin={onJoin} />
-            ))}
-          </View>
-        ) : null}
-
-        {upcoming.length ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Upcoming</Text>
-            {upcoming.map((item) => (
-              <LiveClassCard key={item.id} liveClass={item} onJoin={onJoin} />
-            ))}
-          </View>
-        ) : null}
-
-        {ended.length ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Ended</Text>
-            {ended.slice(0, 5).map((item) => (
-              <LiveClassCard key={item.id} liveClass={item} onJoin={onJoin} />
-            ))}
-          </View>
-        ) : null}
-
-        {liveQuery.isError ? (
-          <View style={styles.retryWrap}>
-            <AppButton
-              label="Retry"
-              variant="ghost"
-              onPress={() => {
-                void liveQuery.refetch();
-              }}
-            />
-          </View>
-        ) : null}
-
-        <Pressable onPress={() => void liveQuery.refetch()} style={styles.refreshHint}>
-          <Text style={styles.refreshText}>Pull to refresh · auto-updates every 30s</Text>
-        </Pressable>
-      </ScrollView>
+        }
+        renderItem={({ item }) =>
+          item.type === 'header' ? (
+            <Text style={styles.sectionTitle}>{item.title}</Text>
+          ) : (
+            <LiveClassCard liveClass={item.liveClass} onJoin={onJoin} />
+          )
+        }
+        onEndReached={() => {
+          if (liveQuery.hasNextPage && !liveQuery.isFetchingNextPage) {
+            void liveQuery.fetchNextPage();
+          }
+        }}
+        onEndReachedThreshold={0.4}
+        ListFooterComponent={
+          liveQuery.isFetchingNextPage ? (
+            <ActivityIndicator color={colors.accent} style={{ marginVertical: spacing.lg }} />
+          ) : (
+            <Pressable onPress={() => void liveQuery.refetch()} style={styles.refreshHint}>
+              <Text style={styles.refreshText}>Pull to refresh · auto-updates every 30s</Text>
+            </Pressable>
+          )
+        }
+        initialNumToRender={8}
+        windowSize={7}
+        removeClippedSubviews
+      />
+      {liveQuery.isError ? (
+        <View style={styles.retryWrap}>
+          <AppButton
+            label="Retry"
+            variant="ghost"
+            onPress={() => {
+              void liveQuery.refetch();
+            }}
+          />
+        </View>
+      ) : null}
     </Screen>
   );
 }

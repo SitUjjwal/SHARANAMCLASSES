@@ -28,6 +28,11 @@ const EMPTY: PlatformGeneralSettings = {
   app_version: '1.0.0',
   min_app_version: '1.0.0',
   timezone: 'Asia/Kolkata',
+  social_facebook: '',
+  social_instagram: '',
+  social_telegram: '',
+  social_youtube: '',
+  social_whatsapp: '',
 };
 
 export function SettingsPage() {
@@ -55,7 +60,7 @@ export function SettingsPage() {
     setError(null);
     try {
       const data = await fetchPlatformSettings();
-      setForm(data.general);
+      setForm({ ...EMPTY, ...data.general });
       setUpdatedAt(data.updated_at);
     } catch (err) {
       setError(err instanceof ApiClientError ? err.message : 'Failed to load settings');
@@ -76,7 +81,7 @@ export function SettingsPage() {
     setError(null);
     try {
       const data = await savePlatformSettings(form);
-      setForm(data.general);
+      setForm({ ...EMPTY, ...data.general });
       setUpdatedAt(data.updated_at);
       setSaved(true);
       await refresh();
@@ -94,7 +99,7 @@ export function SettingsPage() {
     setSaved(false);
     try {
       const data = await uploadPlatformLogo(file);
-      setForm(data.general);
+      setForm({ ...EMPTY, ...data.general });
       setUpdatedAt(data.updated_at);
       setSaved(true);
       await refresh();
@@ -146,7 +151,7 @@ export function SettingsPage() {
             <div className="settings-logo-row">
               <div>
                 <p className="hint" style={{ marginTop: 0 }}>
-                  Logo (JPEG / PNG / WebP / SVG, max 2MB)
+                  Logo (JPEG / PNG / WebP, max 2MB)
                 </p>
                 {form.logo_url ? (
                   <img
@@ -160,7 +165,7 @@ export function SettingsPage() {
                 <input
                   ref={fileRef}
                   type="file"
-                  accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                  accept="image/jpeg,image/png,image/webp"
                   disabled={uploading || !canWrite}
                   onChange={(e) => void onLogoChange(e.target.files?.[0] ?? null)}
                 />
@@ -208,6 +213,7 @@ export function SettingsPage() {
               <input
                 value={form.support_phone}
                 onChange={(e) => setForm((f) => ({ ...f, support_phone: e.target.value }))}
+                placeholder="+91 98765 43210"
               />
             </label>
             <label>
@@ -216,6 +222,64 @@ export function SettingsPage() {
                 value={form.timezone}
                 onChange={(e) => setForm((f) => ({ ...f, timezone: e.target.value }))}
                 required
+              />
+            </label>
+          </fieldset>
+
+          <fieldset disabled={!canWrite}>
+            <legend>Social media (student app drawer)</legend>
+            <p className="hint" style={{ marginTop: 0 }}>
+              Paste full links (https://…). Leave blank to hide that icon. WhatsApp example:
+              https://wa.me/91XXXXXXXXXX
+            </p>
+            <label>
+              Facebook
+              <input
+                type="text"
+                inputMode="url"
+                value={form.social_facebook}
+                onChange={(e) => setForm((f) => ({ ...f, social_facebook: e.target.value }))}
+                placeholder="https://www.facebook.com/…"
+              />
+            </label>
+            <label>
+              Instagram
+              <input
+                type="text"
+                inputMode="url"
+                value={form.social_instagram}
+                onChange={(e) => setForm((f) => ({ ...f, social_instagram: e.target.value }))}
+                placeholder="https://www.instagram.com/…"
+              />
+            </label>
+            <label>
+              Telegram
+              <input
+                type="text"
+                inputMode="url"
+                value={form.social_telegram}
+                onChange={(e) => setForm((f) => ({ ...f, social_telegram: e.target.value }))}
+                placeholder="https://t.me/…"
+              />
+            </label>
+            <label>
+              YouTube
+              <input
+                type="text"
+                inputMode="url"
+                value={form.social_youtube}
+                onChange={(e) => setForm((f) => ({ ...f, social_youtube: e.target.value }))}
+                placeholder="https://www.youtube.com/@…"
+              />
+            </label>
+            <label>
+              WhatsApp
+              <input
+                type="text"
+                inputMode="url"
+                value={form.social_whatsapp}
+                onChange={(e) => setForm((f) => ({ ...f, social_whatsapp: e.target.value }))}
+                placeholder="https://wa.me/91XXXXXXXXXX"
               />
             </label>
           </fieldset>

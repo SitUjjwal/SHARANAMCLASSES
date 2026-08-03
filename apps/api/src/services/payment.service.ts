@@ -17,12 +17,14 @@ import type { CreatePaymentOrderResult, VerifyPaymentResult } from '@sharanam/sh
 
 import { getSupabaseAdmin } from '../config/supabase';
 import { emitPaymentCompleted } from '../events';
+import { logger } from '../logging';
 import {
   createRazorpayOrder,
   fetchRazorpayPayment,
   getRazorpayKeyId,
   verifyPaymentSignature,
 } from '../integrations/razorpay';
+import { AppError } from '../utils/AppError';
 import { resolveActorEmail, writeActivityLog } from './activityLog.service';
 import {
   paymentOrderRepository,
@@ -42,7 +44,6 @@ import {
   purchaseRepository,
   type IPurchaseRepository,
 } from '../repositories/purchase.repository';
-import { AppError } from '../utils/AppError';
 import type {
   CreatePaymentOrderInput,
   VerifyPaymentInput,
@@ -335,6 +336,15 @@ export async function createPaymentOrder(
     },
   });
 
+  logger.payment('Payment order created', {
+    user_id: userId,
+    order_id: row.id,
+    razorpay_order_id: rzOrder.id,
+    product_id: product.id,
+    amount_paise: amountPaise,
+    currency: product.currency || INR,
+  });
+
   return {
     order_id: row.id,
     razorpay_order_id: rzOrder.id,
@@ -381,6 +391,30 @@ function buildVerifySuccess(
  * 6. Return success response
  */
 export async function verifyPayment(
+  userId: string,
+  input: VerifyPaymentInput,
+  deps: PaymentServiceDeps = {},
+): Promise<VerifyPaymentResult> {
+  try {
+    return await verifyPaymentInternal(userId, input, deps);
+  } catch (err) {
+    logger.payment(
+      'Payment verification failed',
+      {
+        user_id: userId,
+        razorpay_order_id: input.razorpay_order_id,
+        razorpay_payment_id: input.razorpay_payment_id,
+        code: err instanceof AppError ? err.code : 'PAYMENT_VERIFY_FAILED',
+        message: err instanceof Error ? err.message : String(err),
+        status: err instanceof AppError ? err.statusCode : 500,
+      },
+      err instanceof AppError && err.statusCode < 500 ? 'warn' : 'error',
+    );
+    throw err;
+  }
+}
+
+async function verifyPaymentInternal(
   userId: string,
   input: VerifyPaymentInput,
   deps: PaymentServiceDeps = {},
@@ -611,10 +645,13 @@ function toHistoryItem(
  */
 export async function listPurchaseHistory(
   userId: string,
+  query: { page?: number; pageSize?: number; status?: string } = {},
   deps: PaymentServiceDeps = {},
 ): Promise<import('@sharanam/shared').PurchaseHistoryPage> {
   const orders = deps.orders ?? paymentOrderRepository;
-  const rows = await orders.listByUserId(userId);
+  const page = Math.max(1, query.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, query.pageSize ?? 20));
+  const { rows, total } = await orders.listByUserId(userId, { page, pageSize });
   const supabase = getSupabaseAdmin();
 
   const courseIds = [
@@ -664,7 +701,13 @@ export async function listPurchaseHistory(
     return toHistoryItem(row, title);
   });
 
-  return { items };
+  return {
+    items,
+    page,
+    pageSize,
+    total,
+    hasMore: page * pageSize < total,
+  };
 }
 
 function formatReceiptDate(iso: string): string {

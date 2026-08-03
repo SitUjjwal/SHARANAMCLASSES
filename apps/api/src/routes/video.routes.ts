@@ -28,7 +28,8 @@ import {
 import { requireAuth } from '../middlewares/auth';
 import { requirePermission } from '../middlewares/requirePermission';
 import { thumbnailUpload } from '../middlewares/upload';
-import { validate } from '../middlewares/validate';
+import { validate, validateRequest } from '../middlewares/validate';
+import { uuidIdParamSchema, uuidNamedParam } from '../validators/common.validators';
 import {
   createVideoSchema,
   listVideosQuerySchema,
@@ -36,15 +37,25 @@ import {
 } from '../validators/video.validators';
 import { upsertVideoWatchProgressSchema } from '../validators/videoWatchProgress.validators';
 
+const videoIdParamSchema = uuidNamedParam('videoId');
+
 export const videoRouter = Router();
 
 videoRouter.get('/continue-watching', requireAuth, getContinueWatching);
 
-videoRouter.get('/videos/:videoId/progress', requireAuth, getVideoProgress);
+videoRouter.get(
+  '/videos/:videoId/progress',
+  requireAuth,
+  validate(videoIdParamSchema, 'params'),
+  getVideoProgress,
+);
 videoRouter.put(
   '/videos/:videoId/progress',
   requireAuth,
-  validate(upsertVideoWatchProgressSchema),
+  validateRequest({
+    params: videoIdParamSchema,
+    body: upsertVideoWatchProgressSchema,
+  }),
   putVideoProgress,
 );
 
@@ -72,14 +83,29 @@ videoRouter.post(
   postVideo,
 );
 
-videoRouter.get('/videos/:id', requireAuth, requirePermission('courses:read'), getVideo);
+videoRouter.get(
+  '/videos/:id',
+  requireAuth,
+  requirePermission('courses:read'),
+  validate(uuidIdParamSchema, 'params'),
+  getVideo,
+);
 
 videoRouter.put(
   '/videos/:id',
   requireAuth,
   requirePermission('courses:update'),
-  validate(updateVideoSchema),
+  validateRequest({
+    params: uuidIdParamSchema,
+    body: updateVideoSchema,
+  }),
   putVideo,
 );
 
-videoRouter.delete('/videos/:id', requireAuth, requirePermission('courses:delete'), removeVideo);
+videoRouter.delete(
+  '/videos/:id',
+  requireAuth,
+  requirePermission('courses:delete'),
+  validate(uuidIdParamSchema, 'params'),
+  removeVideo,
+);

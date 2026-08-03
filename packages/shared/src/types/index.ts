@@ -47,3 +47,5 @@ export * from './adminOps';
 export * from './adminStudents';
 export * from './adminTeachers';
 export * from './adminAnalytics';
+export * from './adminMonitoring';
+export * from './backup';

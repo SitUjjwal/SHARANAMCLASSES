@@ -5,6 +5,7 @@ import type { CreateFaqInput, Faq, UpdateFaqInput } from '@sharanam/shared';
 
 import { getSupabaseAdmin } from '../config/supabase';
 import { AppError } from '../utils/AppError';
+import { sanitizeSearchTerm } from '../utils/postgrestSafe';
 
 const COLUMNS =
   'id, question, answer, category, sort_order, is_published, created_at, updated_at';
@@ -33,10 +34,6 @@ function mapFaq(row: Row): Faq {
   };
 }
 
-function escapeIlike(term: string): string {
-  return term.replace(/[%_,.()]/g, '');
-}
-
 /** Student: published FAQs, optional search on question/answer. */
 export async function listPublishedFaqs(search?: string): Promise<Faq[]> {
   const supabase = getSupabaseAdmin();
@@ -48,7 +45,7 @@ export async function listPublishedFaqs(search?: string): Promise<Faq[]> {
     .order('created_at', { ascending: true })
     .limit(200);
 
-  const q = escapeIlike(search?.trim() ?? '');
+  const q = sanitizeSearchTerm(search?.trim() ?? '');
   if (q) {
     query = query.or(`question.ilike.%${q}%,answer.ilike.%${q}%`);
   }

@@ -30,6 +30,7 @@ export async function maintenanceModeGuard(
     if (
       path === '/health' ||
       path.startsWith('/health/') ||
+      path === '/system-status' ||
       path === '/public/platform' ||
       path.startsWith('/public/')
     ) {

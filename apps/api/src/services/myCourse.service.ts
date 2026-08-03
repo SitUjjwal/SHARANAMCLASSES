@@ -93,6 +93,8 @@ export async function listMyCourses(
   query: ListMyCoursesQuery,
 ): Promise<MyCoursesPage> {
   const supabase = getSupabaseAdmin();
+  const page = Math.max(1, query.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, query.pageSize ?? 20));
 
   const { data, error } = await supabase
     .from('enrollments')
@@ -121,7 +123,7 @@ export async function listMyCourses(
 
   const search = query.search?.trim().toLowerCase() ?? '';
 
-  const items: MyCourseItem[] = [];
+  const allItems: MyCourseItem[] = [];
   for (const row of rows) {
     const course = normalizeCourse(row.course);
     if (!course || !course.is_published) continue;
@@ -131,7 +133,7 @@ export async function listMyCourses(
       if (!hay.includes(search)) continue;
     }
 
-    items.push({
+    allItems.push({
       enrollment_id: row.id,
       course_id: row.course_id,
       title: course.title,
@@ -149,11 +151,21 @@ export async function listMyCourses(
     });
   }
 
-  // Continue Learning = most recently watched owned course with a chapter
   const continueLearning =
-    items.find((item) => item.last_watched_chapter_id && item.last_watched_at) ?? null;
+    allItems.find((item) => item.last_watched_chapter_id && item.last_watched_at) ?? null;
 
-  return { items, continue_learning: continueLearning };
+  const total = allItems.length;
+  const from = (page - 1) * pageSize;
+  const items = allItems.slice(from, from + pageSize);
+
+  return {
+    items,
+    continue_learning: continueLearning,
+    page,
+    pageSize,
+    total,
+    hasMore: from + items.length < total,
+  };
 }
 
 /**
@@ -241,7 +253,7 @@ export async function updateLastWatchedChapter(
     await maybeRequestCertificateOnCompletion(userId, courseId, nextProgress);
   }
 
-  const page = await listMyCourses(userId, { search: '' });
+  const page = await listMyCourses(userId, { search: '', page: 1, pageSize: 100 });
   const item = page.items.find((row) => row.course_id === courseId);
   if (!item) {
     throw new AppError(404, 'MY_COURSE_NOT_FOUND', 'Course not found in My Courses');

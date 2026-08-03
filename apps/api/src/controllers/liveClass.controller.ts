@@ -48,7 +48,12 @@ export async function listLiveClasses(
 
     const courseId =
       typeof req.query.courseId === 'string' ? req.query.courseId : undefined;
-    const data = await listLiveClassesPublic({ courseId });
+    const page = typeof req.query.page === 'number' ? req.query.page : Number(req.query.page) || 1;
+    const pageSize =
+      typeof req.query.pageSize === 'number'
+        ? req.query.pageSize
+        : Number(req.query.pageSize) || 20;
+    const data = await listLiveClassesPublic({ courseId, page, pageSize });
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);
@@ -64,7 +69,9 @@ export async function listPublicLiveClasses(
   try {
     const courseId =
       typeof req.query.courseId === 'string' ? req.query.courseId : undefined;
-    const data = await listLiveClassesPublic({ courseId });
+    const page = Number(req.query.page) || 1;
+    const pageSize = Number(req.query.pageSize) || 20;
+    const data = await listLiveClassesPublic({ courseId, page, pageSize });
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);

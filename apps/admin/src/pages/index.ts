@@ -32,5 +32,7 @@ export { AnalyticsPage } from './AnalyticsPage';
 export { RevenuePage } from './RevenuePage';
 export { ReportsPage } from './ReportsPage';
 export { ActivityLogsPage } from './ActivityLogsPage';
+export { BackupsPage } from './BackupsPage';
 export { SettingsPage } from './SettingsPage';
+export { MonitoringPage } from './MonitoringPage';
 export { RolesPage } from './RolesPage';

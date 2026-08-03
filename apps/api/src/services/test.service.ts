@@ -8,6 +8,7 @@ import type { Test, TestType } from '@sharanam/shared';
 
 import { getSupabaseAdmin } from '../config/supabase';
 import { AppError } from '../utils/AppError';
+import { sanitizeSearchTerm } from '../utils/postgrestSafe';
 import type {
   CreateTestInput,
   ListTestsQuery,
@@ -208,7 +209,7 @@ export async function listTestsForAdmin(query: ListTestsQuery): Promise<TestList
 
   const search = query.search?.trim();
   if (search) {
-    const safe = search.replace(/[%_,.()]/g, '');
+    const safe = sanitizeSearchTerm(search);
     if (safe) {
       dbQuery = dbQuery.or(
         `title.ilike.%${safe}%,description.ilike.%${safe}%,instructions.ilike.%${safe}%`,
@@ -390,11 +391,18 @@ export async function listTestsPublic(options: {
   chapterId?: string;
   testType?: TestType;
   enrolledCourseIds?: Set<string>;
-}): Promise<import('@sharanam/shared').TestPublic[]> {
+  page?: number;
+  pageSize?: number;
+}): Promise<import('@sharanam/shared').TestsPublicPage> {
   const supabase = getSupabaseAdmin();
+  const page = Math.max(1, options.page ?? 1);
+  const pageSize = Math.min(100, Math.max(1, options.pageSize ?? 20));
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
   let query = supabase
     .from('tests')
-    .select(TEST_COLUMNS)
+    .select(TEST_COLUMNS, { count: 'exact' })
     .eq('is_published', true)
     .order('sort_order', { ascending: true });
 
@@ -408,7 +416,7 @@ export async function listTestsPublic(options: {
     query = query.eq('test_type', options.testType);
   }
 
-  const { data, error } = await query;
+  const { data, error, count } = await query.range(from, to);
   if (error) {
     throw new AppError(500, 'TESTS_FETCH_FAILED', error.message);
   }
@@ -416,7 +424,7 @@ export async function listTestsPublic(options: {
   const enriched = await enrichTests((data ?? []) as TestRow[]);
   const enrolled = options.enrolledCourseIds ?? new Set<string>();
 
-  return enriched.map((test) => {
+  const items = enriched.map((test) => {
     const hasCourseAccess =
       !test.course_id || enrolled.has(test.course_id) || test.is_free;
     const is_locked = !hasCourseAccess;
@@ -438,4 +446,13 @@ export async function listTestsPublic(options: {
       chapter_title: test.chapter_title,
     };
   });
+
+  const total = count ?? items.length;
+  return {
+    items,
+    page,
+    pageSize,
+    total,
+    hasMore: page * pageSize < total,
+  };
 }

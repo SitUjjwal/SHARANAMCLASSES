@@ -4,9 +4,9 @@
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
+  FlatList,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -105,7 +105,9 @@ export function TestListScreen({ navigation, hideBack = false }: Props) {
 
       {startError ? <Text style={styles.error}>{startError}</Text> : null}
 
-      <ScrollView
+      <FlatList
+        data={items}
+        keyExtractor={(test) => test.id}
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl
@@ -116,50 +118,46 @@ export function TestListScreen({ navigation, hideBack = false }: Props) {
             tintColor={colors.accent}
           />
         }
-      >
-        {items.length === 0 ? (
-          <EmptyState
-            title="No tests yet"
-            message="Published tests will appear here."
-          />
-        ) : (
-          items.map((test) => {
-            const busy = startingId === test.id;
-            return (
-              <View key={test.id} style={styles.card}>
-                <Text style={styles.cardType}>
-                  {TEST_TYPE_LABELS[test.test_type]}
-                </Text>
-                <Text style={styles.cardTitle}>{test.title}</Text>
-                <Text style={styles.cardMeta}>
-                  {test.duration_minutes} min · {test.total_marks} marks
-                  {test.is_locked ? ' · Locked' : ''}
-                </Text>
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={busy || test.is_locked}
-                  onPress={() => {
-                    void onStart(test);
-                  }}
-                  style={({ pressed }) => [
-                    styles.startBtn,
-                    test.is_locked ? styles.startLocked : null,
-                    pressed && !busy && !test.is_locked ? styles.pressed : null,
-                  ]}
-                >
-                  {busy ? (
-                    <ActivityIndicator color={colors.primary} />
-                  ) : (
-                    <Text style={styles.startLabel}>
-                      {test.is_locked ? 'Locked' : 'Start / Resume'}
-                    </Text>
-                  )}
-                </Pressable>
-              </View>
-            );
-          })
-        )}
-      </ScrollView>
+        ListEmptyComponent={
+          <EmptyState title="No tests yet" message="Published tests will appear here." />
+        }
+        renderItem={({ item: test }) => {
+          const busy = startingId === test.id;
+          return (
+            <View style={styles.card}>
+              <Text style={styles.cardType}>{TEST_TYPE_LABELS[test.test_type]}</Text>
+              <Text style={styles.cardTitle}>{test.title}</Text>
+              <Text style={styles.cardMeta}>
+                {test.duration_minutes} min · {test.total_marks} marks
+                {test.is_locked ? ' · Locked' : ''}
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                disabled={busy || test.is_locked}
+                onPress={() => {
+                  void onStart(test);
+                }}
+                style={({ pressed }) => [
+                  styles.startBtn,
+                  test.is_locked ? styles.startLocked : null,
+                  pressed && !busy && !test.is_locked ? styles.pressed : null,
+                ]}
+              >
+                {busy ? (
+                  <ActivityIndicator color={colors.primary} />
+                ) : (
+                  <Text style={styles.startLabel}>
+                    {test.is_locked ? 'Locked' : 'Start / Resume'}
+                  </Text>
+                )}
+              </Pressable>
+            </View>
+          );
+        }}
+        initialNumToRender={8}
+        windowSize={7}
+        removeClippedSubviews
+      />
     </Screen>
   );
 }

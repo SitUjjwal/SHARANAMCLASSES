@@ -1,18 +1,5 @@
 /**
- * Student feedback ticket routes.
- *
- * Student:
- *   POST   /feedback
- *   GET    /feedback
- *   GET    /feedback/teachers
- *   GET    /feedback/:feedbackId
- *   PATCH  /feedback/:feedbackId   (open only — title/message)
- *   DELETE /feedback/:feedbackId   (open only)
- *
- * Admin:
- *   GET    /admin/feedback?status=&feedback_type=
- *   PATCH  /admin/feedback/:feedbackId
- *   DELETE /admin/feedback/:feedbackId
+ * Student feedback ticket routes — Zod on body / query / params.
  */
 import { Router } from 'express';
 
@@ -29,10 +16,12 @@ import {
 } from '../controllers/feedback.controller';
 import { requireAuth } from '../middlewares/auth';
 import { requirePermission } from '../middlewares/requirePermission';
-import { validate } from '../middlewares/validate';
+import { validate, validateRequest } from '../middlewares/validate';
+import { feedbackIdParamSchema } from '../validators/common.validators';
 import {
   adminFeedbackQuerySchema,
   createFeedbackSchema,
+  listMyFeedbackQuerySchema,
   updateFeedbackContentSchema,
   updateFeedbackStatusSchema,
 } from '../validators/feedback.validators';
@@ -45,16 +34,34 @@ feedbackRouter.post(
   validate(createFeedbackSchema),
   postCreateFeedback,
 );
-feedbackRouter.get('/feedback', requireAuth, listMyFeedback);
+feedbackRouter.get(
+  '/feedback',
+  requireAuth,
+  validate(listMyFeedbackQuerySchema, 'query'),
+  listMyFeedback,
+);
 feedbackRouter.get('/feedback/teachers', requireAuth, listFeedbackTeachersHandler);
-feedbackRouter.get('/feedback/:feedbackId', requireAuth, getMyFeedback);
+feedbackRouter.get(
+  '/feedback/:feedbackId',
+  requireAuth,
+  validate(feedbackIdParamSchema, 'params'),
+  getMyFeedback,
+);
 feedbackRouter.patch(
   '/feedback/:feedbackId',
   requireAuth,
-  validate(updateFeedbackContentSchema),
+  validateRequest({
+    params: feedbackIdParamSchema,
+    body: updateFeedbackContentSchema,
+  }),
   patchMyFeedback,
 );
-feedbackRouter.delete('/feedback/:feedbackId', requireAuth, deleteMyFeedbackHandler);
+feedbackRouter.delete(
+  '/feedback/:feedbackId',
+  requireAuth,
+  validate(feedbackIdParamSchema, 'params'),
+  deleteMyFeedbackHandler,
+);
 
 feedbackRouter.get(
   '/admin/feedback',
@@ -67,12 +74,16 @@ feedbackRouter.patch(
   '/admin/feedback/:feedbackId',
   requireAuth,
   requirePermission('feedback:update'),
-  validate(updateFeedbackStatusSchema),
+  validateRequest({
+    params: feedbackIdParamSchema,
+    body: updateFeedbackStatusSchema,
+  }),
   patchAdminFeedback,
 );
 feedbackRouter.delete(
   '/admin/feedback/:feedbackId',
   requireAuth,
   requirePermission('feedback:delete'),
+  validate(feedbackIdParamSchema, 'params'),
   deleteAdminFeedbackHandler,
 );

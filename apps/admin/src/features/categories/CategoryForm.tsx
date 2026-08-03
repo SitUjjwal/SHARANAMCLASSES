@@ -24,6 +24,7 @@ type FormState = {
   name: string;
   slug: string;
   icon: string;
+  link_url: string;
   sort_order: string;
   is_active: boolean;
   slugTouched: boolean;
@@ -37,6 +38,7 @@ function fromCategory(category: Category | null, nextSortOrder: number): FormSta
       name: '',
       slug: '',
       icon: '📘',
+      link_url: '',
       sort_order: String(nextSortOrder),
       is_active: true,
       slugTouched: false,
@@ -46,6 +48,7 @@ function fromCategory(category: Category | null, nextSortOrder: number): FormSta
     name: category.name,
     slug: category.slug,
     icon: category.icon ?? '📘',
+    link_url: category.link_url ?? '',
     sort_order: String(category.sort_order ?? 0),
     is_active: category.is_active,
     slugTouched: true,
@@ -81,6 +84,7 @@ export function CategoryForm({
       name: form.name.trim(),
       slug: form.slug.trim() || slugifyCategoryName(form.name),
       icon: form.icon.trim() || null,
+      link_url: form.link_url.trim() || null,
       sort_order: Number(form.sort_order) || 0,
       is_active: form.is_active,
     };
@@ -181,6 +185,21 @@ export function CategoryForm({
             </button>
           ))}
         </div>
+
+        <label className="span-2">
+          Social / external link (optional)
+          <input
+            type="text"
+            inputMode="url"
+            value={form.link_url}
+            onChange={(e) => setField('link_url', e.target.value)}
+            placeholder="https://instagram.com/… or https://wa.me/91… or https://youtube.com/…"
+          />
+          <span className="hint">
+            If set, tapping this category in the student app opens this link. Leave blank to open
+            courses for this category.
+          </span>
+        </label>
 
         <label>
           Sort order

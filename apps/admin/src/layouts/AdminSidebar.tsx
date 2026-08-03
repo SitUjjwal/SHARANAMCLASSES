@@ -1,9 +1,15 @@
 /**
- * Admin sidebar — primary flat nav + Logout.
+ * Admin sidebar — grouped nav + Logout.
  */
 import { NavLink } from 'react-router-dom';
 
-import { ADMIN_NAV, APP_NAME } from '@/constants';
+import {
+  ADMIN_NAV,
+  ADMIN_NAV_SECTION_LABELS,
+  ADMIN_NAV_SECTION_ORDER,
+  APP_NAME,
+  type AdminNavSection,
+} from '@/constants';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { useBrandLogo, useBrandName } from '@/features/platform/PlatformProvider';
 
@@ -25,18 +31,28 @@ export function AdminSidebar() {
       </div>
 
       <nav className="admin-nav" aria-label="Admin">
-        {items.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end={item.path === '/'}
-            className={({ isActive }) =>
-              isActive ? 'admin-nav-link is-active' : 'admin-nav-link'
-            }
-          >
-            {item.label}
-          </NavLink>
-        ))}
+        {ADMIN_NAV_SECTION_ORDER.map((section) => {
+          const sectionItems = items.filter((item) => item.section === section);
+          if (sectionItems.length === 0) return null;
+          const label = ADMIN_NAV_SECTION_LABELS[section as AdminNavSection];
+          return (
+            <div key={section} className="admin-nav-section">
+              {label ? <p className="admin-nav-section-label">{label}</p> : null}
+              {sectionItems.map((item) => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  end={item.path === '/'}
+                  className={({ isActive }) =>
+                    isActive ? 'admin-nav-link is-active' : 'admin-nav-link'
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
+          );
+        })}
       </nav>
 
       <div className="admin-sidebar-foot">

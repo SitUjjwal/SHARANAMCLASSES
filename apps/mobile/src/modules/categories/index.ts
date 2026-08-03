@@ -23,4 +23,8 @@ export { CategoriesGrid } from './components/CategoriesGrid';
 export type { CategoriesGridProps } from './components/CategoriesGrid';
 export { useCategoriesQuery } from './hooks/useCategoriesQuery';
 export { filterCategories } from './utils/filterCategories';
+export {
+  categoryHasExternalLink,
+  openCategoryExternalLink,
+} from './utils/openCategoryAction';
 export { CategoriesScreen } from './screens/CategoriesScreen';

@@ -41,12 +41,22 @@ export type InsertPaymentOrderInput = {
   metadata?: Record<string, unknown>;
 };
 
+export type PaymentOrderListPage = {
+  rows: PaymentOrderRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+};
+
 export interface IPaymentOrderRepository {
   insert(input: InsertPaymentOrderInput): Promise<PaymentOrderRow>;
   findById(id: string): Promise<PaymentOrderRow | null>;
   findByRazorpayOrderId(razorpayOrderId: string): Promise<PaymentOrderRow | null>;
   findByRazorpayPaymentId(razorpayPaymentId: string): Promise<PaymentOrderRow | null>;
-  listByUserId(userId: string): Promise<PaymentOrderRow[]>;
+  listByUserId(
+    userId: string,
+    options?: { page?: number; pageSize?: number },
+  ): Promise<PaymentOrderListPage>;
   markPaid(input: {
     id: string;
     razorpay_payment_id: string;
@@ -124,18 +134,29 @@ export const paymentOrderRepository: IPaymentOrderRepository = {
     return (data as PaymentOrderRow | null) ?? null;
   },
 
-  async listByUserId(userId) {
+  async listByUserId(userId, options?: { page?: number; pageSize?: number }) {
     const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
+    const page = Math.max(1, options?.page ?? 1);
+    const pageSize = Math.min(100, Math.max(1, options?.pageSize ?? 50));
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    const { data, error, count } = await supabase
       .from('payment_orders')
-      .select(COLUMNS)
+      .select(COLUMNS, { count: 'exact' })
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(from, to);
 
     if (error) {
       throw new AppError(500, 'PAYMENT_HISTORY_FETCH_FAILED', error.message);
     }
-    return (data ?? []) as PaymentOrderRow[];
+    return {
+      rows: (data ?? []) as PaymentOrderRow[],
+      total: count ?? (data ?? []).length,
+      page,
+      pageSize,
+    };
   },
 
   async markPaid(input) {
@@ -171,6 +192,13 @@ export const paymentOrderRepository: IPaymentOrderRepository = {
 
     if (error) {
       throw new AppError(400, 'PAYMENT_ORDER_UPDATE_FAILED', error.message);
+    }
+
+    try {
+      const { metricsStore } = await import('../monitoring/metricsStore');
+      metricsStore.recordFailedPayment();
+    } catch {
+      // monitoring is best-effort
     }
   },
 };

@@ -3,6 +3,7 @@
  * Overlapping ticks are skipped via an in-process mutex.
  */
 import { getReminderEngineConfig } from './config';
+import { runArchiveEndedLive } from './handlers/archiveEndedLive';
 import { runCourseExpiry } from './handlers/courseExpiry';
 import { runLiveClassUpcoming } from './handlers/liveClassUpcoming';
 import { runMissedClass } from './handlers/missedClass';
@@ -38,6 +39,7 @@ export async function runReminderTick(opts?: {
       await runCourseExpiry(config, { dryRun }),
       await runNewChapter(config, { dryRun }),
       await runMissedClass(config, { dryRun }),
+      await runArchiveEndedLive(config, { dryRun }),
     ];
 
     return {

@@ -2,10 +2,12 @@
  * CategoryCard — one tappable subject tile.
  * Why: reusable on Home grid, Courses browse, and future search results.
  */
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 import type { Category } from '@sharanam/shared';
 import { CategoryIcon } from '@/modules/categories/components/CategoryIcon';
+import { categoryHasExternalLink } from '@/modules/categories/utils/openCategoryAction';
 import { colors, spacing, typography } from '@/theme';
 
 export type CategoryCardProps = {
@@ -14,17 +16,26 @@ export type CategoryCardProps = {
 };
 
 export function CategoryCard({ category, onPress }: CategoryCardProps) {
+  const hasLink = categoryHasExternalLink(category);
+
   return (
     <Pressable
       style={styles.card}
       onPress={() => onPress(category)}
       accessibilityRole="button"
-      accessibilityLabel={category.name}
+      accessibilityLabel={
+        hasLink ? `${category.name}, opens external link` : category.name
+      }
     >
       <CategoryIcon icon={category.icon} />
       <Text style={styles.label} numberOfLines={2}>
         {category.name}
       </Text>
+      {hasLink ? (
+        <View style={styles.linkHint} accessibilityElementsHidden>
+          <Ionicons name="open-outline" size={14} color="rgba(255,255,255,0.55)" />
+        </View>
+      ) : null}
     </Pressable>
   );
 }
@@ -50,5 +61,8 @@ const styles = StyleSheet.create({
     color: colors.surface,
     fontSize: typography.fontSize.lg,
     fontWeight: '700',
+  },
+  linkHint: {
+    marginLeft: 2,
   },
 });

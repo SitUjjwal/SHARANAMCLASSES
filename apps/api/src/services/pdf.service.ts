@@ -3,9 +3,12 @@
  */
 import type { Pdf, PdfPublic } from '@sharanam/shared';
 
+import { isR2Configured } from '../config/env';
+import { createSignedR2Url } from '../integrations/r2/client';
 import { getSupabaseAdmin } from '../config/supabase';
 import { deletePdfStorageObject } from './pdf-upload.service';
 import { AppError } from '../utils/AppError';
+import { sanitizeSearchTerm } from '../utils/postgrestSafe';
 import type {
   CreatePdfInput,
   ListPdfsQuery,
@@ -150,7 +153,7 @@ export async function listPdfsForAdmin(filters: ListPdfsQuery): Promise<PdfListP
 
   const search = filters.search?.trim();
   if (search) {
-    const safe = search.replace(/[%_,.()]/g, '');
+    const safe = sanitizeSearchTerm(search);
     if (safe) {
       query = query.or(
         `title.ilike.%${safe}%,description.ilike.%${safe}%,original_filename.ilike.%${safe}%`,
@@ -359,7 +362,34 @@ export async function deletePdf(pdfId: string): Promise<void> {
 }
 
 /**
+ * Prefer public CDN URL for WebView / Google Docs compatibility.
+ * Fall back to a signed R2 URL when only storage_key is available (private objects).
+ */
+async function resolveStudentPdfUrl(
+  storageKey: string | null | undefined,
+  fileUrl: string | null | undefined,
+): Promise<string | null> {
+  const publicUrl = (fileUrl ?? '').trim();
+  if (publicUrl) {
+    return publicUrl;
+  }
+
+  const key = (storageKey ?? '').trim();
+  if (key && !key.startsWith('supabase:') && isR2Configured()) {
+    try {
+      const signed = await createSignedR2Url(key);
+      return signed.url;
+    } catch (err) {
+      console.warn('[pdf] signed URL failed', key, err);
+    }
+  }
+
+  return null;
+}
+
+/**
  * Published PDFs for a chapter — hide file_url when paid + not enrolled.
+ * Unlocked rows get a signed download URL when R2 is configured.
  */
 export async function listPdfsForChapterPublic(
   chapterId: string,
@@ -377,21 +407,32 @@ export async function listPdfsForChapterPublic(
     throw new AppError(500, 'PDFS_FETCH_FAILED', error.message);
   }
 
-  return ((data ?? []) as Record<string, unknown>[]).map((row) => {
-    const isFree = Boolean(row.is_free);
-    const is_locked = isMediaLocked(options.enrolled, isFree);
-    return {
-      id: row.id as string,
-      course_id: row.course_id as string,
-      chapter_id: row.chapter_id as string,
-      title: row.title as string,
-      description: (row.description as string) ?? '',
-      file_size: Number(row.file_size) || 0,
-      original_filename: (row.original_filename as string) || '',
-      sort_order: Number(row.sort_order) || 0,
-      is_free: isFree,
-      is_locked,
-      file_url: is_locked ? null : (row.file_url as string),
-    };
-  });
+  const rows = (data ?? []) as Record<string, unknown>[];
+
+  return Promise.all(
+    rows.map(async (row) => {
+      const isFree = Boolean(row.is_free);
+      const is_locked = isMediaLocked(options.enrolled, isFree);
+      const file_url = is_locked
+        ? null
+        : await resolveStudentPdfUrl(
+            row.storage_key as string | undefined,
+            row.file_url as string | undefined,
+          );
+
+      return {
+        id: row.id as string,
+        course_id: row.course_id as string,
+        chapter_id: row.chapter_id as string,
+        title: row.title as string,
+        description: (row.description as string) ?? '',
+        file_size: Number(row.file_size) || 0,
+        original_filename: (row.original_filename as string) || '',
+        sort_order: Number(row.sort_order) || 0,
+        is_free: isFree,
+        is_locked,
+        file_url,
+      };
+    }),
+  );
 }

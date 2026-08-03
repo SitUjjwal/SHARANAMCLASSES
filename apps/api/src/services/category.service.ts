@@ -3,13 +3,20 @@
  */
 import { getSupabaseAdmin } from '../config/supabase';
 import { AppError } from '../utils/AppError';
+import { sanitizeSearchTerm } from '../utils/postgrestSafe';
 import type { Category } from '@sharanam/shared';
 import type {
   CreateCategoryInput,
   UpdateCategoryInput,
 } from '../validators/category.validators';
 
-const CATEGORY_COLUMNS = 'id, name, slug, icon, sort_order, is_active';
+const CATEGORY_COLUMNS = 'id, name, slug, icon, link_url, sort_order, is_active';
+
+function normalizeLinkUrl(value: string | null | undefined): string | null {
+  if (value === undefined || value === null) return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
 
 export async function listActiveCategories(search?: string): Promise<Category[]> {
   const supabase = getSupabaseAdmin();
@@ -22,7 +29,7 @@ export async function listActiveCategories(search?: string): Promise<Category[]>
 
   const trimmed = search?.trim();
   if (trimmed) {
-    const safe = trimmed.replace(/[%_,.()]/g, '');
+    const safe = sanitizeSearchTerm(trimmed);
     if (safe) {
       query = query.or(`name.ilike.%${safe}%,slug.ilike.%${safe}%`);
     }
@@ -57,6 +64,7 @@ export async function createCategory(input: CreateCategoryInput): Promise<Catego
       name: input.name,
       slug: input.slug,
       icon: input.icon ?? null,
+      link_url: normalizeLinkUrl(input.link_url),
       sort_order: input.sort_order ?? 0,
       is_active: input.is_active ?? true,
     })
@@ -78,6 +86,7 @@ export async function updateCategory(
   if (input.name !== undefined) patch.name = input.name;
   if (input.slug !== undefined) patch.slug = input.slug;
   if (input.icon !== undefined) patch.icon = input.icon;
+  if (input.link_url !== undefined) patch.link_url = normalizeLinkUrl(input.link_url);
   if (input.sort_order !== undefined) patch.sort_order = input.sort_order;
   if (input.is_active !== undefined) patch.is_active = input.is_active;
 
@@ -99,8 +108,31 @@ export async function updateCategory(
 
 export async function deleteCategory(categoryId: string): Promise<void> {
   const supabase = getSupabaseAdmin();
-  const { error } = await supabase.from('categories').delete().eq('id', categoryId);
+
+  const { data: existing, error: lookupError } = await supabase
+    .from('categories')
+    .select('id')
+    .eq('id', categoryId)
+    .maybeSingle();
+
+  if (lookupError) {
+    throw new AppError(500, 'CATEGORY_DELETE_FAILED', lookupError.message);
+  }
+  if (!existing) {
+    throw new AppError(404, 'CATEGORY_NOT_FOUND', 'Category not found');
+  }
+
+  // Linked courses use ON DELETE SET NULL — safe to hard-delete.
+  const { data, error } = await supabase
+    .from('categories')
+    .delete()
+    .eq('id', categoryId)
+    .select('id');
+
   if (error) {
     throw new AppError(400, 'CATEGORY_DELETE_FAILED', error.message);
+  }
+  if (!data?.length) {
+    throw new AppError(404, 'CATEGORY_NOT_FOUND', 'Category not found or already deleted');
   }
 }

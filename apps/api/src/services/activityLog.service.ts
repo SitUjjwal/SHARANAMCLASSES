@@ -11,7 +11,9 @@
 import type { AdminActivityLog, AdminActivityLogPage, AdminCsvExport } from '@sharanam/shared';
 
 import { getSupabaseAdmin } from '../config/supabase';
+import { logger } from '../logging';
 import { AppError } from '../utils/AppError';
+import { sanitizeSearchTerm } from '../utils/postgrestSafe';
 
 export type ActivityCategory =
   | 'auth'
@@ -62,8 +64,42 @@ export type ListActivityLogsQuery = {
   search?: string;
 };
 
-/** Best-effort append — never throws to callers. */
+/** Best-effort append — never throws to callers. Also mirrors to file logger. */
 export async function writeActivityLog(input: WriteActivityLogInput): Promise<void> {
+  const category = activityCategoryForAction(input.action);
+
+  if (category === 'admin') {
+    logger.admin(input.summary, {
+      action: input.action,
+      actor_id: input.actor_id,
+      actor_email: input.actor_email,
+      entity_type: input.entity_type,
+      entity_id: input.entity_id,
+      metadata: sanitizeMetadata(input.metadata ?? {}),
+    });
+  } else if (category === 'auth') {
+    logger.auth(input.summary, {
+      action: input.action,
+      actor_id: input.actor_id,
+      actor_email: input.actor_email,
+    });
+  } else if (category === 'payment') {
+    logger.payment(input.summary, {
+      action: input.action,
+      actor_id: input.actor_id,
+      entity_type: input.entity_type,
+      entity_id: input.entity_id,
+      metadata: sanitizeMetadata(input.metadata ?? {}),
+    });
+  } else {
+    logger.info(input.summary, {
+      action: input.action,
+      actor_id: input.actor_id,
+      entity_type: input.entity_type,
+      entity_id: input.entity_id,
+    });
+  }
+
   try {
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.from('admin_activity_logs').insert({
@@ -76,11 +112,28 @@ export async function writeActivityLog(input: WriteActivityLogInput): Promise<vo
       metadata: sanitizeMetadata(input.metadata ?? {}),
     });
     if (error && !error.message.toLowerCase().includes('does not exist')) {
-      console.warn('[activity-log] write failed:', error.message);
+      logger.warn('Activity log DB write failed', { message: error.message });
     }
   } catch (err) {
-    console.warn('[activity-log] write exception:', err);
+    logger.warn('Activity log write exception', {
+      err: err instanceof Error ? err.message : String(err),
+    });
   }
+}
+
+function activityCategoryForAction(action: string): 'auth' | 'payment' | 'admin' | 'system' {
+  if (action.startsWith('auth.')) return 'auth';
+  if (action.startsWith('payment.') || action === 'course.purchase') return 'payment';
+  if (
+    action.startsWith('student.') ||
+    action.startsWith('teacher.') ||
+    action.startsWith('settings.') ||
+    action.startsWith('roles.') ||
+    action.startsWith('admin.')
+  ) {
+    return 'admin';
+  }
+  return 'system';
 }
 
 /** @deprecated alias — prefer writeActivityLog */
@@ -146,8 +199,9 @@ export async function listActivityLogs(
   if (query.action?.trim()) {
     dbQuery = dbQuery.eq('action', query.action.trim());
   }
-  if (query.search?.trim()) {
-    dbQuery = dbQuery.ilike('summary', `%${query.search.trim()}%`);
+  const search = sanitizeSearchTerm(query.search?.trim() ?? '');
+  if (search) {
+    dbQuery = dbQuery.ilike('summary', `%${search}%`);
   }
 
   const { data, error, count } = await dbQuery;

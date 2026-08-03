@@ -31,6 +31,7 @@ import {
   deactivatePushTokenOnBackend,
   syncPushTokenToBackend,
 } from '@/modules/notifications/notification.service';
+import { canUseRemotePush } from '@/modules/notifications/pushEnvironment';
 import { registerForPushNotifications } from '@/modules/notifications/registerForPush';
 import { scheduleLocalSmokeNotification } from '@/modules/notifications/scheduleLocalSmokeNotification';
 import type {
@@ -59,7 +60,9 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   const refreshRegistration = useCallback(async () => {
     await configureNotifications();
-    await registerBackgroundNotificationTask();
+    if (canUseRemotePush()) {
+      await registerBackgroundNotificationTask();
+    }
 
     const result = await registerForPushNotifications();
     setState((prev) => ({
@@ -120,8 +123,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     void refreshRegistration();
   }, [isAuthenticated, refreshRegistration]);
 
-  // Token refresh listener (OS may rotate FCM/APNs tokens).
+  // Token refresh listener (OS may rotate FCM/APNs tokens). Skip in Expo Go.
   useEffect(() => {
+    if (!canUseRemotePush()) {
+      return;
+    }
+
     const sub = Notifications.addPushTokenListener((devicePushToken) => {
       if (!isAuthenticated) return;
       const tokenValue =

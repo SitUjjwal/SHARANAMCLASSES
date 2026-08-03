@@ -70,6 +70,7 @@ export async function apiRequest<T>(
     method: options.method ?? 'GET',
     headers,
     body,
+    cache: 'no-store',
   });
 
   const json = (await response.json().catch(() => null)) as

@@ -1,5 +1,5 @@
 /**
- * GreetingHeader — menu + greeting + notifications bell (unread badge).
+ * GreetingHeader — menu + Hello {name} + search + notifications bell.
  */
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,28 +9,19 @@ import { colors, spacing, typography } from '@/theme';
 type GreetingHeaderProps = {
   name: string;
   onMenuPress?: () => void;
+  onSearchPress?: () => void;
   onNotificationsPress?: () => void;
   unreadCount?: number;
 };
 
-function greetingLabel(hour: number): string {
-  if (hour < 12) {
-    return 'Good Morning';
-  }
-  if (hour < 17) {
-    return 'Good Afternoon';
-  }
-  return 'Good Evening';
-}
-
 export function GreetingHeader({
   name,
   onMenuPress,
+  onSearchPress,
   onNotificationsPress,
   unreadCount = 0,
 }: GreetingHeaderProps) {
   const firstName = name.trim().split(/\s+/)[0] || 'Student';
-  const label = greetingLabel(new Date().getHours());
   const badgeLabel = unreadCount > 99 ? '99+' : String(unreadCount);
 
   return (
@@ -45,9 +36,22 @@ export function GreetingHeader({
           <Ionicons name="menu" size={24} color={colors.surface} />
         </Pressable>
       ) : null}
+
       <Text style={styles.hello} numberOfLines={1}>
-        {label} {firstName} 👋
+        Hello {firstName}
       </Text>
+
+      {onSearchPress ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Search courses"
+          onPress={onSearchPress}
+          style={({ pressed }) => [styles.iconBtn, pressed ? styles.pressed : null]}
+        >
+          <Ionicons name="search" size={20} color={colors.surface} />
+        </Pressable>
+      ) : null}
+
       {onNotificationsPress ? (
         <Pressable
           accessibilityRole="button"
@@ -57,9 +61,17 @@ export function GreetingHeader({
               : 'Notifications'
           }
           onPress={onNotificationsPress}
-          style={({ pressed }) => [styles.iconBtn, pressed ? styles.pressed : null]}
+          style={({ pressed }) => [
+            styles.iconBtn,
+            unreadCount > 0 ? styles.iconBtnActive : null,
+            pressed ? styles.pressed : null,
+          ]}
         >
-          <Ionicons name="notifications-outline" size={22} color={colors.surface} />
+          <Ionicons
+            name={unreadCount > 0 ? 'notifications' : 'notifications-outline'}
+            size={20}
+            color={unreadCount > 0 ? colors.accent : colors.surface}
+          />
           {unreadCount > 0 ? (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{badgeLabel}</Text>
@@ -79,15 +91,22 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 42,
+    height: 42,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+  },
+  iconBtnActive: {
+    backgroundColor: 'rgba(201,162,39,0.16)',
+    borderColor: 'rgba(201,162,39,0.35)',
   },
   pressed: {
     opacity: 0.85,
+    transform: [{ scale: 0.96 }],
   },
   hello: {
     flex: 1,
@@ -98,19 +117,21 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
-    minWidth: 16,
-    height: 16,
-    paddingHorizontal: 3,
-    borderRadius: 8,
+    top: -2,
+    right: -2,
+    minWidth: 18,
+    height: 18,
+    paddingHorizontal: 4,
+    borderRadius: 9,
     backgroundColor: colors.danger,
+    borderWidth: 2,
+    borderColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   badgeText: {
     color: colors.surface,
     fontSize: 9,
-    fontWeight: '700',
+    fontWeight: '800',
   },
 });

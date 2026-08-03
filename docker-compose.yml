@@ -1,0 +1,72 @@
+# SHARANAM CLASSES — local / server docker-compose
+# Usage:
+#   cp apps/api/.env.example apps/api/.env   # fill secrets
+#   docker compose up --build -d
+#
+# Admin is built with VITE_* args (public, baked into the SPA).
+# Fill root `.env` VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY before `docker compose build`
+# (empty → build fails / white page).
+
+name: sharanam-classes
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      args:
+        NODE_VERSION: "22"
+    image: sharanam-api:local
+    container_name: sharanam-api
+    restart: unless-stopped
+    ports:
+      - "${API_PORT:-4000}:4000"
+    env_file:
+      - apps/api/.env
+    environment:
+      NODE_ENV: development
+      PORT: "4000"
+      LOG_DIR: /app/logs
+      LOG_TO_CONSOLE: "true"
+      # Ensure browser/admin can reach API from host
+      API_BASE_URL: ${API_BASE_URL:-http://localhost:4000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8080,http://localhost:5173}
+    volumes:
+      - api_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:4000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
+    networks:
+      - sharanam
+
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+      args:
+        NODE_VERSION: "22"
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:4000}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-}
+        VITE_RAZORPAY_KEY_ID: ${VITE_RAZORPAY_KEY_ID:-}
+    image: sharanam-admin:local
+    container_name: sharanam-admin
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - sharanam
+
+networks:
+  sharanam:
+    driver: bridge
+
+volumes:
+  api_logs:
+    name: sharanam-api-logs

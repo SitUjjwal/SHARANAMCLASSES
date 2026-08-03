@@ -6,7 +6,8 @@ export type ReminderType =
   | 'test_tomorrow'
   | 'course_expiry'
   | 'new_chapter'
-  | 'missed_class';
+  | 'missed_class'
+  | 'archive_ended_live';
 
 export type ReminderHandlerResult = {
   reminder_type: ReminderType;

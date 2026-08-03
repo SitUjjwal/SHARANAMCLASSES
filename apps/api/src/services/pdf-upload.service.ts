@@ -1,63 +1,28 @@
 /**
- * PDF upload helpers — validate → Cloudflare R2 (or Supabase fallback in local/dev).
+ * PDF upload helpers — secure validate → Cloudflare R2 (or Supabase fallback in local/dev).
  */
-import { randomUUID } from 'node:crypto';
-import path from 'node:path';
-
 import { getSupabaseAdmin } from '../config/supabase';
 import { env, isR2Configured } from '../config/env';
-import { deleteR2Object, putR2Object } from '../integrations/r2/client';
+import { deleteR2Object, securePutToR2 } from '../integrations/r2/client';
+import { buildContentAddressedKey, UPLOAD_PROFILES, validateSecureUpload } from '../integrations/r2/fileSecurity';
 import { AppError } from '../utils/AppError';
-
-const PDF_MIME = 'application/pdf';
-const PDF_MAX = 25 * 1024 * 1024; // 25MB
-const PDF_MAGIC = Buffer.from('%PDF');
 
 export type UploadedPdfMeta = {
   file_url: string;
+  signed_url?: string;
+  signed_url_expires_at?: string;
   storage_key: string;
   file_size: number;
   mime_type: string;
   original_filename: string;
+  content_hash: string;
+  deduplicated: boolean;
   storage_provider: 'r2' | 'supabase';
 };
 
-function sanitizeFilename(name: string): string {
-  const base = path.basename(name || 'document.pdf');
-  return base.replace(/[^\w.\-() ]+/g, '_').slice(0, 180) || 'document.pdf';
-}
-
-function assertPdfFile(file: {
-  buffer: Buffer;
-  mimetype: string;
-  originalname: string;
-  size: number;
-}): void {
-  if (file.mimetype !== PDF_MIME) {
-    throw new AppError(400, 'INVALID_PDF_TYPE', 'Only PDF files (application/pdf) are allowed');
-  }
-  if (file.size <= 0) {
-    throw new AppError(400, 'EMPTY_PDF', 'PDF file is empty');
-  }
-  if (file.size > PDF_MAX) {
-    throw new AppError(400, 'PDF_TOO_LARGE', 'PDF must be 25MB or smaller');
-  }
-  if (file.buffer.length < 5 || !file.buffer.subarray(0, 4).equals(PDF_MAGIC)) {
-    throw new AppError(
-      400,
-      'INVALID_PDF_CONTENT',
-      'File content is not a valid PDF (missing %PDF header)',
-    );
-  }
-  const lower = file.originalname.toLowerCase();
-  if (lower && !lower.endsWith('.pdf')) {
-    throw new AppError(400, 'INVALID_PDF_EXTENSION', 'Filename must end with .pdf');
-  }
-}
-
 /**
  * Upload a PDF binary.
- * Production: Cloudflare R2.
+ * Production: Cloudflare R2 (content-addressed key, dedupe, signed URL).
  * Local/dev without R2: Supabase chapter-materials bucket (compat).
  */
 export async function uploadPdfFile(file: {
@@ -66,23 +31,25 @@ export async function uploadPdfFile(file: {
   originalname: string;
   size: number;
 }): Promise<UploadedPdfMeta> {
-  assertPdfFile(file);
-
-  const original_filename = sanitizeFilename(file.originalname);
-  const objectKey = `pdfs/${Date.now()}-${randomUUID()}.pdf`;
+  const validated = validateSecureUpload(file, UPLOAD_PROFILES.pdf);
 
   if (isR2Configured()) {
-    const uploaded = await putR2Object({
-      key: objectKey,
-      body: file.buffer,
-      contentType: PDF_MIME,
+    const uploaded = await securePutToR2({
+      file,
+      kind: 'pdf',
+      prefix: 'pdfs',
+      cacheControl: 'private, max-age=3600',
     });
     return {
       file_url: uploaded.file_url,
+      signed_url: uploaded.signed_url,
+      signed_url_expires_at: uploaded.signed_url_expires_at,
       storage_key: uploaded.storage_key,
-      file_size: file.size,
-      mime_type: PDF_MIME,
-      original_filename,
+      file_size: validated.byteLength,
+      mime_type: validated.mimeType,
+      original_filename: validated.displayName,
+      content_hash: validated.contentHash,
+      deduplicated: Boolean(uploaded.deduplicated),
       storage_provider: 'r2',
     };
   }
@@ -95,30 +62,37 @@ export async function uploadPdfFile(file: {
     '[upload] R2 not configured — storing PDF in Supabase chapter-materials (dev fallback)',
   );
 
+  const objectKey = buildContentAddressedKey('pdfs', validated.contentHash, validated.extension);
   const supabase = getSupabaseAdmin();
   const { error } = await supabase.storage
     .from('chapter-materials')
-    .upload(objectKey, file.buffer, {
-      contentType: PDF_MIME,
+    .upload(objectKey, validated.buffer, {
+      contentType: validated.mimeType,
       upsert: false,
     });
 
   if (error) {
-    throw new AppError(
-      500,
-      'PDF_UPLOAD_FAILED',
-      error.message ||
-        'PDF upload failed. Configure Cloudflare R2, or ensure chapter-materials bucket exists.',
-    );
+    // Duplicate path in Supabase — treat as success if object already exists
+    const msg = error.message.toLowerCase();
+    if (!msg.includes('already exists') && !msg.includes('duplicate')) {
+      throw new AppError(
+        500,
+        'PDF_UPLOAD_FAILED',
+        error.message ||
+          'PDF upload failed. Configure Cloudflare R2, or ensure chapter-materials bucket exists.',
+      );
+    }
   }
 
   const { data } = supabase.storage.from('chapter-materials').getPublicUrl(objectKey);
   return {
     file_url: data.publicUrl,
     storage_key: `supabase:${objectKey}`,
-    file_size: file.size,
-    mime_type: PDF_MIME,
-    original_filename,
+    file_size: validated.byteLength,
+    mime_type: validated.mimeType,
+    original_filename: validated.displayName,
+    content_hash: validated.contentHash,
+    deduplicated: Boolean(error),
     storage_provider: 'supabase',
   };
 }

@@ -1,12 +1,40 @@
+/**
+ * Environment validation — fail fast on unsafe / incomplete production config.
+ */
 import { z } from 'zod';
 import dotenv from 'dotenv';
 
 dotenv.config();
 
+/**
+ * Accept common alternate names from host/panel templates.
+ * Canonical names always win if both are set.
+ */
+function applyEnvAliases(): void {
+  const aliases: Array<[from: string, to: string]> = [
+    ['RAZORPAY_KEY', 'RAZORPAY_KEY_ID'],
+    ['RAZORPAY_SECRET', 'RAZORPAY_KEY_SECRET'],
+    ['CLOUDFLARE_ACCOUNT_ID', 'R2_ACCOUNT_ID'],
+    ['CLOUDFLARE_ACCESS_KEY', 'R2_ACCESS_KEY_ID'],
+    ['CLOUDFLARE_SECRET_KEY', 'R2_SECRET_ACCESS_KEY'],
+    ['FCM_SERVICE_ACCOUNT_JSON', 'FIREBASE_SERVICE_ACCOUNT_JSON'],
+    ['FCM_SERVICE_ACCOUNT_PATH', 'FIREBASE_SERVICE_ACCOUNT_PATH'],
+  ];
+
+  for (const [from, to] of aliases) {
+    const src = process.env[from]?.trim();
+    if (src && !process.env[to]?.trim()) {
+      process.env[to] = src;
+    }
+  }
+}
+
+applyEnvAliases();
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  PORT: z.coerce.number().default(4000),
-  API_BASE_URL: z.string().default('http://localhost:4000'),
+  PORT: z.coerce.number().int().positive().default(4000),
+  API_BASE_URL: z.string().url().default('http://localhost:4000'),
   CORS_ORIGINS: z
     .string()
     .default('http://localhost:5173,http://localhost:8081')
@@ -15,12 +43,12 @@ const envSchema = z.object({
         .split(',')
         .map((origin) => origin.trim())
         .filter(Boolean),
-    ),
-  RATE_LIMIT_WINDOW_MS: z.coerce.number().default(15 * 60 * 1000),
-  RATE_LIMIT_MAX: z.coerce.number().default(100),
+    )
+    .refine((origins) => origins.length > 0, 'CORS_ORIGINS must list at least one origin'),
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
   /**
    * Comma-separated emails treated as admin (and auto-promoted in profiles).
-   * Example: ujjwalsharan82@gmail.com
    */
   ADMIN_EMAILS: z
     .string()
@@ -31,7 +59,8 @@ const envSchema = z.object({
         .map((email) => email.trim().toLowerCase())
         .filter(Boolean),
     ),
-  JWT_SECRET: z.string().default('dev-only-change-me'),
+  /** Reserved for non-Supabase signed tokens if added later — must not be default in prod */
+  JWT_SECRET: z.string().min(16).default('dev-only-change-me'),
   JWT_EXPIRES_IN: z.string().default('7d'),
   /** Project URL only — e.g. https://xxxx.supabase.co (never paste a JWT here) */
   SUPABASE_URL: z.string().default(''),
@@ -39,40 +68,42 @@ const envSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().default(''),
   /** Optional public anon key (not used for admin client) */
   SUPABASE_ANON_KEY: z.string().default(''),
-  /**
-   * Cloudflare R2 (S3-compatible) — required in production for PDF uploads.
-   * Leave blank in local/dev to fall back to Supabase chapter-materials.
-   */
   R2_ACCOUNT_ID: z.string().default(''),
   R2_ACCESS_KEY_ID: z.string().default(''),
   R2_SECRET_ACCESS_KEY: z.string().default(''),
   R2_BUCKET: z.string().default(''),
-  /** Public base URL (custom domain or r2.dev) — no trailing slash */
   R2_PUBLIC_BASE_URL: z.string().default(''),
-  /** Optional override; default https://{accountId}.r2.cloudflarestorage.com */
   R2_ENDPOINT: z.string().default(''),
-  /**
-   * Razorpay Payment Gateway (server-only secret).
-   * Checkout receives KEY_ID only — never ship KEY_SECRET to clients.
-   */
+  /** Signed GetObject URL lifetime (seconds). Default 1 hour. */
+  R2_SIGNED_URL_TTL_SECONDS: z.coerce.number().int().positive().default(3600),
   RAZORPAY_KEY_ID: z.string().default(''),
   RAZORPAY_KEY_SECRET: z.string().default(''),
-  /** Optional — required only if webhook route is enabled */
   RAZORPAY_WEBHOOK_SECRET: z.string().default(''),
-  /**
-   * Reminder Engine (node-cron scheduled notification jobs).
-   * Default enabled outside test; set REMINDER_ENGINE_ENABLED=false to disable.
-   */
   REMINDER_ENGINE_ENABLED: z.string().optional(),
-  /** Cron expression (default every 15 minutes) */
   REMINDER_ENGINE_CRON: z.string().default('*/15 * * * *'),
   REMINDER_ENGINE_TZ: z.string().default('Asia/Kolkata'),
   REMINDER_LIVE_LEAD_MINUTES: z.coerce.number().default(60),
   REMINDER_LIVE_WINDOW_MINUTES: z.coerce.number().default(12),
-  /** Comma-separated day milestones before course expiry */
   REMINDER_EXPIRY_DAYS: z.string().default('7,3,1'),
   REMINDER_CHAPTER_LOOKBACK_HOURS: z.coerce.number().default(36),
   REMINDER_MISSED_LOOKBACK_HOURS: z.coerce.number().default(3),
+  /** Backup engine (Module 12) */
+  BACKUP_ENGINE_ENABLED: z.string().optional(),
+  BACKUP_ENGINE_CRON: z.string().default('0 2 * * *'),
+  BACKUP_ENGINE_TZ: z.string().default('Asia/Kolkata'),
+  BACKUP_RETAIN_DAYS: z.coerce.number().int().positive().default(30),
+  /** Logging */
+  LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
+  LOG_DIR: z.string().default('logs'),
+  LOG_MAX_FILES: z.coerce.number().int().positive().default(14),
+  LOG_MAX_SIZE: z.string().default('20M'),
+  LOG_TO_CONSOLE: z
+    .string()
+    .optional()
+    .transform((v) => {
+      if (v === undefined || v === '') return undefined;
+      return v === '1' || v.toLowerCase() === 'true';
+    }),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -98,16 +129,34 @@ export function isRazorpayEnvConfigured(): boolean {
   return Boolean(env.RAZORPAY_KEY_ID?.trim() && env.RAZORPAY_KEY_SECRET?.trim());
 }
 
-if (env.NODE_ENV === 'production' && !isR2Configured()) {
-  console.error(
-    '[api] Cloudflare R2 is required in production (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_BASE_URL)',
-  );
-  process.exit(1);
+function assertProductionSecrets(): void {
+  if (env.NODE_ENV !== 'production') return;
+
+  const missing: string[] = [];
+
+  if (!env.SUPABASE_URL.startsWith('https://') || !env.SUPABASE_URL.includes('supabase.co')) {
+    missing.push('SUPABASE_URL (https://<ref>.supabase.co)');
+  }
+  if (!env.SUPABASE_SERVICE_ROLE_KEY.trim()) {
+    missing.push('SUPABASE_SERVICE_ROLE_KEY');
+  }
+  if (env.JWT_SECRET === 'dev-only-change-me' || env.JWT_SECRET.length < 32) {
+    missing.push('JWT_SECRET (min 32 chars, not the default)');
+  }
+  if (env.CORS_ORIGINS.some((o) => o.includes('localhost'))) {
+    console.warn('[api] WARNING: CORS_ORIGINS includes localhost in production');
+  }
+  if (!isR2Configured()) {
+    missing.push('Cloudflare R2 (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_BASE_URL)');
+  }
+  if (!isRazorpayEnvConfigured()) {
+    missing.push('RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET');
+  }
+
+  if (missing.length) {
+    console.error('[api] Production security check failed. Missing/invalid:', missing.join('; '));
+    process.exit(1);
+  }
 }
 
-if (env.NODE_ENV === 'production' && !isRazorpayEnvConfigured()) {
-  console.error(
-    '[api] Razorpay is required in production (RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET)',
-  );
-  process.exit(1);
-}
+assertProductionSecrets();

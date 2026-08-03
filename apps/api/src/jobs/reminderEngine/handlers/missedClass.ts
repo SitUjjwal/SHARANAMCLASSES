@@ -70,8 +70,8 @@ export async function runMissedClass(
       const notification = await createAndMaybeSendNotification(
         {
           title: 'Missed a live class?',
-          body: `${row.title as string} has ended. Catch the recording if available.`,
-          deep_link: `sharanam://live/${entityId}`,
+          body: `${row.title as string} has ended. Open the course to watch the recording.`,
+          deep_link: `sharanam://course/${courseId}`,
           data: {
             type: 'missed_class',
             live_class_id: entityId,

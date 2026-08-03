@@ -5,6 +5,7 @@ import type { Note, NotePublic } from '@sharanam/shared';
 
 import { getSupabaseAdmin } from '../config/supabase';
 import { AppError } from '../utils/AppError';
+import { sanitizeSearchTerm } from '../utils/postgrestSafe';
 import { parseSafeNotesUrl } from '../utils/notesUrl';
 import type {
   CreateNoteInput,
@@ -158,7 +159,7 @@ export async function listNotesForAdmin(filters: ListNotesQuery): Promise<NoteLi
 
   const search = filters.search?.trim();
   if (search) {
-    const safe = search.replace(/[%_,.()]/g, '');
+    const safe = sanitizeSearchTerm(search);
     if (safe) {
       query = query.or(
         `title.ilike.%${safe}%,description.ilike.%${safe}%,notes_url.ilike.%${safe}%`,

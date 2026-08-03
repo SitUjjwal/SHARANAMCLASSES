@@ -10,7 +10,6 @@ import {
   uploadPlatformLogo,
 } from '../services/systemSettings.service';
 import { AppError } from '../utils/AppError';
-import type { UpdateSystemSettingsInput } from '../validators/systemSettings.validators';
 
 function assertUser(req: Request): { id: string; email: string | null } {
   if (!req.user?.id) {
@@ -51,7 +50,7 @@ export async function getAdminSettingsHandler(
   }
 }
 
-/** PUT /admin/settings */
+/** PUT|PATCH /settings — full replace or partial merge into current general */
 export async function updateAdminSettingsHandler(
   req: Request,
   res: Response,
@@ -59,9 +58,13 @@ export async function updateAdminSettingsHandler(
 ): Promise<void> {
   try {
     const user = assertUser(req);
-    const body = req.body as UpdateSystemSettingsInput;
+    const body = req.body as { general: Record<string, unknown> };
+    const current = await getPlatformSettings({ bypassCache: true });
     const data = await updatePlatformSettings({
-      general: body.general,
+      general: {
+        ...current.general,
+        ...body.general,
+      },
       actor_id: user.id,
       actor_email: user.email,
     });

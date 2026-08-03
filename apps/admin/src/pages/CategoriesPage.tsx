@@ -23,6 +23,7 @@ export function CategoriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -57,13 +58,25 @@ export function CategoriesPage() {
   }
 
   async function onDelete(category: Category) {
-    const ok = window.confirm(`Delete category “${category.name}”?`);
+    const ok = window.confirm(
+      `Delete category “${category.name}”?\n\nCourses in this category will stay, but become uncategorized.`,
+    );
     if (!ok) return;
+
+    setDeletingId(category.id);
+    setError(null);
     try {
       await deleteAdminCategory(category.id);
+      // Optimistic remove so UI updates even if a stale GET were cached.
+      setItems((prev) => prev.filter((c) => c.id !== category.id));
       await load();
     } catch (err) {
-      window.alert(err instanceof ApiClientError ? err.message : 'Delete failed');
+      const message = err instanceof ApiClientError ? err.message : 'Delete failed';
+      setError(message);
+      window.alert(message);
+      await load();
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -109,6 +122,11 @@ export function CategoriesPage() {
                   )}
                 </div>
                 <strong>{category.name}</strong>
+                {category.link_url ? (
+                  <span className="category-tile-badge category-tile-link" title={category.link_url}>
+                    Link
+                  </span>
+                ) : null}
                 {!category.is_active ? (
                   <span className="category-tile-badge">Inactive</span>
                 ) : null}
@@ -120,9 +138,14 @@ export function CategoriesPage() {
                 <button
                   type="button"
                   className="btn danger"
-                  onClick={() => void onDelete(category)}
+                  disabled={deletingId === category.id}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void onDelete(category);
+                  }}
                 >
-                  Delete
+                  {deletingId === category.id ? 'Deleting…' : 'Delete'}
                 </button>
               </div>
             </article>

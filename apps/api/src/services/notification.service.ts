@@ -545,6 +545,15 @@ export async function sendNotification(
     sent_at: now,
   });
 
+  if (failureCount > 0) {
+    try {
+      const { metricsStore } = await import('../monitoring/metricsStore');
+      metricsStore.recordNotificationFailures(failureCount);
+    } catch {
+      // monitoring is best-effort
+    }
+  }
+
   const { data: finalDeliveries } = await supabase
     .from('notification_deliveries')
     .select(DELIVERY_COLUMNS)

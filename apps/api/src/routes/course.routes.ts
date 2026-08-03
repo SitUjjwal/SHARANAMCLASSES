@@ -52,7 +52,8 @@ import {
   attachCourseAccessFromCourse,
 } from '../middlewares/courseAccess';
 import { thumbnailUpload, materialUpload } from '../middlewares/upload';
-import { validate } from '../middlewares/validate';
+import { validate, validateRequest } from '../middlewares/validate';
+import { uuidIdParamSchema } from '../validators/common.validators';
 import {
   adminListChaptersQuerySchema,
   adminListCoursesQuerySchema,
@@ -95,13 +96,27 @@ courseRouter.put(
   '/courses/:id',
   requireAuth,
   requirePermission('courses:update'),
-  validate(updateCourseSchema),
+  validateRequest({
+    params: uuidIdParamSchema,
+    body: updateCourseSchema,
+  }),
   patchCourse,
 );
-courseRouter.delete('/courses/:id', requireAuth, requirePermission('courses:delete'), removeCourse);
+courseRouter.delete(
+  '/courses/:id',
+  requireAuth,
+  requirePermission('courses:delete'),
+  validate(uuidIdParamSchema, 'params'),
+  removeCourse,
+);
 
 // Student / shared detail + enroll (content gated by course-access middleware)
-courseRouter.get('/courses/:id', requireAuth, getCourse);
+courseRouter.get(
+  '/courses/:id',
+  requireAuth,
+  validate(uuidIdParamSchema, 'params'),
+  getCourse,
+);
 courseRouter.get(
   '/courses/:id/content',
   requireAuth,

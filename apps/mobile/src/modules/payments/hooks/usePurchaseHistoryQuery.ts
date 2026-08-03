@@ -1,5 +1,5 @@
 /**
- * usePurchaseHistoryQuery — React Query cache for Purchase History.
+ * usePurchaseHistoryQuery — first-page cache (compat for non-infinite callers).
  */
 import { useQuery } from '@tanstack/react-query';
 
@@ -8,8 +8,8 @@ import { fetchPurchaseHistory } from '@/services/payment.service';
 
 export function usePurchaseHistoryQuery() {
   return useQuery({
-    queryKey: queryKeys.purchaseHistory,
-    queryFn: fetchPurchaseHistory,
+    queryKey: queryKeys.purchaseHistory({ page: 1, pageSize: 50 }),
+    queryFn: () => fetchPurchaseHistory({ page: 1, pageSize: 50 }),
     staleTime: 60_000,
   });
 }

@@ -19,7 +19,10 @@ import { requireAuth } from '../middlewares/auth';
 import { requirePermission } from '../middlewares/requirePermission';
 import { logoUpload } from '../middlewares/upload';
 import { validate } from '../middlewares/validate';
-import { updateSystemSettingsSchema } from '../validators/systemSettings.validators';
+import {
+  patchSystemSettingsSchema,
+  updateSystemSettingsSchema,
+} from '../validators/systemSettings.validators';
 
 export const systemSettingsRouter = Router();
 
@@ -40,6 +43,14 @@ systemSettingsRouter.put(
   updateAdminSettingsHandler,
 );
 
+systemSettingsRouter.patch(
+  '/settings',
+  requireAuth,
+  requirePermission('settings:update'),
+  validate(patchSystemSettingsSchema),
+  updateAdminSettingsHandler,
+);
+
 systemSettingsRouter.get(
   '/admin/settings',
   requireAuth,
@@ -52,6 +63,14 @@ systemSettingsRouter.put(
   requireAuth,
   requirePermission('settings:update'),
   validate(updateSystemSettingsSchema),
+  updateAdminSettingsHandler,
+);
+
+systemSettingsRouter.patch(
+  '/admin/settings',
+  requireAuth,
+  requirePermission('settings:update'),
+  validate(patchSystemSettingsSchema),
   updateAdminSettingsHandler,
 );
 

@@ -64,7 +64,7 @@ export function BuyCourseScreen({ navigation, route }: Props) {
       queryClient.invalidateQueries({ queryKey: ['courses', 'list'] }),
       queryClient.invalidateQueries({ queryKey: queryKeys.dashboard }),
       queryClient.invalidateQueries({ queryKey: ['my-courses'] }),
-      queryClient.invalidateQueries({ queryKey: queryKeys.purchaseHistory }),
+      queryClient.invalidateQueries({ queryKey: ['payments', 'history'] }),
     ]);
   }, [courseId, queryClient]);
 

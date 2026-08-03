@@ -7,6 +7,7 @@ import { env, isR2Configured } from '../config/env';
 import { getSupabaseAdmin } from '../config/supabase';
 import { putR2Object } from '../integrations/r2/client';
 import { AppError } from '../utils/AppError';
+import { sanitizeSearchTerm } from '../utils/postgrestSafe';
 import { buildCertificatePdf } from './certificatePdf.service';
 
 const COLUMNS =
@@ -319,7 +320,7 @@ export async function searchStudentsForAdmin(
   limit = 20,
 ): Promise<AdminStudentOption[]> {
   const supabase = getSupabaseAdmin();
-  const q = query.trim();
+  const q = sanitizeSearchTerm(query);
   let builder = supabase
     .from('profiles')
     .select('id, full_name, email, class_level, role')
@@ -562,9 +563,10 @@ export async function approveCertificate(
       key: storageKey,
       body: Buffer.from(pdfBytes),
       contentType: 'application/pdf',
-      cacheControl: 'public, max-age=86400',
+      cacheControl: 'private, max-age=86400',
+      metadata: { 'upload-kind': 'certificate' },
     });
-    certificateUrl = uploaded.file_url;
+    certificateUrl = uploaded.signed_url ?? uploaded.file_url;
   } else if (env.NODE_ENV === 'production') {
     throw new AppError(503, 'R2_NOT_CONFIGURED', 'Cloudflare R2 is required for certificate PDFs');
   } else {
@@ -733,9 +735,10 @@ export async function updateAdminCertificate(
         key: storageKey,
         body: Buffer.from(pdfBytes),
         contentType: 'application/pdf',
-        cacheControl: 'public, max-age=86400',
+        cacheControl: 'private, max-age=86400',
+        metadata: { 'upload-kind': 'certificate' },
       });
-      certificateUrl = uploaded.file_url;
+      certificateUrl = uploaded.signed_url ?? uploaded.file_url;
     } else if (env.NODE_ENV === 'production') {
       throw new AppError(503, 'R2_NOT_CONFIGURED', 'Cloudflare R2 is required for certificate PDFs');
     } else {

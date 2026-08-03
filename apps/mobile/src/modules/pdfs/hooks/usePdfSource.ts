@@ -47,8 +47,9 @@ export function usePdfSource(pdfId: string | null, remoteUrl: string | null): Pd
       setError(null);
 
       const net = await NetInfo.fetch();
-      const isOffline =
-        net.isConnected === false || net.isInternetReachable === false;
+      // Don't treat `isInternetReachable === false` alone as offline — Android
+      // often reports that incorrectly on cellular and blocks downloads.
+      const isOffline = net.isConnected === false;
 
       if (cancelled) return;
       setOffline(isOffline);

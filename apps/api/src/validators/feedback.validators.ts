@@ -69,8 +69,18 @@ export const updateFeedbackContentSchema = z
 export const adminFeedbackQuerySchema = z.object({
   status: feedbackStatusSchema.optional(),
   feedback_type: feedbackTypeSchema.optional(),
+  page: z.coerce.number().int().min(1).optional().default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).optional().default(20),
+});
+
+export const listMyFeedbackQuerySchema = z.object({
+  status: feedbackStatusSchema.optional(),
+  feedback_type: feedbackTypeSchema.optional(),
+  page: z.coerce.number().int().min(1).optional().default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).optional().default(20),
 });
 
 export type CreateFeedbackInput = z.infer<typeof createFeedbackSchema>;
 export type UpdateFeedbackStatusInput = z.infer<typeof updateFeedbackStatusSchema>;
 export type UpdateFeedbackContentInput = z.infer<typeof updateFeedbackContentSchema>;
+export type ListMyFeedbackQuery = z.infer<typeof listMyFeedbackQuerySchema>;

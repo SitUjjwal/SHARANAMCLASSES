@@ -26,6 +26,11 @@ export type Category = {
   icon: string | null;
   sort_order: number;
   is_active: boolean;
+  /**
+   * Optional external URL (Instagram, YouTube, WhatsApp, website, …).
+   * When set, tapping the category opens this link instead of course browse.
+   */
+  link_url?: string | null;
 };
 
 export type BannerRedirectType =
@@ -311,6 +316,14 @@ export type TestPublic = {
   chapter_title?: string | null;
 };
 
+export type TestsPublicPage = {
+  items: TestPublic[];
+  page: number;
+  pageSize: number;
+  total: number;
+  hasMore: boolean;
+};
+
 /** Correct MCQ option key */
 export type QuestionCorrectAnswer = 'A' | 'B' | 'C' | 'D';
 
@@ -545,6 +558,8 @@ export type LiveClass = {
   end_time: string;
   is_published: boolean;
   notification_sent_at: string | null;
+  /** Set after the live ends and the YouTube link is saved on the course */
+  archived_video_id?: string | null;
   created_at?: string;
   updated_at?: string;
   course_title?: string | null;
@@ -565,6 +580,14 @@ export type LiveClassPublic = {
   end_time: string;
   status: LiveClassStatus;
   youtube_url: string | null;
+};
+
+export type LiveClassesPublicPage = {
+  items: LiveClassPublic[];
+  page: number;
+  pageSize: number;
+  total: number;
+  hasMore: boolean;
 };
 
 export type Enrollment = {
@@ -600,6 +623,10 @@ export type MyCoursesPage = {
   items: MyCourseItem[];
   /** Highest priority continue-learning target (most recent last_watched_at) */
   continue_learning: MyCourseItem | null;
+  page: number;
+  pageSize: number;
+  total: number;
+  hasMore: boolean;
 };
 
 /** Server-tracked Razorpay order lifecycle */
@@ -698,6 +725,10 @@ export type PurchaseHistoryItem = {
 
 export type PurchaseHistoryPage = {
   items: PurchaseHistoryItem[];
+  page: number;
+  pageSize: number;
+  total: number;
+  hasMore: boolean;
 };
 
 /** Downloadable receipt payload */

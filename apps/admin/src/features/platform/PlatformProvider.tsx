@@ -39,6 +39,11 @@ const FALLBACK: PublicPlatformConfig = {
   app_version: '1.0.0',
   min_app_version: '1.0.0',
   timezone: 'Asia/Kolkata',
+  social_facebook: '',
+  social_instagram: '',
+  social_telegram: '',
+  social_youtube: '',
+  social_whatsapp: '',
   updated_at: null,
 };
 

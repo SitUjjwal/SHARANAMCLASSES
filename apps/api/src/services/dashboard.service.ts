@@ -46,7 +46,7 @@ export async function getDashboardForUser(userId: string): Promise<DashboardPayl
       .order('sort_order', { ascending: true }),
     supabase
       .from('categories')
-      .select('id, name, slug, icon, sort_order, is_active')
+      .select('id, name, slug, icon, link_url, sort_order, is_active')
       .eq('is_active', true)
       .order('sort_order', { ascending: true }),
     supabase

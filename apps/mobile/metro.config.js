@@ -20,4 +20,15 @@ config.resolver.extraNodeModules = {
   semver: path.resolve(monorepoRoot, 'node_modules/semver'),
 };
 
+// Bundle optimization: defer requires until first use (pairs with stack getComponent)
+config.transformer = {
+  ...config.transformer,
+  getTransformOptions: async () => ({
+    transform: {
+      experimentalImportSupport: false,
+      inlineRequires: true,
+    },
+  }),
+};
+
 module.exports = config;

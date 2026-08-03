@@ -1,9 +1,6 @@
 /**
  * Bug report service — create with optional screenshot, list, admin status.
  */
-import { randomUUID } from 'node:crypto';
-import path from 'node:path';
-
 import type {
   AdminBugReport,
   BugReport,
@@ -15,14 +12,17 @@ import { BUG_REPORT_SCREEN_LABELS } from '@sharanam/shared';
 
 import { env, isR2Configured } from '../config/env';
 import { getSupabaseAdmin } from '../config/supabase';
-import { putR2Object } from '../integrations/r2/client';
+import { securePutToR2 } from '../integrations/r2/client';
+import {
+  buildContentAddressedKey,
+  UPLOAD_PROFILES,
+  validateSecureUpload,
+} from '../integrations/r2/fileSecurity';
 import { AppError } from '../utils/AppError';
 
 const COLUMNS =
   'id, ticket_number, user_id, description, screen_key, screen_label, screenshot_url, screenshot_storage_key, status, admin_note, resolved_at, closed_at, created_at, updated_at';
 
-const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/webp']);
-const MAX_BYTES = 5 * 1024 * 1024;
 const FALLBACK_BUCKET = 'course-thumbnails';
 
 type Row = {
@@ -70,41 +70,34 @@ async function nextTicketNumber(): Promise<string> {
   return `BUG${year}${String(Date.now()).slice(-5)}`;
 }
 
-function extensionFor(mimetype: string, originalname: string): string {
-  const fromName = path.extname(originalname).replace('.', '').toLowerCase();
-  if (fromName === 'jpg' || fromName === 'jpeg' || fromName === 'png' || fromName === 'webp') {
-    return fromName === 'jpeg' ? 'jpg' : fromName;
-  }
-  if (mimetype === 'image/png') return 'png';
-  if (mimetype === 'image/webp') return 'webp';
-  return 'jpg';
-}
-
 async function uploadScreenshot(
   userId: string,
   file: Express.Multer.File,
 ): Promise<{ url: string; storage_key: string }> {
-  if (!ALLOWED_MIME.has(file.mimetype)) {
-    throw new AppError(400, 'INVALID_IMAGE_TYPE', 'Use JPEG, PNG, or WebP for screenshots');
-  }
-  if (file.size <= 0) {
-    throw new AppError(400, 'EMPTY_IMAGE', 'Screenshot file is empty');
-  }
-  if (file.size > MAX_BYTES) {
-    throw new AppError(400, 'IMAGE_TOO_LARGE', 'Screenshot must be 5MB or smaller');
-  }
-
-  const ext = extensionFor(file.mimetype, file.originalname);
-  const objectKey = `bug-screenshots/${userId}/${Date.now()}-${randomUUID()}.${ext}`;
+  const validated = validateSecureUpload(
+    {
+      buffer: file.buffer,
+      mimetype: file.mimetype,
+      originalname: file.originalname,
+      size: file.size,
+    },
+    UPLOAD_PROFILES.image,
+  );
 
   if (isR2Configured()) {
-    const uploaded = await putR2Object({
-      key: objectKey,
-      body: file.buffer,
-      contentType: file.mimetype,
-      cacheControl: 'public, max-age=86400',
+    const uploaded = await securePutToR2({
+      file: {
+        buffer: file.buffer,
+        mimetype: file.mimetype,
+        originalname: file.originalname,
+        size: file.size,
+      },
+      kind: 'image',
+      prefix: `bug-screenshots/${userId}`,
+      cacheControl: 'private, max-age=86400',
+      extraMetadata: { 'owner-user-id': userId },
     });
-    return { url: uploaded.file_url, storage_key: uploaded.storage_key };
+    return { url: uploaded.signed_url ?? uploaded.file_url, storage_key: uploaded.storage_key };
   }
 
   if (env.NODE_ENV === 'production') {
@@ -115,13 +108,21 @@ async function uploadScreenshot(
     );
   }
 
+  const objectKey = buildContentAddressedKey(
+    `bug-screenshots/${userId}`,
+    validated.contentHash,
+    validated.extension,
+  );
   const supabase = getSupabaseAdmin();
-  const { error } = await supabase.storage.from(FALLBACK_BUCKET).upload(objectKey, file.buffer, {
-    contentType: file.mimetype,
+  const { error } = await supabase.storage.from(FALLBACK_BUCKET).upload(objectKey, validated.buffer, {
+    contentType: validated.mimeType,
     upsert: false,
   });
   if (error) {
-    throw new AppError(500, 'SCREENSHOT_UPLOAD_FAILED', error.message);
+    const msg = error.message.toLowerCase();
+    if (!msg.includes('already exists') && !msg.includes('duplicate')) {
+      throw new AppError(500, 'SCREENSHOT_UPLOAD_FAILED', error.message);
+    }
   }
   const { data } = supabase.storage.from(FALLBACK_BUCKET).getPublicUrl(objectKey);
   return { url: data.publicUrl, storage_key: objectKey };

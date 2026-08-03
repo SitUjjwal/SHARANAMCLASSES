@@ -1,9 +1,11 @@
 /**
  * ProfilePhoto — circular avatar from avatar_url, or initials fallback.
+ * Uses expo-image memory+disk cache for remote avatars.
  */
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
-import { colors, typography } from '@/theme';
+import { colors } from '@/theme';
 
 type Props = {
   name: string;
@@ -28,6 +30,9 @@ export function ProfilePhoto({ name, avatarUrl, size = 88 }: Props) {
       <Image
         source={{ uri: avatarUrl }}
         style={{ width: size, height: size, borderRadius: radius }}
+        contentFit="cover"
+        cachePolicy="memory-disk"
+        recyclingKey={avatarUrl}
         accessibilityLabel={`${name} profile photo`}
       />
     );
@@ -41,7 +46,9 @@ export function ProfilePhoto({ name, avatarUrl, size = 88 }: Props) {
       ]}
       accessibilityLabel={`${name} initials`}
     >
-      <Text style={styles.initials}>{initials(name)}</Text>
+      <Text style={[styles.initials, { fontSize: Math.max(12, Math.round(size * 0.36)) }]}>
+        {initials(name)}
+      </Text>
     </View>
   );
 }
@@ -54,7 +61,6 @@ const styles = StyleSheet.create({
   },
   initials: {
     color: colors.primary,
-    fontSize: typography.fontSize.xl,
     fontWeight: '800',
   },
 });

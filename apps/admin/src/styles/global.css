@@ -562,6 +562,10 @@ a {
   color: var(--admin-muted, #64748b);
 }
 
+.category-tile-link {
+  color: #0b6bcb;
+}
+
 .category-tile-actions {
   display: flex;
   justify-content: center;

@@ -10,8 +10,11 @@
 import * as Notifications from 'expo-notifications';
 import * as TaskManager from 'expo-task-manager';
 
+import { canUseRemotePush } from '@/modules/notifications/pushEnvironment';
+
 export const BACKGROUND_NOTIFICATION_TASK = 'SHARANAM_BACKGROUND_NOTIFICATION_TASK';
 
+// defineTask is safe in Expo Go; registerTaskAsync is what remote-push blocks.
 TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }) => {
   if (error) {
     console.warn('[notifications] background task error', error);
@@ -31,6 +34,10 @@ TaskManager.defineTask(BACKGROUND_NOTIFICATION_TASK, async ({ data, error }) => 
 });
 
 export async function registerBackgroundNotificationTask(): Promise<void> {
+  if (!canUseRemotePush()) {
+    return;
+  }
+
   try {
     const isRegistered = await TaskManager.isTaskRegisteredAsync(BACKGROUND_NOTIFICATION_TASK);
     if (!isRegistered) {

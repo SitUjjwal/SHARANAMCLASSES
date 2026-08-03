@@ -4,6 +4,7 @@
 import { getSupabaseAdmin } from '../config/supabase';
 import { emitCourseUpdated } from '../events';
 import { AppError } from '../utils/AppError';
+import { sanitizeSearchTerm } from '../utils/postgrestSafe';
 import type { CourseDetail, CourseListPage, CourseSummary } from '@sharanam/shared';
 import type {
   CreateCourseInput,
@@ -106,7 +107,7 @@ export async function listPublishedCourses(
 
   const search = filters.search?.trim();
   if (search) {
-    const safe = search.replace(/[%_,.()]/g, '');
+    const safe = sanitizeSearchTerm(search);
     if (safe) {
       query = query.or(
         `title.ilike.%${safe}%,description.ilike.%${safe}%,teacher_name.ilike.%${safe}%`,
@@ -136,7 +137,7 @@ export async function listPublishedCourses(
     query = query.eq('academic_year', filters.academicYear);
   }
   if (filters.subject) {
-    const safeSubject = filters.subject.replace(/[%_,.()]/g, '').trim();
+    const safeSubject = sanitizeSearchTerm(filters.subject);
     if (safeSubject) {
       query = query.ilike('subject', `%${safeSubject}%`);
     }
@@ -203,7 +204,7 @@ export async function listCoursesForAdmin(
 
   const search = filters.search?.trim();
   if (search) {
-    const safe = search.replace(/[%_,.()]/g, '');
+    const safe = sanitizeSearchTerm(search);
     if (safe) {
       query = query.or(
         `title.ilike.%${safe}%,slug.ilike.%${safe}%,teacher_name.ilike.%${safe}%`,
@@ -240,7 +241,7 @@ export async function listCoursesForAdmin(
     query = query.eq('academic_year', filters.academicYear);
   }
   if (filters.subject) {
-    const safeSubject = filters.subject.replace(/[%_,.()]/g, '').trim();
+    const safeSubject = sanitizeSearchTerm(filters.subject);
     if (safeSubject) {
       query = query.ilike('subject', `%${safeSubject}%`);
     }

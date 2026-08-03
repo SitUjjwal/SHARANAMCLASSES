@@ -29,7 +29,14 @@ export function VideoPoster({
       style={({ pressed }) => [styles.wrap, pressed && !disabled ? styles.pressed : null]}
     >
       {thumbnailUrl ? (
-        <Image source={{ uri: thumbnailUrl }} style={styles.image} contentFit="cover" />
+        <Image
+          source={{ uri: thumbnailUrl }}
+          style={styles.image}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          recyclingKey={thumbnailUrl}
+          transition={200}
+        />
       ) : (
         <View style={[styles.image, styles.placeholder]} />
       )}

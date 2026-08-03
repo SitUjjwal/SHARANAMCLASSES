@@ -1,24 +1,33 @@
 /**
- * requireAuth — Express authentication middleware.
+ * requireAuth — verifies Supabase access JWT (signature, expiry, user existence).
  *
- * What it does:
- * 1) Reads the Bearer token from `Authorization`
- * 2) Verifies it with Supabase Auth (`auth.getUser(jwt)`)
- * 3) Attaches `req.user` + `req.accessToken` when valid
- * 4) Rejects with 401 when missing/invalid/expired
- *
- * Why getUser(jwt) instead of only decoding locally?
- * - Supabase validates signature, expiry, and that the user still exists
- * - Safer than trusting a locally decoded payload alone
- *
- * Usage:
- *   router.get('/profile', requireAuth, getProfile)
+ * Security notes:
+ * - Does NOT trust locally decoded payloads alone
+ * - Rejects malformed / oversized tokens before calling Supabase
+ * - Uses service-role client only for auth.getUser(jwt)
  */
 import type { NextFunction, Request, Response } from 'express';
 
 import { getSupabaseAdmin } from '../config/supabase';
+import { logger } from '../logging';
 import { AppError } from '../utils/AppError';
 import { extractBearerToken } from '../utils/tokens';
+
+const JWT_PARTS = 3;
+const MAX_TOKEN_CHARS = 4096;
+
+function assertJwtShape(token: string): void {
+  if (token.length > MAX_TOKEN_CHARS) {
+    throw new AppError(401, 'UNAUTHORIZED', 'Access token is too large');
+  }
+  const parts = token.split('.');
+  if (parts.length !== JWT_PARTS || parts.some((p) => !p)) {
+    throw new AppError(401, 'UNAUTHORIZED', 'Malformed access token');
+  }
+  if (!/^[A-Za-z0-9_-]+$/.test(parts[0]!) || !/^[A-Za-z0-9_-]+$/.test(parts[1]!)) {
+    throw new AppError(401, 'UNAUTHORIZED', 'Malformed access token');
+  }
+}
 
 export async function requireAuth(
   req: Request,
@@ -29,6 +38,11 @@ export async function requireAuth(
     const accessToken = extractBearerToken(req.headers.authorization);
 
     if (!accessToken) {
+      logger.auth(
+        'Missing Authorization bearer token',
+        { request_id: req.requestId, path: req.path, ip: req.ip },
+        'warn',
+      );
       throw new AppError(
         401,
         'UNAUTHORIZED',
@@ -36,16 +50,42 @@ export async function requireAuth(
       );
     }
 
-    const supabase = getSupabaseAdmin();
+    assertJwtShape(accessToken);
 
-    // Verifies the Supabase JWT and returns the Auth user
+    const supabase = getSupabaseAdmin();
     const { data, error } = await supabase.auth.getUser(accessToken);
 
     if (error || !data.user) {
+      logger.auth(
+        'Invalid or expired access token',
+        {
+          request_id: req.requestId,
+          path: req.path,
+          ip: req.ip,
+          supabase_error: error?.message,
+        },
+        'warn',
+      );
       throw new AppError(401, 'UNAUTHORIZED', 'Invalid or expired access token');
     }
 
-    // Available to downstream controllers
+    if (data.user.banned_until) {
+      const bannedUntil = new Date(data.user.banned_until).getTime();
+      if (!Number.isNaN(bannedUntil) && bannedUntil > Date.now()) {
+        logger.auth(
+          'Suspended account rejected',
+          {
+            request_id: req.requestId,
+            user_id: data.user.id,
+            email: data.user.email,
+            banned_until: data.user.banned_until,
+          },
+          'warn',
+        );
+        throw new AppError(403, 'FORBIDDEN', 'Account is suspended');
+      }
+    }
+
     req.user = data.user;
     req.accessToken = accessToken;
 

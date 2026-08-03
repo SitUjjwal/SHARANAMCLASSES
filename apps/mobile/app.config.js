@@ -17,6 +17,7 @@ const config = {
   icon: './assets/icon.png',
   userInterfaceStyle: 'automatic',
   newArchEnabled: true,
+  jsEngine: 'hermes',
   scheme: 'sharanam',
   splash: {
     image: './assets/splash-brand.png',

@@ -105,6 +105,17 @@ export const listTestsQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).optional().default(20),
 });
 
+/** Student published-test list filters */
+export const listStudentTestsQuerySchema = z.object({
+  courseId: z.string().uuid().optional(),
+  chapterId: z.string().uuid().optional(),
+  search: z.string().trim().max(120).optional().default(''),
+  testType: z.enum(['all', ...TEST_TYPES]).optional().default('all'),
+  page: z.coerce.number().int().min(1).optional().default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).optional().default(20),
+});
+
 export type CreateTestInput = z.infer<typeof createTestSchema>;
 export type UpdateTestInput = z.infer<typeof updateTestSchema>;
 export type ListTestsQuery = z.infer<typeof listTestsQuerySchema>;
+export type ListStudentTestsQuery = z.infer<typeof listStudentTestsQuerySchema>;

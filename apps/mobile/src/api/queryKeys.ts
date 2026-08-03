@@ -3,6 +3,7 @@
  */
 export const queryKeys = {
   dashboard: ['dashboard'] as const,
+  publicPlatform: ['platform', 'public'] as const,
   banners: ['banners'] as const,
   categories: (search?: string) => ['categories', { search: search ?? '' }] as const,
   courses: (filters?: Record<string, unknown>) =>
@@ -11,9 +12,11 @@ export const queryKeys = {
   chapters: (courseId: string) => ['courses', courseId, 'chapters'] as const,
   chapterDetail: (courseId: string, chapterId: string) =>
     ['courses', courseId, 'chapters', chapterId] as const,
-  liveClasses: () => ['live-classes', 'public'] as const,
+  liveClasses: (filters?: Record<string, unknown>) =>
+    ['live-classes', 'public', filters ?? {}] as const,
   myCourses: (search?: string) => ['my-courses', { search: search ?? '' }] as const,
-  purchaseHistory: ['payments', 'history'] as const,
+  purchaseHistory: (filters?: Record<string, unknown>) =>
+    ['payments', 'history', filters ?? {}] as const,
   notificationHistory: ['notifications', 'history'] as const,
   notificationUnreadCount: ['notifications', 'unread-count'] as const,
   profile: ['profile'] as const,

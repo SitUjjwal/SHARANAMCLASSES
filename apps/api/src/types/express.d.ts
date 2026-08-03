@@ -14,6 +14,8 @@ declare global {
     interface Request {
       user?: User;
       accessToken?: string;
+      /** Correlation id from requestId middleware */
+      requestId?: string;
       /** Set by attachCourseAccessFromCourse / attachCourseAccessFromChapter */
       courseAccess?: CourseAccessContext;
       /** Set by requirePermission / requireAdmin / requireStaff */

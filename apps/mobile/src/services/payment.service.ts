@@ -37,9 +37,20 @@ export async function verifyPayment(
   return data.data;
 }
 
-export async function fetchPurchaseHistory(): Promise<PurchaseHistoryPage> {
+export async function fetchPurchaseHistory(params?: {
+  page?: number;
+  pageSize?: number;
+  status?: string;
+}): Promise<PurchaseHistoryPage> {
   const { data } = await apiClient.get<ApiSuccessResponse<PurchaseHistoryPage>>(
     '/payments/history',
+    {
+      params: {
+        page: params?.page ?? 1,
+        pageSize: params?.pageSize ?? 20,
+        status: params?.status ?? 'all',
+      },
+    },
   );
   return data.data;
 }

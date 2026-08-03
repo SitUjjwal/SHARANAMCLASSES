@@ -5,6 +5,7 @@
  * Security: never send SUPABASE_SERVICE_ROLE_KEY to mobile/admin.
  */
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import WebSocket from 'ws';
 
 import { env } from './env';
 
@@ -37,6 +38,12 @@ export function getSupabaseAdmin(): SupabaseClient {
       persistSession: false,
       autoRefreshToken: false,
       detectSessionInUrl: false,
+    },
+    // supabase-js always boots Realtime; Node <22 has no native WebSocket.
+    // Provide `ws` so createClient does not throw (API uses PostgREST, not Realtime).
+    realtime: {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      transport: WebSocket as any,
     },
   });
 

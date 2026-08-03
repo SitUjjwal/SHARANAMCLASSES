@@ -7,11 +7,13 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { RequireAuth, RequireStaff } from '@/features/auth/RequireAuth';
 import { AdminLayout } from '@/layouts/AdminLayout';
+import { supabaseEnvOk } from '@/lib/supabase';
 import {
   ActivityLogsPage,
   AnalyticsPage,
   AnnouncementsPage,
   BannersPage,
+  BackupsPage,
   BugReportsPage,
   CategoriesPage,
   CertificatesPage,
@@ -24,6 +26,7 @@ import {
   FeedbackTicketsPage,
   LeaderboardPage,
   LiveClassesPage,
+  MonitoringPage,
   NotesPage,
   NotificationsDashboardPage,
   NotificationsPage,
@@ -47,6 +50,24 @@ import {
 } from '@/pages';
 
 export function App() {
+  if (!supabaseEnvOk) {
+    return (
+      <div className="login-page">
+        <div className="login-card">
+          <h1>Admin config missing</h1>
+          <p className="form-error">
+            VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY were empty at build time (causes a white
+            screen). Set them in the repo root <code>.env</code>, then rebuild:
+          </p>
+          <pre style={{ fontSize: 12, overflow: 'auto' }}>
+            {`docker compose build admin
+docker compose up -d`}
+          </pre>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       <Routes>
@@ -92,6 +113,8 @@ export function App() {
               <Route path="payments" element={<PaymentsPage />} />
               <Route path="reports" element={<ReportsPage />} />
               <Route path="activity-logs" element={<ActivityLogsPage />} />
+              <Route path="monitoring" element={<MonitoringPage />} />
+              <Route path="backups" element={<BackupsPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="roles" element={<RolesPage />} />
             </Route>

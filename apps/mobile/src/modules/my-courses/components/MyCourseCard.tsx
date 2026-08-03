@@ -1,16 +1,14 @@
 /**
- * MyCourseCard — simple list row matching:
- *
- *   📘 Mathematics
- *   45%
- *   Continue
- *   --------------------
+ * MyCourseCard — full course banner + progress + Continue/Review CTA.
  */
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import type { MyCourseItem } from '@sharanam/shared';
 
 import { ProgressBar } from '@/modules/my-courses/components/ProgressBar';
 import { bookIconForTitle } from '@/modules/my-courses/utils/bookIcon';
+import { useAppTheme } from '@/theme/ThemeProvider';
 import { colors, spacing, typography } from '@/theme';
 
 type Props = {
@@ -20,103 +18,177 @@ type Props = {
 };
 
 export function MyCourseCard({ item, onOpenCourse, onContinue }: Props) {
+  const theme = useAppTheme();
+  const isDark = theme.canvas === '#0B1F3A';
   const percent = Math.min(100, Math.max(0, Math.round(item.progress_percent)));
   const icon = bookIconForTitle(item.title);
+  const done = percent >= 100;
 
   return (
-    <View style={styles.row}>
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#FFFFFF',
+          borderColor: theme.cardBorder,
+        },
+      ]}
+    >
       <Pressable
-        style={styles.main}
         onPress={() => onOpenCourse(item)}
         accessibilityRole="button"
         accessibilityLabel={item.title}
       >
-        <Text style={styles.emoji} accessibilityLabel="Course">
-          {icon}
-        </Text>
+        <View style={styles.bannerWrap}>
+          {item.thumbnail_url ? (
+            <Image
+              source={{ uri: item.thumbnail_url }}
+              style={styles.banner}
+              contentFit="cover"
+              cachePolicy="memory-disk"
+              recyclingKey={item.course_id}
+              transition={180}
+              accessibilityLabel={`${item.title} banner`}
+            />
+          ) : (
+            <View
+              style={[
+                styles.banner,
+                styles.bannerFallback,
+                {
+                  backgroundColor: isDark
+                    ? 'rgba(201,162,39,0.16)'
+                    : 'rgba(201,162,39,0.12)',
+                },
+              ]}
+            >
+              <Text style={styles.emoji}>{icon}</Text>
+            </View>
+          )}
 
-        <View style={styles.content}>
-          <Text style={styles.title} numberOfLines={2}>
+          <View
+            style={[
+              styles.percentChip,
+              {
+                backgroundColor: done
+                  ? 'rgba(20,40,30,0.88)'
+                  : 'rgba(11,31,58,0.88)',
+              },
+            ]}
+          >
+            <Text style={[styles.percentText, { color: done ? '#81C784' : colors.accent }]}>
+              {percent}%
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.body}>
+          <Text style={[styles.title, { color: theme.textPrimary }]} numberOfLines={2}>
             {item.title}
           </Text>
 
-          <Text style={styles.percent}>{percent}%</Text>
+          {item.teacher_name ? (
+            <Text style={[styles.meta, { color: theme.textSecondary }]} numberOfLines={1}>
+              {item.teacher_name}
+            </Text>
+          ) : null}
 
           <ProgressBar percent={percent} />
 
           {item.last_watched_chapter_title ? (
-            <Text style={styles.lastWatched} numberOfLines={1}>
+            <Text style={[styles.lastWatched, { color: theme.textSecondary }]} numberOfLines={1}>
               Last: {item.last_watched_chapter_title}
             </Text>
-          ) : null}
+          ) : (
+            <Text style={[styles.lastWatched, { color: theme.textSecondary }]}>
+              {done ? 'Completed' : 'Ready to start'}
+            </Text>
+          )}
         </View>
       </Pressable>
 
       <Pressable
-        style={styles.continueBtn}
+        style={({ pressed }) => [styles.continueBtn, { opacity: pressed ? 0.88 : 1 }]}
         onPress={() => onContinue(item)}
         accessibilityRole="button"
-        accessibilityLabel="Continue"
+        accessibilityLabel={done ? 'Review course' : 'Continue learning'}
       >
-        <Text style={styles.continueText}>Continue</Text>
+        <Text style={styles.continueText}>{done ? 'Review' : 'Continue'}</Text>
+        <Ionicons name="play" size={14} color={colors.primary} />
       </Pressable>
-
-      <View style={styles.divider} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  row: {
-    paddingVertical: spacing.md,
+  card: {
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+    paddingBottom: spacing.md,
   },
-  main: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    alignItems: 'flex-start',
+  bannerWrap: {
+    width: '100%',
+    height: 168,
+    backgroundColor: colors.secondary,
+    position: 'relative',
+  },
+  banner: {
+    width: '100%',
+    height: '100%',
+  },
+  bannerFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   emoji: {
-    fontSize: 32,
-    lineHeight: 40,
-    width: 40,
-    textAlign: 'center',
+    fontSize: 48,
   },
-  content: {
-    flex: 1,
-    gap: spacing.xs,
+  percentChip: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  percentText: {
+    fontSize: typography.fontSize.sm,
+    fontWeight: '800',
+  },
+  body: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    gap: 6,
   },
   title: {
-    color: colors.surface,
     fontSize: typography.fontSize.xl,
     fontWeight: '800',
     lineHeight: 26,
   },
-  percent: {
-    color: colors.accent,
-    fontSize: typography.fontSize.lg,
-    fontWeight: '800',
+  meta: {
+    fontSize: typography.fontSize.sm,
   },
   lastWatched: {
-    color: '#7A8799',
     fontSize: typography.fontSize.sm,
+    marginTop: 2,
   },
   continueBtn: {
     marginTop: spacing.md,
-    alignSelf: 'stretch',
+    marginHorizontal: spacing.md,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.md,
-    borderRadius: 10,
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
     backgroundColor: colors.accent,
   },
   continueText: {
     color: colors.primary,
     fontSize: typography.fontSize.md,
     fontWeight: '800',
-  },
-  divider: {
-    marginTop: spacing.md,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(255,255,255,0.18)',
   },
 });

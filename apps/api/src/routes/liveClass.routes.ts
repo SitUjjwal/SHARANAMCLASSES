@@ -26,7 +26,8 @@ import {
 import { requireAuth } from '../middlewares/auth';
 import { requirePermission } from '../middlewares/requirePermission';
 import { thumbnailUpload } from '../middlewares/upload';
-import { validate } from '../middlewares/validate';
+import { validate, validateRequest } from '../middlewares/validate';
+import { uuidIdParamSchema } from '../validators/common.validators';
 import {
   createLiveClassSchema,
   listLiveClassesQuerySchema,
@@ -39,12 +40,12 @@ export const liveClassRouter = Router();
 liveClassRouter.get(
   '/live-classes/public',
   requireAuth,
+  validate(listLiveClassesQuerySchema, 'query'),
   listPublicLiveClasses,
 );
 
 /**
  * GET /live-classes — students get published list; admins get filtered admin page.
- * Admin query schema is loose enough for student `?courseId=` too.
  */
 liveClassRouter.get(
   '/live-classes',
@@ -52,7 +53,6 @@ liveClassRouter.get(
   validate(listLiveClassesQuerySchema, 'query'),
   listLiveClasses,
 );
-
 
 liveClassRouter.post(
   '/live-classes/upload-thumbnail',
@@ -74,18 +74,36 @@ liveClassRouter.post(
   '/live-classes/:id/notify',
   requireAuth,
   requirePermission('courses:create'),
-  validate(notifyLiveClassSchema),
+  validateRequest({
+    params: uuidIdParamSchema,
+    body: notifyLiveClassSchema,
+  }),
   postLiveClassNotify,
 );
 
-liveClassRouter.get('/live-classes/:id', requireAuth, requirePermission('courses:read'), getLiveClass);
+liveClassRouter.get(
+  '/live-classes/:id',
+  requireAuth,
+  requirePermission('courses:read'),
+  validate(uuidIdParamSchema, 'params'),
+  getLiveClass,
+);
 
 liveClassRouter.put(
   '/live-classes/:id',
   requireAuth,
   requirePermission('courses:update'),
-  validate(updateLiveClassSchema),
+  validateRequest({
+    params: uuidIdParamSchema,
+    body: updateLiveClassSchema,
+  }),
   putLiveClass,
 );
 
-liveClassRouter.delete('/live-classes/:id', requireAuth, requirePermission('courses:delete'), removeLiveClass);
+liveClassRouter.delete(
+  '/live-classes/:id',
+  requireAuth,
+  requirePermission('courses:delete'),
+  validate(uuidIdParamSchema, 'params'),
+  removeLiveClass,
+);

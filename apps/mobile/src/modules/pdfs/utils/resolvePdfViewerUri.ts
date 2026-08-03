@@ -16,19 +16,20 @@ export type PdfViewSource = {
 export function resolvePdfViewerUri(source: PdfViewSource): string {
   const { remoteUrl, localUri, offline } = source;
 
-  if (Platform.OS === 'android') {
+  // Offline: only local cache can work
+  if (offline) {
     return localUri ?? remoteUrl;
   }
 
-  // iOS: prefer Google Docs viewer when online (public R2 URLs work)
-  if (!offline && remoteUrl.startsWith('http')) {
+  if (Platform.OS === 'android') {
+    // System WebView renders https:// PDFs; file:// PDFs often fail silently
+    return remoteUrl;
+  }
+
+  // iOS WKWebView cannot render PDFs natively — Google Docs viewer for remote
+  if (remoteUrl.startsWith('http')) {
     return `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(remoteUrl)}`;
   }
 
-  // Offline iOS — best-effort local URI (may fail; screen offers share/open)
-  if (localUri) {
-    return localUri;
-  }
-
-  return remoteUrl;
+  return localUri ?? remoteUrl;
 }

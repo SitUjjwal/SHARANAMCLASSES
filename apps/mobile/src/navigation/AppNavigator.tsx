@@ -1,60 +1,12 @@
 /**
  * Authenticated stack: tabs + course / chapter / video / PDF / notes screens.
+ *
+ * Heavy secondary screens use `getComponent` so Metro only evaluates their
+ * module graph on first navigation (code splitting / smaller startup bundle).
  */
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
-import { ChapterContentScreen, ChapterListScreen } from '@/modules/chapters';
-import { NoteViewerScreen } from '@/modules/notes';
-import { BuyCourseScreen, PurchaseHistoryScreen } from '@/modules/payments';
-import { PaymentFailedScreen } from '@/modules/payments/screens/PaymentFailedScreen';
-import { PaymentSuccessScreen } from '@/modules/payments/screens/PaymentSuccessScreen';
-import { PdfViewerScreen } from '@/modules/pdfs';
-import { NotificationCenterScreen } from '@/modules/notifications';
-import {
-  AchievementsScreen,
-  CertificateViewerScreen,
-  CertificatesScreen,
-  ChangePasswordScreen,
-  EditProfileScreen,
-  LearningProgressScreen,
-  TestHistoryScreen,
-} from '@/modules/profile';
-import {
-  AboutScreen,
-  LanguageSettingsScreen,
-  LegalDocumentScreen,
-  NotificationPreferencesScreen,
-  SettingsScreen,
-} from '@/modules/settings';
-import {
-  BugReportDetailScreen,
-  BugReportScreen,
-  ChatSupportScreen,
-  ContactUsScreen,
-  ContentReportDetailScreen,
-  FAQScreen,
-  FeatureRequestScreen,
-  FeedbackDetailScreen,
-  FeedbackScreen,
-  MyBugReportsScreen,
-  MyContentReportsScreen,
-  MyFeedbackScreen,
-  ReportContentScreen,
-  ReviewScreen as AppReviewScreen,
-  SubmitFeedbackScreen,
-  SupportScreen,
-} from '@/modules/feedback';
-import {
-  TestListScreen,
-  TestScreen,
-  ResultScreen,
-  ReviewScreen,
-  LeaderboardScreen,
-  AnalyticsDashboardScreen,
-} from '@/modules/tests';
-import { VideoPlayerScreen } from '@/modules/videos';
 import { MainDrawerNavigator } from '@/navigation/MainDrawerNavigator';
-import { CourseDetailScreen } from '@/screens/CourseDetailScreen';
 import type { AppStackParamList } from '@/types/navigation';
 
 const Stack = createNativeStackNavigator<AppStackParamList>();
@@ -63,57 +15,190 @@ export function AppNavigator() {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={MainDrawerNavigator} />
-      <Stack.Screen name="CourseDetail" component={CourseDetailScreen} />
-      <Stack.Screen name="BuyCourse" component={BuyCourseScreen} />
-      <Stack.Screen name="PaymentSuccess" component={PaymentSuccessScreen} />
-      <Stack.Screen name="PaymentFailed" component={PaymentFailedScreen} />
-      <Stack.Screen name="PurchaseHistory" component={PurchaseHistoryScreen} />
-      <Stack.Screen name="NotificationCenter" component={NotificationCenterScreen} />
-      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
-      <Stack.Screen name="LearningProgress" component={LearningProgressScreen} />
-      <Stack.Screen name="Certificates" component={CertificatesScreen} />
-      <Stack.Screen name="CertificateViewer" component={CertificateViewerScreen} />
-      <Stack.Screen name="Achievements" component={AchievementsScreen} />
-      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen
+        name="CourseDetail"
+        getComponent={() => require('@/screens/CourseDetailScreen').CourseDetailScreen}
+      />
+      <Stack.Screen
+        name="BuyCourse"
+        getComponent={() => require('@/modules/payments').BuyCourseScreen}
+      />
+      <Stack.Screen
+        name="PaymentSuccess"
+        getComponent={() =>
+          require('@/modules/payments/screens/PaymentSuccessScreen').PaymentSuccessScreen
+        }
+      />
+      <Stack.Screen
+        name="PaymentFailed"
+        getComponent={() =>
+          require('@/modules/payments/screens/PaymentFailedScreen').PaymentFailedScreen
+        }
+      />
+      <Stack.Screen
+        name="PurchaseHistory"
+        getComponent={() => require('@/modules/payments').PurchaseHistoryScreen}
+      />
+      <Stack.Screen
+        name="NotificationCenter"
+        getComponent={() => require('@/modules/notifications').NotificationCenterScreen}
+      />
+      <Stack.Screen
+        name="EditProfile"
+        getComponent={() => require('@/modules/profile').EditProfileScreen}
+      />
+      <Stack.Screen
+        name="LearningProgress"
+        getComponent={() => require('@/modules/profile').LearningProgressScreen}
+      />
+      <Stack.Screen
+        name="Certificates"
+        getComponent={() => require('@/modules/profile').CertificatesScreen}
+      />
+      <Stack.Screen
+        name="CertificateViewer"
+        getComponent={() => require('@/modules/profile').CertificateViewerScreen}
+      />
+      <Stack.Screen
+        name="Achievements"
+        getComponent={() => require('@/modules/profile').AchievementsScreen}
+      />
+      <Stack.Screen
+        name="Settings"
+        getComponent={() => require('@/modules/settings').SettingsScreen}
+      />
       <Stack.Screen
         name="NotificationPreferences"
-        component={NotificationPreferencesScreen}
+        getComponent={() => require('@/modules/settings').NotificationPreferencesScreen}
       />
-      <Stack.Screen name="LanguageSettings" component={LanguageSettingsScreen} />
-      <Stack.Screen name="LegalDocument" component={LegalDocumentScreen} />
-      <Stack.Screen name="About" component={AboutScreen} />
-      <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
-      <Stack.Screen name="TestHistory" component={TestHistoryScreen} />
-      <Stack.Screen name="Feedback" component={FeedbackScreen} />
-      <Stack.Screen name="SubmitFeedback" component={SubmitFeedbackScreen} />
-      <Stack.Screen name="MyFeedback" component={MyFeedbackScreen} />
-      <Stack.Screen name="FeedbackDetail" component={FeedbackDetailScreen} />
-      <Stack.Screen name="AppReview" component={AppReviewScreen} />
-      <Stack.Screen name="Support" component={SupportScreen} />
-      <Stack.Screen name="FAQ" component={FAQScreen} />
-      <Stack.Screen name="ContactUs" component={ContactUsScreen} />
-      <Stack.Screen name="BugReport" component={BugReportScreen} />
-      <Stack.Screen name="MyBugReports" component={MyBugReportsScreen} />
-      <Stack.Screen name="BugReportDetail" component={BugReportDetailScreen} />
-      <Stack.Screen name="ReportContent" component={ReportContentScreen} />
-      <Stack.Screen name="MyContentReports" component={MyContentReportsScreen} />
+      <Stack.Screen
+        name="LanguageSettings"
+        getComponent={() => require('@/modules/settings').LanguageSettingsScreen}
+      />
+      <Stack.Screen
+        name="LegalDocument"
+        getComponent={() => require('@/modules/settings').LegalDocumentScreen}
+      />
+      <Stack.Screen
+        name="About"
+        getComponent={() => require('@/modules/settings').AboutScreen}
+      />
+      <Stack.Screen
+        name="ChangePassword"
+        getComponent={() => require('@/modules/profile').ChangePasswordScreen}
+      />
+      <Stack.Screen
+        name="TestHistory"
+        getComponent={() => require('@/modules/profile').TestHistoryScreen}
+      />
+      <Stack.Screen
+        name="Feedback"
+        getComponent={() => require('@/modules/feedback').FeedbackScreen}
+      />
+      <Stack.Screen
+        name="SubmitFeedback"
+        getComponent={() => require('@/modules/feedback').SubmitFeedbackScreen}
+      />
+      <Stack.Screen
+        name="MyFeedback"
+        getComponent={() => require('@/modules/feedback').MyFeedbackScreen}
+      />
+      <Stack.Screen
+        name="FeedbackDetail"
+        getComponent={() => require('@/modules/feedback').FeedbackDetailScreen}
+      />
+      <Stack.Screen
+        name="AppReview"
+        getComponent={() => require('@/modules/feedback').ReviewScreen}
+      />
+      <Stack.Screen
+        name="Support"
+        getComponent={() => require('@/modules/feedback').SupportScreen}
+      />
+      <Stack.Screen
+        name="FAQ"
+        getComponent={() => require('@/modules/feedback').FAQScreen}
+      />
+      <Stack.Screen
+        name="ContactUs"
+        getComponent={() => require('@/modules/feedback').ContactUsScreen}
+      />
+      <Stack.Screen
+        name="BugReport"
+        getComponent={() => require('@/modules/feedback').BugReportScreen}
+      />
+      <Stack.Screen
+        name="MyBugReports"
+        getComponent={() => require('@/modules/feedback').MyBugReportsScreen}
+      />
+      <Stack.Screen
+        name="BugReportDetail"
+        getComponent={() => require('@/modules/feedback').BugReportDetailScreen}
+      />
+      <Stack.Screen
+        name="ReportContent"
+        getComponent={() => require('@/modules/feedback').ReportContentScreen}
+      />
+      <Stack.Screen
+        name="MyContentReports"
+        getComponent={() => require('@/modules/feedback').MyContentReportsScreen}
+      />
       <Stack.Screen
         name="ContentReportDetail"
-        component={ContentReportDetailScreen}
+        getComponent={() => require('@/modules/feedback').ContentReportDetailScreen}
       />
-      <Stack.Screen name="FeatureRequest" component={FeatureRequestScreen} />
-      <Stack.Screen name="ChatSupport" component={ChatSupportScreen} />
-      <Stack.Screen name="ChapterList" component={ChapterListScreen} />
-      <Stack.Screen name="ChapterContent" component={ChapterContentScreen} />
-      <Stack.Screen name="VideoPlayer" component={VideoPlayerScreen} />
-      <Stack.Screen name="PdfViewer" component={PdfViewerScreen} />
-      <Stack.Screen name="NoteViewer" component={NoteViewerScreen} />
-      <Stack.Screen name="TestList" component={TestListScreen} />
-      <Stack.Screen name="TestAttempt" component={TestScreen} />
-      <Stack.Screen name="TestResult" component={ResultScreen} />
-      <Stack.Screen name="TestReview" component={ReviewScreen} />
-      <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
-      <Stack.Screen name="TestAnalytics" component={AnalyticsDashboardScreen} />
+      <Stack.Screen
+        name="FeatureRequest"
+        getComponent={() => require('@/modules/feedback').FeatureRequestScreen}
+      />
+      <Stack.Screen
+        name="ChatSupport"
+        getComponent={() => require('@/modules/feedback').ChatSupportScreen}
+      />
+      <Stack.Screen
+        name="ChapterList"
+        getComponent={() => require('@/modules/chapters').ChapterListScreen}
+      />
+      <Stack.Screen
+        name="ChapterContent"
+        getComponent={() => require('@/modules/chapters').ChapterContentScreen}
+      />
+      <Stack.Screen
+        name="VideoPlayer"
+        getComponent={() => require('@/modules/videos').VideoPlayerScreen}
+      />
+      <Stack.Screen
+        name="PdfViewer"
+        getComponent={() => require('@/modules/pdfs').PdfViewerScreen}
+      />
+      <Stack.Screen
+        name="NoteViewer"
+        getComponent={() => require('@/modules/notes').NoteViewerScreen}
+      />
+      <Stack.Screen
+        name="TestList"
+        getComponent={() => require('@/modules/tests').TestListScreen}
+      />
+      <Stack.Screen
+        name="TestAttempt"
+        getComponent={() => require('@/modules/tests').TestScreen}
+      />
+      <Stack.Screen
+        name="TestResult"
+        getComponent={() => require('@/modules/tests').ResultScreen}
+      />
+      <Stack.Screen
+        name="TestReview"
+        getComponent={() => require('@/modules/tests').ReviewScreen}
+      />
+      <Stack.Screen
+        name="Leaderboard"
+        getComponent={() => require('@/modules/tests').LeaderboardScreen}
+      />
+      <Stack.Screen
+        name="TestAnalytics"
+        getComponent={() => require('@/modules/tests').AnalyticsDashboardScreen}
+      />
     </Stack.Navigator>
   );
 }

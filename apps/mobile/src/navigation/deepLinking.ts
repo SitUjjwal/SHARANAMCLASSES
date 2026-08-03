@@ -5,7 +5,7 @@
  *   Course        → CourseDetail
  *   Live Class    → Live tab
  *   Test          → TestList
- *   Announcement  → Home (Latest Announcements)
+ *   Announcement  → Notification Center
  *   Banner        → same as banner redirect (course/test/live/website)
  *
  * Cold start:
@@ -209,17 +209,6 @@ function navigateToDestination(dest: DeepLinkDestination): boolean {
       return true;
 
     case 'announcement':
-      navigationRef.navigate('MainTabs', {
-        screen: 'Tabs',
-        params: {
-          screen: 'HomeTab',
-          params: dest.announcementId
-            ? { announcementId: dest.announcementId }
-            : undefined,
-        },
-      });
-      return true;
-
     case 'notifications':
       navigationRef.navigate('NotificationCenter');
       return true;

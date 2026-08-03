@@ -1,9 +1,9 @@
 /**
  * Database connectivity service.
  * Why: prove PostgreSQL is reachable through Supabase before building features.
- * Future: same pattern — services talk to Supabase; controllers stay thin.
  */
 import { getSupabaseAdmin } from '../config/supabase';
+import { withDbTiming } from '../monitoring/timeDb';
 import { AppError } from '../utils/AppError';
 
 export type DatabaseStatusResult = {
@@ -23,8 +23,9 @@ export async function checkDatabaseStatus(): Promise<DatabaseStatusResult> {
     );
   }
 
-  // Lightweight SELECT via PostgREST (requires `app_meta` migration)
-  const { error } = await supabase.from('app_meta').select('key').limit(1);
+  const { error } = await withDbTiming('database-status', async () =>
+    supabase.from('app_meta').select('key').limit(1),
+  );
 
   if (error) {
     throw new AppError(503, 'DATABASE_UNAVAILABLE', error.message, {

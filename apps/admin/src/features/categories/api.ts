@@ -9,6 +9,7 @@ export type CategoryWritePayload = {
   name: string;
   slug: string;
   icon?: string | null;
+  link_url?: string | null;
   sort_order?: number;
   is_active?: boolean;
 };

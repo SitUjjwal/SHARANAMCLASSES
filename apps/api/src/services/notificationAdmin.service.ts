@@ -10,6 +10,7 @@
  */
 import { getSupabaseAdmin } from '../config/supabase';
 import { AppError } from '../utils/AppError';
+import { sanitizeSearchTerm } from '../utils/postgrestSafe';
 import type {
   NotificationAdminCampaignRow,
   NotificationAdminCsvExport,
@@ -109,7 +110,7 @@ export async function listNotificationAdminCampaigns(
   const pageSize = Math.min(Math.max(filters.pageSize ?? 20, 1), 100);
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
-  const search = filters.search?.trim() ?? '';
+  const search = sanitizeSearchTerm(filters.search?.trim() ?? '');
 
   const supabase = getSupabaseAdmin();
   let query = supabase

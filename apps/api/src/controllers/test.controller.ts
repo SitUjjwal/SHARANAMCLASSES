@@ -130,6 +130,8 @@ export async function listStudentTests(
       typeof req.query.testType === 'string' && req.query.testType !== 'all'
         ? (req.query.testType as TestType)
         : undefined;
+    const page = Number(req.query.page) || 1;
+    const pageSize = Number(req.query.pageSize) || 20;
 
     const enrolledCourseIds = courseId
       ? (await userHasCourseAccess(userId, courseId)
@@ -142,8 +144,10 @@ export async function listStudentTests(
       chapterId,
       testType,
       enrolledCourseIds,
+      page,
+      pageSize,
     });
-    res.status(200).json({ success: true, data: { items: data } });
+    res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);
   }

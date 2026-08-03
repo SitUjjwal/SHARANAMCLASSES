@@ -13,6 +13,7 @@ import type {
 
 import { getSupabaseAdmin } from '../config/supabase';
 import { AppError } from '../utils/AppError';
+import { sanitizeSearchTerm } from '../utils/postgrestSafe';
 import {
   bulkQuestionRowSchema,
   type CreateQuestionInput,
@@ -105,7 +106,7 @@ export async function listQuestionsForAdmin(
 
   const search = query.search?.trim();
   if (search) {
-    const safe = search.replace(/[%_,.()]/g, '');
+    const safe = sanitizeSearchTerm(search);
     if (safe) {
       dbQuery = dbQuery.or(
         `question_text.ilike.%${safe}%,option_a.ilike.%${safe}%,option_b.ilike.%${safe}%,option_c.ilike.%${safe}%,option_d.ilike.%${safe}%,explanation.ilike.%${safe}%`,

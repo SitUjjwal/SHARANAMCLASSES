@@ -14,6 +14,7 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 
 import { configureNotifications } from '@/modules/notifications/configureNotifications';
+import { canUseRemotePush } from '@/modules/notifications/pushEnvironment';
 import { getStableDeviceId } from '@/modules/notifications/stableDeviceId';
 import type {
   NotificationPermissionStatus,
@@ -78,6 +79,16 @@ export async function registerForPushNotifications(): Promise<{
     };
   }
 
+  // Expo Go (SDK 53+) removed Android remote push — skip token APIs to avoid redbox.
+  if (!canUseRemotePush()) {
+    return {
+      permission: 'unavailable',
+      token: null,
+      error:
+        'Remote push needs a development build. Notification inbox still works in Expo Go.',
+    };
+  }
+
   const permission = await requestNotificationPermission();
   if (permission !== 'granted') {
     return {
@@ -90,7 +101,7 @@ export async function registerForPushNotifications(): Promise<{
   const deviceId = await getStableDeviceId();
   const platform = resolvePlatform();
 
-  // 1) Native FCM / APNs token (production builds with google-services / APNs)
+  // 1) Native FCM / APNs token (production / dev builds with google-services / APNs)
   try {
     const devicePush = await Notifications.getDevicePushTokenAsync();
     const tokenValue =
@@ -115,7 +126,7 @@ export async function registerForPushNotifications(): Promise<{
     );
   }
 
-  // 2) Expo push token (works in Expo Go when projectId is configured)
+  // 2) Expo push token (EAS projectId)
   try {
     const projectId = resolveExpoProjectId();
     const expoPush = await Notifications.getExpoPushTokenAsync(
