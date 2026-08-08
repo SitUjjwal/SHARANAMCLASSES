@@ -20,6 +20,9 @@ COPY packages/tsconfig ./packages/tsconfig
 COPY packages/eslint-config ./packages/eslint-config
 COPY apps/api/package.json ./apps/api/
 
+# Hosts (Render/Railway) often set NODE_ENV=production during image build,
+# which skips typescript/devDependencies and breaks `tsc`. Force a full install.
+ENV NODE_ENV=development
 RUN npm ci --workspace=@sharanam/api --workspace=@sharanam/shared --include-workspace-root
 
 # ─── Build ────────────────────────────────────────────────────────────────────
@@ -27,6 +30,7 @@ FROM deps AS build
 COPY packages/shared ./packages/shared
 COPY apps/api ./apps/api
 
+ENV NODE_ENV=development
 RUN npm run build --workspace=@sharanam/shared \
   && npm run build --workspace=@sharanam/api
 
