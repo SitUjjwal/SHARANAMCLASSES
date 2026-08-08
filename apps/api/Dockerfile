@@ -35,9 +35,11 @@ FROM node:${NODE_VERSION}-bookworm-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production \
+    APP_ENV=production \
     PORT=4000 \
     LOG_DIR=/app/logs \
-    LOG_TO_CONSOLE=true
+    LOG_TO_CONSOLE=true \
+    SHUTDOWN_TIMEOUT_MS=15000
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates curl \
