@@ -560,6 +560,22 @@ export async function deleteCourse(courseId: string): Promise<void> {
     );
   }
 
+  // Course-targeted notification campaigns: FK is ON DELETE SET NULL, but the
+  // notifications_audience_shape check requires audience_course_id for
+  // audience_type='course' — so these rows must be removed before the course.
+  const { error: notificationsError } = await supabase
+    .from('notifications')
+    .delete()
+    .eq('audience_type', 'course')
+    .eq('audience_course_id', courseId);
+  if (notificationsError) {
+    throw new AppError(
+      400,
+      'COURSE_DELETE_FAILED',
+      `Cannot clear course notifications: ${notificationsError.message}`,
+    );
+  }
+
   if (productId) {
     const { error: productError } = await supabase
       .from('products')
