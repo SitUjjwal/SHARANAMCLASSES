@@ -1,8 +1,10 @@
 /**
- * settingService — system settings + activity logs.
+ * settingService — system settings, activity logs, app versions.
  */
 import type {
   AdminActivityLogPage,
+  AppVersionHistoryEntry,
+  CreateAppVersionReleaseInput,
   PlatformGeneralSettings,
   PlatformSettingsBundle,
 } from '@sharanam/shared';
@@ -46,5 +48,21 @@ export async function fetchActivityLogs(params: {
       category: params.category,
       search: params.search,
     },
+  });
+}
+
+export async function fetchAppVersionHistory(): Promise<AppVersionHistoryEntry[]> {
+  return apiRequest<AppVersionHistoryEntry[]>('/admin/app-versions');
+}
+
+export async function publishAppVersion(
+  body: CreateAppVersionReleaseInput,
+): Promise<{
+  entry: AppVersionHistoryEntry;
+  settings: PlatformSettingsBundle | null;
+}> {
+  return apiRequest('/admin/app-versions', {
+    method: 'POST',
+    body,
   });
 }

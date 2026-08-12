@@ -5,7 +5,7 @@
 export const APP_NAME = 'SHARANAM CLASSES';
 
 export const CONTACT_INFO = {
-  email: 'support@sharanamclasses.com',
+  email: 'sharanam.sp@gmail.com',
   /** E.164 digits only (no +) for wa.me */
   whatsappE164: '919876543210',
   /** Display phone */

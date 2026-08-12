@@ -44,6 +44,13 @@ export const ADMIN_NAV: AdminNavItem[] = [
 
   // Catalog
   {
+    label: 'Batches',
+    path: '/batches',
+    description: 'Batch → Subject → Chapter management.',
+    section: 'catalog',
+    permission: 'courses:read',
+  },
+  {
     label: 'Courses',
     path: '/courses',
     description: 'Create and publish course catalog.',
@@ -290,6 +297,13 @@ export const ADMIN_NAV: AdminNavItem[] = [
     label: 'Backups',
     path: '/backups',
     description: 'Database, R2 metadata, and settings backups.',
+    section: 'ops',
+    permission: 'settings:read',
+  },
+  {
+    label: 'App versions',
+    path: '/versions',
+    description: 'SemVer releases, force/optional updates, build numbers, history.',
     section: 'ops',
     permission: 'settings:read',
   },

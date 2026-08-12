@@ -33,6 +33,7 @@ export interface ApiErrorResponse {
 export type ApiResponse<T> = ApiSuccessResponse<T> | ApiErrorResponse;
 
 export * from './course';
+export * from './batch';
 export * from './notifications';
 export * from './events';
 export * from './profile';
@@ -49,3 +50,4 @@ export * from './adminTeachers';
 export * from './adminAnalytics';
 export * from './adminMonitoring';
 export * from './backup';
+export * from './appVersion';

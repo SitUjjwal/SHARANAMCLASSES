@@ -1,0 +1,73 @@
+# SHARANAM CLASSES — ADMIN PANEL production deploy (Vite SPA + nginx + HTTPS)
+#
+# Prerequisites:
+#   1. DNS A/AAAA: ADMIN_DOMAIN → this server
+#   2. Ports 80 + 443 open
+#   3. Root .env with VITE_* build args (baked into the image)
+#   4. API already reachable at VITE_API_BASE_URL (HTTPS)
+#
+#   cp .env.admin.example .env
+#   # fill ADMIN_DOMAIN, ACME_EMAIL, VITE_*
+#   docker compose -f docker-compose.admin.yml up -d --build
+#
+# Or pull pre-built admin image from GHCR (IMAGE_TAG + GITHUB_REPOSITORY_OWNER).
+
+name: sharanam-admin
+
+services:
+  admin:
+    build:
+      context: .
+      dockerfile: apps/admin/Dockerfile
+      args:
+        NODE_VERSION: "22"
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:?Set VITE_API_BASE_URL}
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:?Set VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:?Set VITE_SUPABASE_ANON_KEY}
+        VITE_RAZORPAY_KEY_ID: ${VITE_RAZORPAY_KEY_ID:-}
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-sharanam}/sharanam-admin:${IMAGE_TAG:-latest}
+    container_name: sharanam-admin
+    restart: unless-stopped
+    expose:
+      - "80"
+    ports:
+      - "127.0.0.1:8080:80"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - sharanam
+
+  caddy:
+    image: caddy:2.9-alpine
+    container_name: sharanam-caddy-admin
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:?Set ADMIN_DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env}
+    volumes:
+      - ./infra/caddy/Caddyfile.admin:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      admin:
+        condition: service_healthy
+    networks:
+      - sharanam
+
+networks:
+  sharanam:
+    driver: bridge
+
+volumes:
+  caddy_data:
+    name: sharanam-admin-caddy-data
+  caddy_config:
+    name: sharanam-admin-caddy-config

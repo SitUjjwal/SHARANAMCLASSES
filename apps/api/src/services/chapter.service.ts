@@ -20,7 +20,7 @@ import {
 } from './courseAccess.service';
 
 const CHAPTER_COLUMNS =
-  'id, course_id, title, description, sort_order, duration_seconds, video_count, pdf_count, notes_count, video_url, is_free_preview, is_published';
+  'id, course_id, batch_subject_id, title, description, sort_order, duration_seconds, video_count, pdf_count, notes_count, video_url, is_free_preview, is_published';
 
 const CONTENT_COLUMNS =
   'id, chapter_id, content_type, title, url, body, duration_seconds, sort_order';
@@ -28,6 +28,7 @@ const CONTENT_COLUMNS =
 type ChapterRow = {
   id: string;
   course_id: string;
+  batch_subject_id: string | null;
   title: string;
   description: string;
   sort_order: number;
@@ -53,6 +54,7 @@ function toChapter(
   return {
     id: row.id,
     course_id: row.course_id,
+    batch_subject_id: row.batch_subject_id ?? null,
     title: row.title,
     description: row.description,
     sort_order: row.sort_order,
@@ -70,7 +72,12 @@ function toChapter(
 
 export async function listChaptersForCourse(
   courseId: string,
-  options: { publishedOnly: boolean; userId?: string; search?: string },
+  options: {
+    publishedOnly: boolean;
+    userId?: string;
+    search?: string;
+    batchSubjectId?: string;
+  },
 ): Promise<Chapter[]> {
   const supabase = getSupabaseAdmin();
   let query = supabase
@@ -79,6 +86,9 @@ export async function listChaptersForCourse(
     .eq('course_id', courseId)
     .order('sort_order', { ascending: true });
 
+  if (options.batchSubjectId) {
+    query = query.eq('batch_subject_id', options.batchSubjectId);
+  }
   if (options.publishedOnly) {
     query = query.eq('is_published', true);
   }
@@ -109,11 +119,13 @@ export async function listChaptersForCourse(
 export async function listChaptersForAdmin(
   courseId: string,
   search?: string,
+  batchSubjectId?: string,
 ): Promise<Chapter[]> {
   // Admin always treats chapters as unlocked for display of counts/meta
   return listChaptersForCourse(courseId, {
     publishedOnly: false,
     search,
+    batchSubjectId,
   }).then((chapters) =>
     chapters.map((chapter) => ({
       ...chapter,
@@ -338,6 +350,24 @@ export async function createChapter(
   }
   if (!course) {
     throw new AppError(404, 'COURSE_NOT_FOUND', 'Course not found');
+  }
+
+  if (input.batch_subject_id) {
+    const { data: bs, error: bsError } = await supabase
+      .from('batch_subjects')
+      .select('id, batch_id')
+      .eq('id', input.batch_subject_id)
+      .maybeSingle();
+    if (bsError) {
+      throw new AppError(500, 'BATCH_SUBJECT_LOOKUP_FAILED', bsError.message);
+    }
+    if (!bs || bs.batch_id !== courseId) {
+      throw new AppError(
+        400,
+        'BATCH_SUBJECT_MISMATCH',
+        'Selected subject does not belong to this batch',
+      );
+    }
   }
 
   let sortOrder = input.sort_order;

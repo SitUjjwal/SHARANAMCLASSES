@@ -14,10 +14,12 @@ import {
   listCategories,
   patchCategory,
   postCategory,
+  postCategoryIcon,
   removeCategory,
 } from '../controllers/category.controller';
 import { requireAuth } from '../middlewares/auth';
 import { requirePermission } from '../middlewares/requirePermission';
+import { bannerImageUpload } from '../middlewares/upload';
 import { validate } from '../middlewares/validate';
 import {
   createCategorySchema,
@@ -27,6 +29,13 @@ import {
 export const categoryRouter = Router();
 
 categoryRouter.get('/categories', requireAuth, listCategories);
+categoryRouter.post(
+  '/categories/upload-icon',
+  requireAuth,
+  requirePermission('courses:create'),
+  bannerImageUpload,
+  postCategoryIcon,
+);
 categoryRouter.post(
   '/categories',
   requireAuth,

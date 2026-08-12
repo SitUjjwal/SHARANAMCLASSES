@@ -38,6 +38,17 @@ export function deleteAdminCategory(id: string) {
   });
 }
 
+/** Upload category photo/icon → public URL. */
+export async function uploadCategoryIcon(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('image', file);
+  const data = await apiRequest<{ url: string }>('/categories/upload-icon', {
+    method: 'POST',
+    formData,
+  });
+  return data.url;
+}
+
 export function slugifyCategoryName(name: string): string {
   return name
     .trim()

@@ -15,7 +15,7 @@ import { listChaptersForCourse } from './chapter.service';
 import { resolveActorEmail, writeActivityLog } from './activityLog.service';
 
 export const COURSE_COLUMNS =
-  'id, category_id, title, slug, description, thumbnail_url, class_level, medium, stream, board, academic_year, subject, teacher_id, language, teacher_name, price, rating, review_count, is_free, is_featured, is_published, sort_order, features';
+  'id, category_id, title, slug, description, thumbnail_url, class_level, medium, stream, board, academic_year, subject, teacher_id, language, teacher_name, price, original_price, discount_percent, start_date, end_date, rating, review_count, is_free, is_featured, is_published, sort_order, features';
 
 type CourseRow = Omit<CourseSummary, 'is_purchased' | 'price' | 'rating' | 'review_count'> & {
   price: number | string;
@@ -28,6 +28,10 @@ type CourseRow = Omit<CourseSummary, 'is_purchased' | 'price' | 'rating' | 'revi
   subject?: string | null;
   teacher_id?: string | null;
   language?: CourseSummary['language'];
+  original_price?: number | string | null;
+  discount_percent?: number | string | null;
+  start_date?: string | null;
+  end_date?: string | null;
 };
 
 function toSummary(row: CourseRow, purchasedIds: Set<string>): CourseSummary {
@@ -41,6 +45,10 @@ function toSummary(row: CourseRow, purchasedIds: Set<string>): CourseSummary {
     teacher_id: row.teacher_id ?? null,
     language: (row.language as CourseSummary['language']) ?? row.medium ?? null,
     price: Number(row.price) || 0,
+    original_price: row.original_price != null ? Number(row.original_price) : null,
+    discount_percent: row.discount_percent != null ? Number(row.discount_percent) : null,
+    start_date: row.start_date ?? null,
+    end_date: row.end_date ?? null,
     rating: Math.min(5, Math.max(0, Number(row.rating) || 0)),
     review_count: Math.max(0, Number(row.review_count) || 0),
     is_purchased: purchasedIds.has(row.id),

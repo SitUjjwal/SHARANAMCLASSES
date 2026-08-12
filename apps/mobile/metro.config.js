@@ -6,8 +6,10 @@ const monorepoRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
 
-// Monorepo: watch shared packages and resolve from app + root node_modules
-config.watchFolders = [monorepoRoot];
+// Keep Expo defaults, then add monorepo root (required for @sharanam/shared).
+const defaultWatchFolders = config.watchFolders ?? [];
+config.watchFolders = [...new Set([...defaultWatchFolders, monorepoRoot])];
+
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
   path.resolve(monorepoRoot, 'node_modules'),
@@ -15,6 +17,7 @@ config.resolver.nodeModulesPaths = [
 
 // Prefer exact React pinned at monorepo root (Expo SDK 54 needs 19.1.0)
 config.resolver.extraNodeModules = {
+  ...(config.resolver.extraNodeModules ?? {}),
   react: path.resolve(monorepoRoot, 'node_modules/react'),
   'react-dom': path.resolve(monorepoRoot, 'node_modules/react-dom'),
   semver: path.resolve(monorepoRoot, 'node_modules/semver'),

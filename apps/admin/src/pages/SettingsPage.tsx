@@ -20,13 +20,21 @@ const EMPTY: PlatformGeneralSettings = {
   logo_url: '',
   logo_storage_key: '',
   primary_color: '#0B6E4F',
-  support_email: '',
+  support_email: 'sharanam.sp@gmail.com',
   support_phone: '',
   privacy_policy: '',
   terms: '',
   maintenance_mode: false,
   app_version: '1.0.0',
   min_app_version: '1.0.0',
+  recommended_app_version: '1.0.0',
+  force_update: false,
+  optional_update: true,
+  release_notes: '',
+  android_build_number: 1,
+  ios_build_number: '1',
+  store_url_android: 'https://play.google.com/store/apps/details?id=com.sharanam.classes',
+  store_url_ios: '',
   timezone: 'Asia/Kolkata',
   social_facebook: '',
   social_instagram: '',
@@ -308,20 +316,80 @@ export function SettingsPage() {
 
           <fieldset disabled={!canWrite}>
             <legend>Release & maintenance</legend>
+            <p className="hint">
+              Full SemVer / force update / history: open <a href="/versions">App versions</a>.
+            </p>
             <label>
               App version
               <input
                 value={form.app_version}
                 onChange={(e) => setForm((f) => ({ ...f, app_version: e.target.value }))}
+                pattern="\d+\.\d+\.\d+"
                 required
               />
             </label>
             <label>
-              Minimum app version
+              Minimum app version (force below)
               <input
                 value={form.min_app_version}
                 onChange={(e) => setForm((f) => ({ ...f, min_app_version: e.target.value }))}
+                pattern="\d+\.\d+\.\d+"
                 required
+              />
+            </label>
+            <label>
+              Recommended version (optional below)
+              <input
+                value={form.recommended_app_version}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, recommended_app_version: e.target.value }))
+                }
+                pattern="\d+\.\d+\.\d+"
+              />
+            </label>
+            <label>
+              Android build number
+              <input
+                type="number"
+                min={1}
+                value={form.android_build_number}
+                onChange={(e) =>
+                  setForm((f) => ({
+                    ...f,
+                    android_build_number: Number(e.target.value) || 1,
+                  }))
+                }
+              />
+            </label>
+            <label>
+              iOS build number
+              <input
+                value={form.ios_build_number}
+                onChange={(e) => setForm((f) => ({ ...f, ios_build_number: e.target.value }))}
+              />
+            </label>
+            <label className="checkbox-row">
+              <input
+                type="checkbox"
+                checked={form.force_update}
+                onChange={(e) => setForm((f) => ({ ...f, force_update: e.target.checked }))}
+              />
+              Force update (clients below latest)
+            </label>
+            <label className="checkbox-row">
+              <input
+                type="checkbox"
+                checked={form.optional_update}
+                onChange={(e) => setForm((f) => ({ ...f, optional_update: e.target.checked }))}
+              />
+              Optional update prompts
+            </label>
+            <label>
+              Release notes
+              <textarea
+                rows={4}
+                value={form.release_notes}
+                onChange={(e) => setForm((f) => ({ ...f, release_notes: e.target.value }))}
               />
             </label>
             <label className="checkbox-row">

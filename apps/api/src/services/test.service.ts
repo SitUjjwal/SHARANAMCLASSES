@@ -16,7 +16,7 @@ import type {
 } from '../validators/test.validators';
 
 const TEST_COLUMNS =
-  'id, title, description, instructions, test_type, course_id, chapter_id, duration_minutes, total_marks, passing_marks, sort_order, is_free, is_published, created_at, updated_at';
+  'id, title, description, instructions, test_type, course_id, chapter_id, batch_subject_id, duration_minutes, total_marks, passing_marks, sort_order, is_free, is_published, created_at, updated_at';
 
 export type TestListPage = {
   items: Test[];
@@ -34,6 +34,7 @@ type TestRow = {
   test_type: TestType;
   course_id: string | null;
   chapter_id: string | null;
+  batch_subject_id: string | null;
   duration_minutes: number;
   total_marks: number;
   passing_marks: number;
@@ -281,6 +282,7 @@ export async function createTest(input: CreateTestInput): Promise<Test> {
       test_type: input.test_type,
       course_id,
       chapter_id,
+      batch_subject_id: input.batch_subject_id ?? null,
       duration_minutes: input.duration_minutes,
       total_marks: input.total_marks,
       passing_marks: input.passing_marks,
@@ -330,6 +332,7 @@ export async function updateTest(testId: string, input: UpdateTestInput): Promis
   if (input.test_type !== undefined) patch.test_type = input.test_type;
   if (input.course_id !== undefined) patch.course_id = input.course_id;
   if (input.chapter_id !== undefined) patch.chapter_id = input.chapter_id;
+  if (input.batch_subject_id !== undefined) patch.batch_subject_id = input.batch_subject_id;
   if (input.duration_minutes !== undefined) {
     patch.duration_minutes = input.duration_minutes;
   }

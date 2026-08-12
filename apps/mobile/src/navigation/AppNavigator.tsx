@@ -156,6 +156,10 @@ export function AppNavigator() {
         getComponent={() => require('@/modules/feedback').ChatSupportScreen}
       />
       <Stack.Screen
+        name="SubjectList"
+        getComponent={() => require('@/modules/subjects').SubjectListScreen}
+      />
+      <Stack.Screen
         name="ChapterList"
         getComponent={() => require('@/modules/chapters').ChapterListScreen}
       />

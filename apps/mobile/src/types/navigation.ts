@@ -75,7 +75,13 @@ export type AppStackParamList = {
   ContentReportDetail: { reportId: string };
   FeatureRequest: undefined;
   ChatSupport: { ticketId?: string } | undefined;
-  ChapterList: { courseId: string; courseTitle?: string };
+  SubjectList: { batchId: string; batchTitle: string };
+  ChapterList: {
+    courseId: string;
+    courseTitle?: string;
+    batchSubjectId?: string;
+    subjectName?: string;
+  };
   ChapterContent: { courseId: string; chapterId: string };
   VideoPlayer: { courseId: string; chapterId: string; videoId: string };
   PdfViewer: { courseId: string; chapterId: string; pdfId: string };

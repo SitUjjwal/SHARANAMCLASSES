@@ -154,6 +154,7 @@ function emit(
     message,
     ...redact(fields),
     env: env.NODE_ENV,
+    app_env: env.APP_ENV,
   };
 
   const line = JSON.stringify(entry);
@@ -219,5 +220,26 @@ export function initLogger(): void {
     level: env.LOG_LEVEL,
     max_files: env.LOG_MAX_FILES,
     max_size: env.LOG_MAX_SIZE,
+    app_env: env.APP_ENV,
   });
+}
+
+/** Flush and end rotating streams during graceful shutdown. */
+export function closeLogger(): Promise<void> {
+  const streams = [appStream, errorStream, accessStream].filter(
+    (s): s is RotatingFileStream => s != null,
+  );
+  appStream = null;
+  errorStream = null;
+  accessStream = null;
+  initialized = false;
+
+  return Promise.all(
+    streams.map(
+      (stream) =>
+        new Promise<void>((resolve) => {
+          stream.end(() => resolve());
+        }),
+    ),
+  ).then(() => undefined);
 }

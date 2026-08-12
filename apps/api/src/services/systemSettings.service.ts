@@ -31,13 +31,21 @@ export const DEFAULT_GENERAL: PlatformGeneralSettings = {
   logo_url: '',
   logo_storage_key: '',
   primary_color: '#0B6E4F',
-  support_email: 'support@sharanamclasses.com',
+  support_email: 'sharanam.sp@gmail.com',
   support_phone: '',
   privacy_policy: '',
   terms: '',
   maintenance_mode: false,
   app_version: '1.0.0',
   min_app_version: '1.0.0',
+  recommended_app_version: '1.0.0',
+  force_update: false,
+  optional_update: true,
+  release_notes: '',
+  android_build_number: 1,
+  ios_build_number: '1',
+  store_url_android: 'https://play.google.com/store/apps/details?id=com.sharanam.classes',
+  store_url_ios: '',
   timezone: TZ,
   social_facebook: '',
   social_instagram: '',
@@ -86,6 +94,24 @@ export function parseGeneral(value: unknown): PlatformGeneralSettings {
     min_app_version:
       asString(v.min_app_version, DEFAULT_GENERAL.min_app_version) ||
       DEFAULT_GENERAL.min_app_version,
+    recommended_app_version:
+      asString(v.recommended_app_version, '') ||
+      asString(v.app_version, DEFAULT_GENERAL.app_version) ||
+      DEFAULT_GENERAL.recommended_app_version,
+    force_update: Boolean(v.force_update),
+    optional_update: v.optional_update === undefined ? true : Boolean(v.optional_update),
+    release_notes: typeof v.release_notes === 'string' ? v.release_notes : DEFAULT_GENERAL.release_notes,
+    android_build_number: (() => {
+      const n = Number(v.android_build_number);
+      return Number.isFinite(n) && n >= 0 ? Math.floor(n) : DEFAULT_GENERAL.android_build_number;
+    })(),
+    ios_build_number:
+      asString(v.ios_build_number, DEFAULT_GENERAL.ios_build_number) ||
+      DEFAULT_GENERAL.ios_build_number,
+    store_url_android:
+      asString(v.store_url_android, DEFAULT_GENERAL.store_url_android) ||
+      DEFAULT_GENERAL.store_url_android,
+    store_url_ios: asString(v.store_url_ios, DEFAULT_GENERAL.store_url_ios),
     timezone: asString(v.timezone, DEFAULT_GENERAL.timezone) || DEFAULT_GENERAL.timezone,
     social_facebook: asString(v.social_facebook, DEFAULT_GENERAL.social_facebook),
     social_instagram: asString(v.social_instagram, DEFAULT_GENERAL.social_instagram),
@@ -108,6 +134,14 @@ export function toPublicConfig(bundle: PlatformSettingsBundle): PublicPlatformCo
     maintenance_mode: g.maintenance_mode,
     app_version: g.app_version,
     min_app_version: g.min_app_version,
+    recommended_app_version: g.recommended_app_version,
+    force_update: g.force_update,
+    optional_update: g.optional_update,
+    release_notes: g.release_notes,
+    android_build_number: g.android_build_number,
+    ios_build_number: g.ios_build_number,
+    store_url_android: g.store_url_android,
+    store_url_ios: g.store_url_ios,
     timezone: g.timezone,
     social_facebook: g.social_facebook,
     social_instagram: g.social_instagram,

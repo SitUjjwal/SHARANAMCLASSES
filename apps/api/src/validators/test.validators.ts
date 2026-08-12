@@ -23,6 +23,8 @@ const testBodyBase = z.object({
   test_type: z.enum(TEST_TYPES),
   course_id: optionalUuid,
   chapter_id: optionalUuid,
+  /** Subject inside the batch (batch_subjects.id) — subject-level tests */
+  batch_subject_id: optionalUuid,
   duration_minutes: z.coerce.number().int().min(1).max(24 * 60),
   total_marks: z.coerce.number().positive().max(10000),
   passing_marks: z.coerce.number().positive().max(10000),

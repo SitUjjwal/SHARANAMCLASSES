@@ -14,7 +14,7 @@ import type { AppStackParamList } from '@/types/navigation';
 import { colors, spacing, typography } from '@/theme';
 
 /** Public support inbox — update when a dedicated address is ready */
-const SUPPORT_EMAIL = 'support@sharanamclasses.com';
+const SUPPORT_EMAIL = 'sharanam.sp@gmail.com';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'PaymentFailed'>;
 

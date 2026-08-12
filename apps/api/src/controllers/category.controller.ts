@@ -11,6 +11,7 @@ import {
   updateCategory,
 } from '../services/category.service';
 import { hasStaffPermission } from '../services/role.service';
+import { uploadCourseThumbnail } from '../services/upload.service';
 import type {
   CreateCategoryInput,
   UpdateCategoryInput,
@@ -104,6 +105,24 @@ export async function removeCategory(
     const categoryId = requireParam(req.params.id, 'id');
     await deleteCategory(categoryId);
     res.status(200).json({ success: true, data: null, message: 'Category deleted' });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** POST /categories/upload-icon — multipart field `image` → public URL. */
+export async function postCategoryIcon(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const file = req.file;
+    if (!file) {
+      throw new AppError(400, 'FILE_REQUIRED', 'Upload an image file (field: image)');
+    }
+    const url = await uploadCourseThumbnail(file);
+    res.status(201).json({ success: true, data: { url }, message: 'Icon uploaded' });
   } catch (error) {
     next(error);
   }

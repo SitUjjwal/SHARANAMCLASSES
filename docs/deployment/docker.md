@@ -3,16 +3,21 @@
 # Containerizes the API (Express) and Admin (Vite → nginx).
 # Mobile (Expo) is not containerized; ship via EAS / stores.
 #
-# Quick start (local):
+# Quick start (local / development):
 #   cp .env.docker.example .env
 #   cp apps/api/.env.example apps/api/.env   # fill secrets
-#   docker compose up --build -d
+#   docker compose -f docker-compose.yml up --build -d
+#
+# Staging:
+#   docker compose -f docker-compose.staging.yml pull && up -d
 #
 # Production (server with images from GHCR):
 #   export IMAGE_TAG=<git-sha-short>
 #   export GITHUB_REPOSITORY_OWNER=<lowercase-github-org-or-user>
 #   docker compose -f docker-compose.prod.yml pull
 #   docker compose -f docker-compose.prod.yml up -d
+#
+# Full production readiness guide: docs/deployment/production.md
 
 ## File map
 
@@ -23,11 +28,19 @@
 | `apps/api/Dockerfile` | Multi-stage production image for the Express API |
 | `apps/admin/Dockerfile` | Multi-stage: Vite build → nginx static SPA |
 | `apps/admin/nginx.conf` | SPA routing, `/healthz`, gzip, security headers |
-| `docker-compose.yml` | Local/server **build** + run (api + admin) |
-| `docker-compose.prod.yml` | Production **pull** from GHCR + run |
+| `docker-compose.yml` | **Development** build + run (`APP_ENV=development`) |
+| `docker-compose.staging.yml` | **Staging** pull from GHCR `:staging` |
+| `docker-compose.prod.yml` | **Production** API + Admin + Caddy HTTPS |
+| `docker-compose.backend.yml` | **Backend-only** API + Caddy HTTPS |
+| `infra/caddy/Caddyfile` | Let's Encrypt TLS for API + Admin |
+| `infra/caddy/Caddyfile.backend` | Let's Encrypt TLS for API only |
 | `.env.docker.example` | Template for root `.env` (compose interpolation) |
+| `.env.backend.example` | Domains + ACME for HTTPS deploy |
 | `.github/workflows/ci.yml` | Lint → typecheck → test → build → Docker smoke |
-| `.github/workflows/deploy.yml` | Push images to GHCR + optional SSH deploy |
+| `.github/workflows/deploy.yml` | Prod: push images to GHCR + optional SSH deploy |
+| `.github/workflows/deploy-staging.yml` | Staging: push `:staging` + optional SSH deploy |
+| `docs/deployment/production.md` | Production readiness + every-file explanations |
+| `docs/deployment/backend-deploy.md` | Backend deploy (Docker, HTTPS, health, headers, logs) |
 
 ---
 

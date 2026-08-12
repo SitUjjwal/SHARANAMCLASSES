@@ -9,6 +9,9 @@ import { metricsStore } from '../monitoring/metricsStore';
 
 const SKIP_PREFIXES = [
   '/health',
+  '/ready',
+  '/version',
+  '/release-notes',
   '/metrics',
   '/system-status',
   '/admin/monitoring',

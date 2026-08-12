@@ -63,6 +63,12 @@ temp/
 .cache/
 .parcel-cache/
 
+# EAS build debug artifacts
+apps/mobile/eas-err.txt
+apps/mobile/eas-log-plain.txt
+apps/mobile/build-view.json
+apps/mobile/raw-build.json
+
 # Misc
 *.local
 .vercel

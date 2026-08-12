@@ -17,6 +17,10 @@ export const rateLimiter = rateLimit({
   skip: (req) =>
     req.path === '/health' ||
     req.path.startsWith('/health/') ||
+    req.path === '/ready' ||
+    req.path.startsWith('/ready/') ||
+    req.path === '/version' ||
+    req.path === '/release-notes' ||
     req.path === '/system-status',
   message: {
     success: false,

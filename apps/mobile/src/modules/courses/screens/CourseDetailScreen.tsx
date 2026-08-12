@@ -18,9 +18,12 @@
  *     sharanam://course/:courseId/chapters
  *     sharanam://course/:courseId/chapters/:chapterId
  */
+import { useState } from 'react';
 import { Alert, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import * as Linking from 'expo-linking';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+
+import { fetchBatchSubjects } from '@/services/subject.service';
 
 import { ChapterList } from '@/modules/courses/components/ChapterList';
 import { CourseDetailHero } from '@/modules/courses/components/CourseDetailHero';
@@ -86,8 +89,29 @@ export function CourseDetailScreen({ navigation, route }: Props) {
     navigation.push('CourseDetail', { courseId: courseItem.id });
   }
 
-  function openChapterList() {
+  const [resolvingSubjects, setResolvingSubjects] = useState(false);
+
+  async function openChapterList() {
+    if (resolvingSubjects) {
+      return;
+    }
     const course = detailQuery.data;
+    setResolvingSubjects(true);
+    try {
+      // Batch architecture: batches with subjects show the subject list first.
+      const subjects = await fetchBatchSubjects(courseId);
+      if (subjects.length > 0) {
+        navigation.navigate('SubjectList', {
+          batchId: courseId,
+          batchTitle: course?.title ?? '',
+        });
+        return;
+      }
+    } catch {
+      // Fall back to the legacy chapter flow if the subjects lookup fails.
+    } finally {
+      setResolvingSubjects(false);
+    }
     navigation.navigate('ChapterList', {
       courseId,
       courseTitle: course?.title,
@@ -195,7 +219,9 @@ export function CourseDetailScreen({ navigation, route }: Props) {
           <ChapterList
             chapters={course.chapters}
             onOpenChapter={openChapter}
-            onSeeAll={openChapterList}
+            onSeeAll={() => {
+              void openChapterList();
+            }}
           />
         </View>
 

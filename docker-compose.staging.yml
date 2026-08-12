@@ -1,0 +1,61 @@
+# SHARANAM CLASSES — STAGING compose
+# Pulls GHCR images tagged staging (or IMAGE_TAG).
+#
+# On staging server:
+#   cp apps/api/.env.staging.example apps/api/.env   # fill secrets
+#   export IMAGE_TAG=staging
+#   export GITHUB_REPOSITORY_OWNER=your-gh-user-or-org
+#   docker compose -f docker-compose.staging.yml pull
+#   docker compose -f docker-compose.staging.yml up -d
+#
+# Use a SEPARATE Supabase project, Razorpay test keys, and R2 bucket from production.
+
+name: sharanam-staging
+
+services:
+  api:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-sharanam}/sharanam-api:${IMAGE_TAG:-staging}
+    container_name: sharanam-api-staging
+    restart: unless-stopped
+    stop_grace_period: 25s
+    ports:
+      - "${API_PORT:-4000}:4000"
+    env_file:
+      - apps/api/.env
+    environment:
+      NODE_ENV: production
+      APP_ENV: staging
+      PORT: "4000"
+      LOG_DIR: /app/logs
+      LOG_TO_CONSOLE: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - api_logs_staging:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:4000/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - sharanam
+
+  admin:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-sharanam}/sharanam-admin:${IMAGE_TAG:-staging}
+    container_name: sharanam-admin-staging
+    restart: unless-stopped
+    ports:
+      - "${ADMIN_PORT:-8080}:80"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - sharanam
+
+networks:
+  sharanam:
+    driver: bridge
+
+volumes:
+  api_logs_staging:
+    name: sharanam-api-logs-staging

@@ -4,6 +4,8 @@
  */
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 
+import { DocumentTitle } from '@/components/DocumentTitle';
+import { NotFoundPage } from '@/components/NotFoundPage';
 import { LoginPage } from '@/features/auth/LoginPage';
 import { RequireAuth, RequireStaff } from '@/features/auth/RequireAuth';
 import { AdminLayout } from '@/layouts/AdminLayout';
@@ -14,6 +16,7 @@ import {
   AnnouncementsPage,
   BannersPage,
   BackupsPage,
+  BatchesPage,
   BugReportsPage,
   CategoriesPage,
   CertificatesPage,
@@ -46,6 +49,7 @@ import {
   TeachersPage,
   TestimonialsPage,
   TestsPage,
+  VersionsPage,
   VideosPage,
 } from '@/pages';
 
@@ -56,13 +60,10 @@ export function App() {
         <div className="login-card">
           <h1>Admin config missing</h1>
           <p className="form-error">
-            VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY were empty at build time (causes a white
-            screen). Set them in the repo root <code>.env</code>, then rebuild:
+            VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY were empty at build time. On Vercel: Settings
+            → Environment Variables → <strong>Production</strong> pe set karo, phir Redeploy (cache
+            off).
           </p>
-          <pre style={{ fontSize: 12, overflow: 'auto' }}>
-            {`docker compose build admin
-docker compose up -d`}
-          </pre>
         </div>
       </div>
     );
@@ -70,6 +71,7 @@ docker compose up -d`}
 
   return (
     <BrowserRouter>
+      <DocumentTitle />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route element={<RequireAuth />}>
@@ -94,6 +96,7 @@ docker compose up -d`}
               <Route path="faqs" element={<FaqsPage />} />
               <Route path="support-chat" element={<SupportChatPage />} />
               <Route path="content-reports" element={<ContentReportsPage />} />
+              <Route path="batches" element={<BatchesPage />} />
               <Route path="courses" element={<CoursesPage />} />
               <Route path="tests" element={<TestsPage />} />
               <Route path="questions" element={<QuestionsHubPage />} />
@@ -116,11 +119,12 @@ docker compose up -d`}
               <Route path="monitoring" element={<MonitoringPage />} />
               <Route path="backups" element={<BackupsPage />} />
               <Route path="settings" element={<SettingsPage />} />
+              <Route path="versions" element={<VersionsPage />} />
               <Route path="roles" element={<RolesPage />} />
             </Route>
           </Route>
         </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   );

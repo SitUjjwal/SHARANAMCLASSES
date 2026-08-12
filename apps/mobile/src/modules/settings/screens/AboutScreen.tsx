@@ -1,7 +1,7 @@
 /**
  * AboutScreen — app blurb + version.
  */
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, Platform } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Constants from 'expo-constants';
 
@@ -19,6 +19,10 @@ export function AboutScreen({ navigation }: Props) {
   const theme = useAppTheme();
   const language = useSettingsStore((s) => s.language);
   const version = Constants.expoConfig?.version ?? '1.0.0';
+  const build =
+    Platform.OS === 'android'
+      ? String(Constants.expoConfig?.android?.versionCode ?? '—')
+      : String(Constants.expoConfig?.ios?.buildNumber ?? '—');
 
   return (
     <Screen>
@@ -36,6 +40,10 @@ export function AboutScreen({ navigation }: Props) {
       >
         <Text style={[styles.label, { color: theme.textSecondary }]}>App Version</Text>
         <Text style={[styles.value, { color: theme.textPrimary }]}>{version}</Text>
+        <Text style={[styles.label, { color: theme.textSecondary, marginTop: 8 }]}>
+          Build number
+        </Text>
+        <Text style={[styles.value, { color: theme.textPrimary }]}>{build}</Text>
       </View>
 
       <AppButton label="Back" variant="ghost" onPress={() => navigation.goBack()} />

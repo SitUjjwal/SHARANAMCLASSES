@@ -1,5 +1,6 @@
 export { DashboardPage } from './DashboardPage';
 export { CoursesPage } from './CoursesPage';
+export { BatchesPage } from './BatchesPage';
 export { BannersPage } from './BannersPage';
 export { AnnouncementsPage } from './AnnouncementsPage';
 export { NotificationsPage } from './NotificationsPage';
@@ -34,5 +35,6 @@ export { ReportsPage } from './ReportsPage';
 export { ActivityLogsPage } from './ActivityLogsPage';
 export { BackupsPage } from './BackupsPage';
 export { SettingsPage } from './SettingsPage';
+export { VersionsPage } from './VersionsPage';
 export { MonitoringPage } from './MonitoringPage';
 export { RolesPage } from './RolesPage';

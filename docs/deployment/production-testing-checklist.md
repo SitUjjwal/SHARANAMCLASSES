@@ -41,6 +41,19 @@ Legend: ✅ Pass · ⚠️ Manual click needed · ❌ Fail
 
 ---
 
+## Environments & runtime ops
+
+| Check | Status | Notes |
+|--------|--------|----------|
+| Dev / Staging / Prod compose separated | ✅ | `docker-compose.yml`, `.staging.yml`, `.prod.yml` |
+| `APP_ENV` + env validation | ✅ | Zod + deployed-tier secret assert |
+| `GET /health` liveness | ✅ | Public |
+| `GET /ready` readiness | ✅ | Public; DB + shutdown gate |
+| Graceful shutdown | ✅ | SIGTERM → stop jobs → `server.close` |
+| Production docs | ✅ | `docs/deployment/production.md` |
+
+---
+
 ## Backup
 
 | Check | Status | Evidence |

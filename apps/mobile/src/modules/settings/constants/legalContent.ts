@@ -15,7 +15,7 @@ Data is stored on Supabase and related cloud services (e.g. Cloudflare R2 for fi
 
 You may request account deletion by contacting support. Push notifications can be disabled in Settings → Notification Preferences.
 
-For questions: support@sharanamclasses.com`;
+For questions: sharanam.sp@gmail.com`;
 
 const PRIVACY_HI = `गोपनीयता नीति — शरणम् क्लासेस
 
@@ -27,7 +27,7 @@ const PRIVACY_HI = `गोपनीयता नीति — शरणम् �
 
 सेटिंग्स → सूचना प्राथमिकताएँ में पुश बंद कर सकते हैं।
 
-संपर्क: support@sharanamclasses.com`;
+संपर्क: sharanam.sp@gmail.com`;
 
 const TERMS_EN = `Terms of Use — SHARANAM CLASSES
 
@@ -37,7 +37,7 @@ Purchased courses remain available per enrollment rules. Certificates are issued
 
 We may update these terms; continued use means you accept the latest version.
 
-Contact: support@sharanamclasses.com`;
+Contact: sharanam.sp@gmail.com`;
 
 const TERMS_HI = `उपयोग की शर्तें — शरणम् क्लासेस
 
@@ -45,7 +45,7 @@ const TERMS_HI = `उपयोग की शर्तें — शरणम् 
 
 खरीदे गए पाठ्यक्रम नामांकन नियमों के अनुसार उपलब्ध रहते हैं। प्रमाणपत्र पाठ्यक्रम पूर्णता और व्यवस्थापक अनुमोदन के बाद जारी होते हैं।
 
-संपर्क: support@sharanamclasses.com`;
+संपर्क: sharanam.sp@gmail.com`;
 
 export function getLegalDocument(
   id: LegalDocId,
@@ -63,8 +63,10 @@ export function getLegalDocument(
   };
 }
 
-export const ABOUT_EN = `SHARANAM CLASSES helps students learn with courses, live classes, tests, notes, and certificates.
+export const ABOUT_EN = `SHARANAM CLASSES is a Bihar Board learning platform with live classes, notes, tests, and smart learning.
 
-Brand-first learning for school and competitive paths.`;
+Courses, live sessions, PDFs, and certificates — built for Bihar Board students.`;
 
-export const ABOUT_HI = `शरणम् क्लासेस छात्रों को पाठ्यक्रम, लाइव कक्षाएँ, टेस्ट, नोट्स और प्रमाणपत्र के साथ सीखने में मदद करता है।`;
+export const ABOUT_HI = `शरणम् क्लासेस बिहार बोर्ड लर्निंग प्लेटफ़ॉर्म है — लाइव क्लास, नोट्स, टेस्ट और स्मार्ट लर्निंग।
+
+कोर्स, लाइव सत्र, PDF और प्रमाणपत्र — बिहार बोर्ड छात्रों के लिए।`;

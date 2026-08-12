@@ -1,0 +1,86 @@
+# SHARANAM CLASSES — BACKEND ONLY production deploy (API + HTTPS)
+# No admin SPA. Use when you only need the Express API online.
+#
+#   cp apps/api/.env.production.example apps/api/.env
+#   cp .env.backend.example .env
+#   # fill secrets + API_DOMAIN + ACME_EMAIL
+#   docker compose -f docker-compose.backend.yml up -d --build
+#
+# Or pull from GHCR (set IMAGE_TAG + GITHUB_REPOSITORY_OWNER):
+#   docker compose -f docker-compose.backend.yml pull
+#   docker compose -f docker-compose.backend.yml up -d
+
+name: sharanam-backend
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      args:
+        NODE_VERSION: "22"
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER:-sharanam}/sharanam-api:${IMAGE_TAG:-latest}
+    container_name: sharanam-api
+    restart: unless-stopped
+    stop_grace_period: 30s
+    expose:
+      - "4000"
+    # Localhost-only publish for ops /ready checks without going through TLS
+    ports:
+      - "127.0.0.1:4000:4000"
+    env_file:
+      - apps/api/.env
+    environment:
+      NODE_ENV: production
+      APP_ENV: production
+      PORT: "4000"
+      LOG_DIR: /app/logs
+      LOG_TO_CONSOLE: "true"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      SHUTDOWN_TIMEOUT_MS: ${SHUTDOWN_TIMEOUT_MS:-15000}
+      API_BASE_URL: ${API_BASE_URL:-https://${API_DOMAIN:-api.localhost}}
+    volumes:
+      - api_logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:4000/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - sharanam
+
+  caddy:
+    image: caddy:2.9-alpine
+    container_name: sharanam-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      API_DOMAIN: ${API_DOMAIN:-api.localhost}
+      # Unused by backend-only Caddyfile.backend — kept for env compatibility
+      ADMIN_DOMAIN: ${ADMIN_DOMAIN:-admin.localhost}
+      ACME_EMAIL: ${ACME_EMAIL:-ops@localhost}
+    volumes:
+      - ./infra/caddy/Caddyfile.backend:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - sharanam
+
+networks:
+  sharanam:
+    driver: bridge
+
+volumes:
+  api_logs:
+    name: sharanam-backend-api-logs
+  caddy_data:
+    name: sharanam-backend-caddy-data
+  caddy_config:
+    name: sharanam-backend-caddy-config

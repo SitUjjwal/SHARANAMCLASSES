@@ -77,6 +77,12 @@ export type CourseSummary = {
    * When greater than `price`, Buy Course shows Discount = compare_at − price.
    */
   compare_at_price?: number | null;
+  /** MRP / strike-through price (batch pricing) */
+  original_price?: number | null;
+  discount_percent?: number | null;
+  /** Batch validity window (YYYY-MM-DD) */
+  start_date?: string | null;
+  end_date?: string | null;
   /** Average of approved reviews 0–5 (0 when none) */
   rating: number;
   /** Count of approved reviews */
@@ -117,6 +123,8 @@ export type CourseListFilters = {
 export type Chapter = {
   id: string;
   course_id: string;
+  /** Subject (batch_subjects.id) this chapter belongs to inside the batch */
+  batch_subject_id?: string | null;
   title: string;
   description: string;
   sort_order: number;
@@ -283,6 +291,8 @@ export type Test = {
   test_type: TestType;
   course_id: string | null;
   chapter_id: string | null;
+  /** Subject inside the batch (batch_subjects.id) for subject-level tests */
+  batch_subject_id?: string | null;
   duration_minutes: number;
   total_marks: number;
   passing_marks: number;
@@ -549,6 +559,10 @@ export type LiveClassStatus = 'upcoming' | 'live' | 'ended';
 export type LiveClass = {
   id: string;
   course_id: string | null;
+  /** Batch subject taxonomy (subjects.id) */
+  subject_id?: string | null;
+  chapter_id?: string | null;
+  teacher_id?: string | null;
   title: string;
   description: string;
   youtube_url: string;

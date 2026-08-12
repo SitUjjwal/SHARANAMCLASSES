@@ -14,6 +14,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ChapterCard } from '@/modules/chapters/components/ChapterCard';
 import { useChaptersQuery } from '@/modules/chapters/hooks/useChaptersQuery';
+import { useBatchSubjectChaptersQuery } from '@/modules/subjects/hooks/useBatchSubjectChaptersQuery';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Screen } from '@/components/ui/Screen';
@@ -26,9 +27,14 @@ import type { Chapter } from '@sharanam/shared';
 type Props = NativeStackScreenProps<AppStackParamList, 'ChapterList'>;
 
 export function ChapterListScreen({ navigation, route }: Props) {
-  const { courseId, courseTitle } = route.params;
+  const { courseId, courseTitle, batchSubjectId, subjectName } = route.params;
   const insets = useSafeAreaInsets();
-  const chaptersQuery = useChaptersQuery(courseId);
+  // Batch subject flow fetches via /student/batch-subjects/:id/chapters;
+  // legacy flow keeps the course endpoint. Only one query is enabled.
+  const courseChaptersQuery = useChaptersQuery(batchSubjectId ? '' : courseId);
+  const subjectChaptersQuery = useBatchSubjectChaptersQuery(batchSubjectId);
+  const chaptersQuery = batchSubjectId ? subjectChaptersQuery : courseChaptersQuery;
+  const headerSubtitle = subjectName ?? courseTitle;
 
   function openChapter(chapter: Chapter) {
     if (chapter.is_locked) {
@@ -61,9 +67,9 @@ export function ChapterListScreen({ navigation, route }: Props) {
         </Pressable>
         <View style={styles.headerText}>
           <Text style={styles.title}>Chapters</Text>
-          {courseTitle ? (
+          {headerSubtitle ? (
             <Text style={styles.subtitle} numberOfLines={1}>
-              {courseTitle}
+              {headerSubtitle}
             </Text>
           ) : null}
         </View>

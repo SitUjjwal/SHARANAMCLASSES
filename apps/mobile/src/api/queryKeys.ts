@@ -10,6 +10,9 @@ export const queryKeys = {
     ['courses', 'list', filters ?? {}] as const,
   courseDetail: (courseId: string) => ['courses', 'detail', courseId] as const,
   chapters: (courseId: string) => ['courses', courseId, 'chapters'] as const,
+  batchSubjects: (batchId: string) => ['batches', batchId, 'subjects'] as const,
+  batchSubjectChapters: (batchSubjectId: string) =>
+    ['batch-subjects', batchSubjectId, 'chapters'] as const,
   chapterDetail: (courseId: string, chapterId: string) =>
     ['courses', courseId, 'chapters', chapterId] as const,
   liveClasses: (filters?: Record<string, unknown>) =>

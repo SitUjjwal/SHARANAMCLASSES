@@ -196,7 +196,7 @@ export async function listAdminChapters(
       throw new AppError(400, 'COURSE_ID_REQUIRED', 'Query courseId is required');
     }
 
-    const data = await listChaptersForAdmin(courseId, query.search);
+    const data = await listChaptersForAdmin(courseId, query.search, query.batchSubjectId);
     res.status(200).json({ success: true, data });
   } catch (error) {
     next(error);

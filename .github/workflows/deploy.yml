@@ -116,4 +116,6 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
             docker image prune -f
+            sleep 3
+            curl -fsS "http://127.0.0.1:${API_PORT:-4000}/ready" || curl -fsS "http://127.0.0.1:4000/ready" || true
             docker compose -f docker-compose.prod.yml ps

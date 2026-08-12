@@ -9,6 +9,7 @@ import {
   createAdminCategory,
   slugifyCategoryName,
   updateAdminCategory,
+  uploadCategoryIcon,
   type CategoryWritePayload,
 } from '@/features/categories/api';
 import { ApiClientError } from '@/services/api';
@@ -68,6 +69,7 @@ export function CategoryForm({
   const [form, setForm] = useState<FormState>(() => fromCategory(category, nextSortOrder));
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     setForm(fromCategory(category, nextSortOrder));
@@ -76,6 +78,20 @@ export function CategoryForm({
 
   function setField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  async function onUploadPhoto(file: File | null) {
+    if (!file) return;
+    setUploading(true);
+    setError(null);
+    try {
+      const url = await uploadCategoryIcon(file);
+      setField('icon', url);
+    } catch (err) {
+      setError(err instanceof ApiClientError ? err.message : 'Photo upload failed');
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function onSubmit(event: FormEvent) {
@@ -164,14 +180,32 @@ export function CategoryForm({
           />
         </label>
 
-        <label className="span-2">
-          Icon (emoji or image URL)
+        <label className="span-2 file-upload-field">
+          Upload photo (JPEG / PNG / WebP)
           <input
-            value={form.icon}
-            onChange={(e) => setField('icon', e.target.value)}
-            placeholder="📘 or https://…"
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            disabled={uploading}
+            onChange={(e) => {
+              void onUploadPhoto(e.target.files?.[0] ?? null);
+              e.target.value = '';
+            }}
           />
+          {uploading ? <span className="hint">Uploading…</span> : null}
+          {isImageIcon(form.icon) ? (
+            <span className="hint">Photo set — it will show on the category tile.</span>
+          ) : (
+            <span className="hint">Or pick an emoji below.</span>
+          )}
         </label>
+
+        {isImageIcon(form.icon) ? (
+          <div className="span-2">
+            <button type="button" className="btn ghost" onClick={() => setField('icon', '📘')}>
+              Remove photo (use emoji instead)
+            </button>
+          </div>
+        ) : null}
 
         <div className="span-2 icon-preset-row">
           {ICON_PRESETS.map((emoji) => (
@@ -226,7 +260,7 @@ export function CategoryForm({
         <button type="button" className="btn ghost" onClick={onCancel}>
           Cancel
         </button>
-        <button type="submit" className="btn primary" disabled={saving}>
+        <button type="submit" className="btn primary" disabled={saving || uploading}>
           {saving ? 'Saving…' : category ? 'Update Category' : 'Add Category'}
         </button>
       </div>

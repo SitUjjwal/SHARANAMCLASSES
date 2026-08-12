@@ -1,0 +1,71 @@
+# Caddy — TLS termination for SHARANAM CLASSES (production / staging).
+# Auto HTTPS via Let's Encrypt when DNS points here and ports 80/443 are open.
+#
+# Required env (compose):
+#   API_DOMAIN=api.yourdomain.com
+#   ADMIN_DOMAIN=admin.yourdomain.com   (optional; omit block if unused)
+#
+# Upstream services must be on the same Docker network (`api:4000`, `admin:80`).
+
+{
+	email {$ACME_EMAIL:ops@localhost}
+}
+
+{$API_DOMAIN:api.localhost} {
+	encode gzip zstd
+
+	header {
+		# Edge hardening (API also sets Helmet; defense in depth)
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	# Liveness / readiness for external monitors (optional path passthrough)
+	handle /health* {
+		reverse_proxy api:4000
+	}
+	handle /ready* {
+		reverse_proxy api:4000
+	}
+
+	reverse_proxy api:4000 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+		header_up X-Real-IP {remote_host}
+		transport http {
+			read_timeout 120s
+			write_timeout 120s
+		}
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
+
+{$ADMIN_DOMAIN:admin.localhost} {
+	encode gzip zstd
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy no-referrer
+		-Server
+	}
+
+	reverse_proxy admin:80 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

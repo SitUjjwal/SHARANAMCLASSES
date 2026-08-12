@@ -42,6 +42,19 @@ const courseBodyBase = z.object({
   language: z.enum(['hindi', 'english']).nullable().optional(),
   teacher_name: z.string().trim().max(120).nullable().optional(),
   price: z.number().min(0).optional().default(0),
+  /** MRP shown struck-through; discount computed / stored alongside */
+  original_price: z.number().min(0).nullable().optional(),
+  discount_percent: z.number().min(0).max(100).nullable().optional(),
+  start_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'start_date must be YYYY-MM-DD')
+    .nullable()
+    .optional(),
+  end_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'end_date must be YYYY-MM-DD')
+    .nullable()
+    .optional(),
   rating: z.number().min(0).max(5).optional().default(4),
   is_free: z.boolean().optional().default(false),
   is_featured: z.boolean().optional().default(false),
@@ -80,6 +93,69 @@ export const createCourseSchema = courseBodyBase.transform(normalizeCourseTaxono
 
 export const updateCourseSchema = courseBodyBase.partial().transform(normalizeCourseTaxonomy);
 
+/**
+ * Batch create/update — same storage as courses, but enforces the batch rules:
+ * class, board, medium, academic year required; stream required for class 11–12.
+ */
+const batchRules = (
+  data: {
+    class_level?: string | null;
+    stream?: string | null;
+    board?: string | null;
+    medium?: string | null;
+    academic_year?: string | null;
+    price?: number;
+    original_price?: number | null;
+    start_date?: string | null;
+    end_date?: string | null;
+  },
+  ctx: z.RefinementCtx,
+) => {
+  if ((data.class_level === '11' || data.class_level === '12') && !data.stream) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Stream is required for Class 11 and 12',
+      path: ['stream'],
+    });
+  }
+  if (
+    data.original_price != null &&
+    data.price != null &&
+    data.original_price < data.price
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Original price must be greater than or equal to batch price',
+      path: ['original_price'],
+    });
+  }
+  if (data.start_date && data.end_date && data.end_date < data.start_date) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'End date must be after start date',
+      path: ['end_date'],
+    });
+  }
+};
+
+export const createBatchSchema = courseBodyBase
+  .extend({
+    class_level: classLevelEnum,
+    medium: z.enum(['hindi', 'english']),
+    board: z.enum(['bihar_board', 'other']).default('bihar_board'),
+    academic_year: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{4}$/, 'academic_year must look like 2026-2027'),
+  })
+  .superRefine(batchRules)
+  .transform(normalizeCourseTaxonomy);
+
+export const updateBatchSchema = courseBodyBase
+  .partial()
+  .superRefine(batchRules)
+  .transform(normalizeCourseTaxonomy);
+
 export const createChapterSchema = z.object({
   title: z.string().trim().min(2).max(160),
   description: z.string().trim().max(4000).default(''),
@@ -91,6 +167,8 @@ export const createChapterSchema = z.object({
   notes_count: z.number().int().min(0).optional().default(0),
   is_free_preview: z.boolean().optional().default(false),
   is_published: z.boolean().optional().default(true),
+  /** Subject inside the batch this chapter belongs to */
+  batch_subject_id: z.string().uuid().nullable().optional(),
 });
 
 /** Flat POST /chapters — course_id in body */
@@ -103,6 +181,7 @@ export const updateChapterSchema = createChapterSchema.partial();
 export const adminListChaptersQuerySchema = z.object({
   search: z.string().trim().max(120).optional(),
   courseId: z.string().uuid().optional(),
+  batchSubjectId: z.string().uuid().optional(),
 });
 
 export const reorderChaptersSchema = z.object({

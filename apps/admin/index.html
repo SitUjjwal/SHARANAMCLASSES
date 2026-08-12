@@ -4,9 +4,73 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SHARANAM CLASSES — Admin</title>
+    <meta
+      name="description"
+      content="SHARANAM CLASSES staff admin portal — courses, students, payments, and operations."
+    />
+    <!-- Private staff app: keep search engines out -->
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta name="googlebot" content="noindex, nofollow" />
+    <meta name="theme-color" content="#0b1f3a" />
+    <meta name="application-name" content="SHARANAM CLASSES Admin" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="SHARANAM CLASSES — Admin" />
+    <meta
+      property="og:description"
+      content="Staff portal for SHARANAM CLASSES operations."
+    />
+    <meta property="og:site_name" content="SHARANAM CLASSES" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="SHARANAM CLASSES — Admin" />
     <link rel="icon" type="image/png" href="/icon.png" />
+    <link rel="apple-touch-icon" href="/icon.png" />
+    <style>
+      /* Boot splash — visible before JS bundle parses */
+      #boot-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: grid;
+        place-items: center;
+        margin: 0;
+        background: #eef2f7;
+        color: #0b1f3a;
+        font-family: 'Segoe UI', system-ui, sans-serif;
+      }
+      #boot-loader[hidden] {
+        display: none;
+      }
+      #boot-loader .boot-inner {
+        text-align: center;
+      }
+      #boot-loader .boot-spinner {
+        width: 2.25rem;
+        height: 2.25rem;
+        margin: 0 auto 1rem;
+        border: 3px solid #d8dee8;
+        border-top-color: #0b1f3a;
+        border-radius: 50%;
+        animation: boot-spin 0.7s linear infinite;
+      }
+      @keyframes boot-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      #boot-loader p {
+        margin: 0;
+        font-size: 0.95rem;
+        color: #5a6b82;
+      }
+    </style>
   </head>
   <body>
+    <div id="boot-loader" role="status" aria-live="polite" aria-busy="true">
+      <div class="boot-inner">
+        <div class="boot-spinner" aria-hidden="true"></div>
+        <p>Loading admin…</p>
+      </div>
+    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

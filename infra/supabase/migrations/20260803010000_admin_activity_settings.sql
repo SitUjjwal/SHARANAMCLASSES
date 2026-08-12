@@ -45,7 +45,7 @@ values
     'general',
     jsonb_build_object(
       'app_name', 'SHARANAM CLASSES',
-      'support_email', 'support@sharanamclasses.com',
+      'support_email', 'sharanam.sp@gmail.com',
       'support_phone', '',
       'maintenance_mode', false,
       'timezone', 'Asia/Kolkata'

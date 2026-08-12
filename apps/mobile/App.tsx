@@ -10,6 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { queryClient } from '@/api/queryClient';
 import { AuthProvider } from '@/auth/AuthProvider';
 import { NotificationProvider } from '@/modules/notifications';
+import { AppUpdateGate } from '@/modules/platform/components/AppUpdateGate';
 import { RootNavigator } from '@/navigation/RootNavigator';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
@@ -21,7 +22,9 @@ export default function App() {
           <ThemeProvider>
             <AuthProvider>
               <NotificationProvider>
-                <RootNavigator />
+                <AppUpdateGate>
+                  <RootNavigator />
+                </AppUpdateGate>
               </NotificationProvider>
             </AuthProvider>
           </ThemeProvider>

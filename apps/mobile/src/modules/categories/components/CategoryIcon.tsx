@@ -1,8 +1,8 @@
 /**
  * CategoryIcon — dynamic icon from API `icon` field.
- * Why: supports Ionicons names OR emoji (📘) without hardcoding per category.
+ * Why: supports Ionicons names, emoji (📘), or an uploaded photo URL without hardcoding per category.
  */
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import { colors } from '@/theme';
@@ -16,10 +16,16 @@ function isIonicon(name: string | null): name is keyof typeof Ionicons.glyphMap 
   return Boolean(name && name in Ionicons.glyphMap);
 }
 
+function isImageUrl(icon: string | null): icon is string {
+  return Boolean(icon && /^https?:\/\//i.test(icon.trim()));
+}
+
 export function CategoryIcon({ icon, size = 22 }: CategoryIconProps) {
   return (
     <View style={styles.wrap}>
-      {isIonicon(icon) ? (
+      {isImageUrl(icon) ? (
+        <Image source={{ uri: icon.trim() }} style={styles.photo} resizeMode="cover" />
+      ) : isIonicon(icon) ? (
         <Ionicons name={icon} size={size} color={colors.accent} />
       ) : (
         <Text style={[styles.emoji, { fontSize: size }]}>{icon || '📘'}</Text>
@@ -39,5 +45,10 @@ const styles = StyleSheet.create({
   },
   emoji: {
     lineHeight: 28,
+  },
+  photo: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
   },
 });

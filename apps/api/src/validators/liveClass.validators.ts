@@ -26,6 +26,9 @@ const isoDateTime = z
 export const createLiveClassSchema = z
   .object({
     course_id: z.string().uuid().nullable().optional(),
+    subject_id: z.string().uuid().nullable().optional(),
+    chapter_id: z.string().uuid().nullable().optional(),
+    teacher_id: z.string().uuid().nullable().optional(),
     title: z.string().trim().min(2).max(160),
     description: z.string().trim().max(4000).optional().default(''),
     youtube_url: youtubeUrlField,
@@ -49,6 +52,9 @@ export const createLiveClassSchema = z
 export const updateLiveClassSchema = z
   .object({
     course_id: z.string().uuid().nullable().optional(),
+    subject_id: z.string().uuid().nullable().optional(),
+    chapter_id: z.string().uuid().nullable().optional(),
+    teacher_id: z.string().uuid().nullable().optional(),
     title: z.string().trim().min(2).max(160).optional(),
     description: z.string().trim().max(4000).optional(),
     youtube_url: youtubeUrlField.optional(),

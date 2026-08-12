@@ -6,7 +6,8 @@ Short production paths for health, metrics, logs, backup, and restore.
 
 | Method | Path | Auth | Permission | Notes |
 |--------|------|------|------------|--------|
-| `GET` | `/health` | Public | — | Liveness: `{ "status": "ok" }` |
+| `GET` | `/health` | Public | — | Liveness: process up (`app_env`, `uptime_s`) |
+| `GET` | `/ready` | Public | — | Readiness: DB OK + not shutting down (503 otherwise) |
 | `GET` | `/metrics` | Staff JWT | `settings:read` | Same data as `/admin/monitoring/overview` (+ alerts) |
 | `GET` | `/alerts` | Staff JWT | `settings:read` | Threshold alerts list |
 | `POST` | `/alerts/:id/ack` | Staff JWT | `settings:update` | Acknowledge alert |
@@ -26,10 +27,34 @@ GET /health
 ```
 
 ```json
-{ "status": "ok" }
+{
+  "status": "ok",
+  "app_env": "production",
+  "node_env": "production",
+  "uptime_s": 120
+}
 ```
 
-Used by Docker `HEALTHCHECK` and load balancers.
+Used by Docker `HEALTHCHECK` (liveness). Does **not** check the database.
+
+---
+
+### `GET /ready`
+
+```http
+GET /ready
+```
+
+```json
+{
+  "status": "ready",
+  "app_env": "production",
+  "node_env": "production",
+  "checks": { "database": "ok" }
+}
+```
+
+Returns **503** when Supabase/DB is unreachable or the process is shutting down. Point load-balancer **readiness** probes here.
 
 ---
 

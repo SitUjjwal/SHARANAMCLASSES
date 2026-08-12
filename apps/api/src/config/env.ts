@@ -32,8 +32,19 @@ function applyEnvAliases(): void {
 applyEnvAliases();
 
 const envSchema = z.object({
+  /**
+   * Node runtime mode (tooling / Express optimizations).
+   * Staging and production both typically use `production` here.
+   */
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  /**
+   * Deployment tier — independent of NODE_ENV.
+   * development | staging | production
+   */
+  APP_ENV: z.enum(['development', 'staging', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
+  /** Max time to drain HTTP + stop jobs on SIGTERM/SIGINT */
+  SHUTDOWN_TIMEOUT_MS: z.coerce.number().int().positive().default(15_000),
   API_BASE_URL: z.string().url().default('http://localhost:4000'),
   CORS_ORIGINS: z
     .string()
@@ -129,10 +140,24 @@ export function isRazorpayEnvConfigured(): boolean {
   return Boolean(env.RAZORPAY_KEY_ID?.trim() && env.RAZORPAY_KEY_SECRET?.trim());
 }
 
-function assertProductionSecrets(): void {
-  if (env.NODE_ENV !== 'production') return;
+/** True for staging or production deployment tiers (strict secret checks). */
+export function isDeployedTier(): boolean {
+  return env.APP_ENV === 'staging' || env.APP_ENV === 'production';
+}
+
+/**
+ * Fail fast when secrets are missing/invalid on staging/production.
+ * Also when NODE_ENV=production (covers hosts that omit APP_ENV).
+ */
+function assertDeployedSecrets(): void {
+  const strict =
+    env.APP_ENV === 'staging' ||
+    env.APP_ENV === 'production' ||
+    env.NODE_ENV === 'production';
+  if (!strict) return;
 
   const missing: string[] = [];
+  const tierLabel = env.APP_ENV !== 'development' ? env.APP_ENV : env.NODE_ENV;
 
   if (!env.SUPABASE_URL.startsWith('https://') || !env.SUPABASE_URL.includes('supabase.co')) {
     missing.push('SUPABASE_URL (https://<ref>.supabase.co)');
@@ -143,20 +168,25 @@ function assertProductionSecrets(): void {
   if (env.JWT_SECRET === 'dev-only-change-me' || env.JWT_SECRET.length < 32) {
     missing.push('JWT_SECRET (min 32 chars, not the default)');
   }
-  if (env.CORS_ORIGINS.some((o) => o.includes('localhost'))) {
+  if (env.APP_ENV === 'production' && env.CORS_ORIGINS.some((o) => o.includes('localhost'))) {
     console.warn('[api] WARNING: CORS_ORIGINS includes localhost in production');
   }
   if (!isR2Configured()) {
-    missing.push('Cloudflare R2 (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_BASE_URL)');
+    missing.push(
+      'Cloudflare R2 (R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET, R2_PUBLIC_BASE_URL)',
+    );
   }
   if (!isRazorpayEnvConfigured()) {
     missing.push('RAZORPAY_KEY_ID + RAZORPAY_KEY_SECRET');
   }
 
   if (missing.length) {
-    console.error('[api] Production security check failed. Missing/invalid:', missing.join('; '));
+    console.error(
+      `[api] ${tierLabel} security check failed. Missing/invalid:`,
+      missing.join('; '),
+    );
     process.exit(1);
   }
 }
 
-assertProductionSecrets();
+assertDeployedSecrets();

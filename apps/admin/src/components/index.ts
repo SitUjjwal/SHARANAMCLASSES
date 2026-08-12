@@ -13,3 +13,7 @@ export {
   RankingBarChart,
   AverageTestScoresChart,
 } from './AnalyticsCharts';
+export { ErrorBoundary } from './ErrorBoundary';
+export { LoadingPage } from './LoadingPage';
+export { NotFoundPage } from './NotFoundPage';
+export { DocumentTitle } from './DocumentTitle';

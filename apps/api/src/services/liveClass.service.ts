@@ -17,7 +17,7 @@ import type {
 } from '../validators/liveClass.validators';
 
 const LIVE_COLUMNS =
-  'id, course_id, title, description, youtube_url, youtube_video_id, thumbnail_url, start_time, end_time, is_published, notification_sent_at, archived_video_id, created_at, updated_at';
+  'id, course_id, subject_id, chapter_id, teacher_id, title, description, youtube_url, youtube_video_id, thumbnail_url, start_time, end_time, is_published, notification_sent_at, archived_video_id, created_at, updated_at';
 
 export type LiveClassListPage = {
   items: LiveClass[];
@@ -69,6 +69,9 @@ function toLiveClass(
   return {
     id: row.id as string,
     course_id: (row.course_id as string | null) ?? null,
+    subject_id: (row.subject_id as string | null | undefined) ?? null,
+    chapter_id: (row.chapter_id as string | null | undefined) ?? null,
+    teacher_id: (row.teacher_id as string | null | undefined) ?? null,
     title: row.title as string,
     description: (row.description as string) ?? '',
     youtube_url: row.youtube_url as string,
@@ -203,6 +206,9 @@ export async function createLiveClass(input: CreateLiveClassInput): Promise<Live
     .from('live_classes')
     .insert({
       course_id: input.course_id ?? null,
+      subject_id: input.subject_id ?? null,
+      chapter_id: input.chapter_id ?? null,
+      teacher_id: input.teacher_id ?? null,
       title: input.title,
       description: input.description ?? '',
       youtube_url: parsed.youtube_url,
@@ -261,6 +267,9 @@ export async function updateLiveClass(
   };
 
   if (input.course_id !== undefined) patch.course_id = courseId;
+  if (input.subject_id !== undefined) patch.subject_id = input.subject_id;
+  if (input.chapter_id !== undefined) patch.chapter_id = input.chapter_id;
+  if (input.teacher_id !== undefined) patch.teacher_id = input.teacher_id;
   if (input.title !== undefined) patch.title = input.title;
   if (input.description !== undefined) patch.description = input.description;
   if (input.thumbnail_url !== undefined) patch.thumbnail_url = input.thumbnail_url;

@@ -1,0 +1,28 @@
+# Caddy — TLS for Admin SPA only.
+# Set ADMIN_DOMAIN + ACME_EMAIL via compose environment.
+
+{
+	email {$ACME_EMAIL:ops@localhost}
+}
+
+{$ADMIN_DOMAIN:admin.localhost} {
+	encode gzip zstd
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		X-Content-Type-Options nosniff
+		X-Frame-Options SAMEORIGIN
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	reverse_proxy admin:80 {
+		header_up X-Forwarded-Proto {scheme}
+		header_up X-Forwarded-Host {host}
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}

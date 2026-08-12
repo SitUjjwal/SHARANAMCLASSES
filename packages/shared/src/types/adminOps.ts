@@ -96,9 +96,24 @@ export type PlatformGeneralSettings = {
   privacy_policy: string;
   terms: string;
   maintenance_mode: boolean;
+  /** Latest published marketing version (SemVer MAJOR.MINOR.PATCH). */
   app_version: string;
-  /** Minimum client version recommended/required (semver-ish string). */
+  /** Clients below this MUST update (force). */
   min_app_version: string;
+  /** Soft update threshold; empty → same as app_version. */
+  recommended_app_version: string;
+  /** Force any client below app_version to update. */
+  force_update: boolean;
+  /** Show optional update when below recommended/latest. */
+  optional_update: boolean;
+  /** What’s new for the current app_version. */
+  release_notes: string;
+  /** Latest Android versionCode (Play). */
+  android_build_number: number;
+  /** Latest iOS CFBundleVersion. */
+  ios_build_number: string;
+  store_url_android: string;
+  store_url_ios: string;
   timezone: string;
   /** Public social / contact links shown in the student app drawer. */
   social_facebook: string;
@@ -120,6 +135,14 @@ export type PublicPlatformConfig = {
   maintenance_mode: boolean;
   app_version: string;
   min_app_version: string;
+  recommended_app_version: string;
+  force_update: boolean;
+  optional_update: boolean;
+  release_notes: string;
+  android_build_number: number;
+  ios_build_number: string;
+  store_url_android: string;
+  store_url_ios: string;
   timezone: string;
   social_facebook: string;
   social_instagram: string;
