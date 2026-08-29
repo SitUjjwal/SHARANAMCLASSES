@@ -24,6 +24,7 @@ import * as Linking from 'expo-linking';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { fetchBatchSubjects } from '@/services/subject.service';
+import { openBatchContent } from '@/modules/courses/utils/openBatch';
 
 import { ChapterList } from '@/modules/courses/components/ChapterList';
 import { CourseDetailHero } from '@/modules/courses/components/CourseDetailHero';
@@ -74,7 +75,7 @@ export function CourseDetailScreen({ navigation, route }: Props) {
     if (current.is_free) {
       enrollMutation.mutate(undefined, {
         onSuccess: () => {
-          Alert.alert('Enrolled', 'This course is now in My Learning.');
+          void openChapterList();
         },
         onError: (error) => {
           Alert.alert('Could not enroll', getApiErrorMessage(error));
@@ -86,7 +87,11 @@ export function CourseDetailScreen({ navigation, route }: Props) {
   }
 
   function openRelated(courseItem: CourseSummary) {
-    navigation.push('CourseDetail', { courseId: courseItem.id });
+    void openBatchContent(navigation, {
+      courseId: courseItem.id,
+      title: courseItem.title,
+      isPurchased: courseItem.is_purchased,
+    });
   }
 
   const [resolvingSubjects, setResolvingSubjects] = useState(false);
@@ -157,7 +162,7 @@ export function CourseDetailScreen({ navigation, route }: Props) {
   const course = detailQuery.data;
   const priceLabel = course.is_free ? 'Free' : formatCoursePrice(course.price);
   const buyLabel = course.is_purchased
-    ? 'Purchased'
+    ? 'Open Batch'
     : course.is_free
       ? 'Enroll Free'
       : `Buy · ${priceLabel}`;
@@ -202,9 +207,15 @@ export function CourseDetailScreen({ navigation, route }: Props) {
 
           <AppButton
             label={buyLabel}
-            onPress={onBuy}
-            loading={enrollMutation.isPending}
-            disabled={course.is_purchased || enrollMutation.isPending}
+            onPress={
+              course.is_purchased
+                ? () => {
+                    void openChapterList();
+                  }
+                : onBuy
+            }
+            loading={enrollMutation.isPending || resolvingSubjects}
+            disabled={enrollMutation.isPending || resolvingSubjects}
           />
 
           <CourseReviewsSection

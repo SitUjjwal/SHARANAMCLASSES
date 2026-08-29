@@ -31,6 +31,7 @@ import { useLiveClassesQuery } from '@/modules/live-classes/hooks/useLiveClasses
 import { useUnreadNotificationCountQuery } from '@/modules/notifications/hooks/useUnreadNotificationCountQuery';
 import { openBannerRedirect } from '@/modules/banners/openBannerRedirect';
 import { openCategoryExternalLink } from '@/modules/categories/utils/openCategoryAction';
+import { openBatchContent } from '@/modules/courses/utils/openBatch';
 import { openInYouTubeApp } from '@/modules/videos/utils/openYouTube';
 import { extractYouTubeVideoId } from '@/modules/videos/utils/youtube';
 import type {
@@ -77,7 +78,11 @@ export function HomeDashboardScreen({ navigation }: Props) {
   }, [liveQuery.data]);
 
   function openCourse(course: CourseSummary) {
-    navigation.navigate('CourseDetail', { courseId: course.id });
+    void openBatchContent(navigation, {
+      courseId: course.id,
+      title: course.title,
+      isPurchased: course.is_purchased,
+    });
   }
 
   async function openCategory(category: Category) {

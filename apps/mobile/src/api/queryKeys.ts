@@ -27,6 +27,8 @@ export const queryKeys = {
   learningProgress: ['profile', 'learning-progress'] as const,
   studentTests: (courseId?: string) =>
     ['tests', 'student', { courseId: courseId ?? null }] as const,
+  chapterTests: (courseId: string, chapterId: string) =>
+    ['tests', 'student', 'chapter', courseId, chapterId] as const,
   attemptSession: (attemptId: string) => ['tests', 'attempt', attemptId] as const,
   attemptResult: (attemptId: string) =>
     ['tests', 'attempt', attemptId, 'result'] as const,

@@ -22,9 +22,9 @@ const googleServicesPath = path.resolve('google-services.json');
 const hasGoogleServices = fs.existsSync(googleServicesPath);
 
 /** User-facing marketing version */
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 /** Android versionCode (Play Store build number) */
-const ANDROID_VERSION_CODE = 4;
+const ANDROID_VERSION_CODE = 5;
 /** iOS CFBundleVersion */
 const IOS_BUILD_NUMBER = '1';
 

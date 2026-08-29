@@ -1,29 +1,31 @@
 /**
- * ChapterContentScreen — syllabus content in fixed order:
- *   Videos → PDFs → Notes → Live Classes
+ * ChapterContentScreen — Video | PDF | Test tabs (Classplus-style).
  *
- * Navigation
- * ----------
- * CourseDetail / ChapterList
- *   → ChapterContent { courseId, chapterId }
- *        → Video  → VideoPlayer
- *        → PDF    → PdfViewer
- *        → Note   → NoteViewer
- *        → Live   → YouTube (Join) or Live tab
- *
- * Badges: Free preview · Locked (not purchased)
+ * ChapterList → ChapterContent { courseId, chapterId }
+ *   Video → VideoPlayer (live classes also listed here)
+ *   PDF   → PdfViewer / NoteViewer
+ *   Test  → TestAttempt
  */
-import type { ReactNode } from 'react';
-import { useEffect } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useChapterContentQuery } from '@/modules/chapters/hooks/useChapterContentQuery';
-import { formatDuration } from '@/modules/chapters/utils/formatDuration';
+import { FolderBrowserHeader } from '@/modules/folders/components/FolderBrowserHeader';
+import { FolderRow } from '@/modules/folders/components/FolderRow';
+import { folderTheme } from '@/modules/folders/theme';
 import { formatStartTime } from '@/modules/live-classes/utils/formatLiveTime';
+import { useChapterTestsQuery } from '@/modules/tests/hooks/useChapterTestsQuery';
 import { openInYouTubeApp } from '@/modules/videos/utils/openYouTube';
 import { extractYouTubeVideoId } from '@/modules/videos/utils/youtube';
 import { AppButton } from '@/components/ui/AppButton';
@@ -32,34 +34,37 @@ import { ErrorState } from '@/components/ui/ErrorState';
 import { Screen } from '@/components/ui/Screen';
 import { SkeletonBlock } from '@/components/ui/SkeletonBlock';
 import { updateLastWatchedChapter } from '@/services/myCourse.service';
+import { startOrResumeAttempt } from '@/services/test.service';
 import type { AppStackParamList } from '@/types/navigation';
 import { getApiErrorMessage } from '@/utils/apiErrors';
-import { colors, spacing, typography } from '@/theme';
+import { spacing, typography } from '@/theme';
 import type {
   LiveClassPublic,
   NotePublic,
   PdfPublic,
+  TestPublic,
   VideoPublic,
 } from '@sharanam/shared';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'ChapterContent'>;
 
-type ContentKind = 'video' | 'pdf' | 'note' | 'live';
+type ContentTab = 'video' | 'pdf' | 'test';
 
-function iconFor(kind: ContentKind): keyof typeof Ionicons.glyphMap {
-  if (kind === 'video') return 'play-circle';
-  if (kind === 'pdf') return 'document-text';
-  if (kind === 'note') return 'newspaper';
-  return 'radio';
-}
+const TABS: { key: ContentTab; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { key: 'video', label: 'Video', icon: 'videocam' },
+  { key: 'pdf', label: 'PDF', icon: 'document' },
+  { key: 'test', label: 'Test', icon: 'clipboard' },
+];
 
 export function ChapterContentScreen({ navigation, route }: Props) {
   const { courseId, chapterId } = route.params;
-  const insets = useSafeAreaInsets();
   const contentQuery = useChapterContentQuery(courseId, chapterId);
+  const testsQuery = useChapterTestsQuery(courseId, chapterId);
   const queryClient = useQueryClient();
+  const [tab, setTab] = useState<ContentTab>('video');
+  const [search, setSearch] = useState('');
+  const [startingTestId, setStartingTestId] = useState<string | null>(null);
 
-  // Record last watched for Continue Learning (owned courses only)
   useEffect(() => {
     if (!contentQuery.isSuccess) return;
     let cancelled = false;
@@ -158,19 +163,74 @@ export function ChapterContentScreen({ navigation, route }: Props) {
     await openInYouTubeApp({ youtubeUrl: live.youtube_url, videoId });
   }
 
+  async function openTest(test: TestPublic) {
+    if (test.is_locked) {
+      promptEnroll();
+      return;
+    }
+    if (startingTestId) return;
+    setStartingTestId(test.id);
+    try {
+      const session = await startOrResumeAttempt(test.id);
+      navigation.navigate('TestAttempt', {
+        attemptId: session.attempt.id,
+        testId: test.id,
+      });
+    } catch (err) {
+      Alert.alert('Could not start test', getApiErrorMessage(err));
+    } finally {
+      setStartingTestId(null);
+    }
+  }
+
+  const q = search.trim().toLowerCase();
+  const chapterData = contentQuery.data;
+
+  const videos = useMemo(() => {
+    const items = chapterData?.videos ?? [];
+    if (!q) return items;
+    return items.filter((item) => item.title.toLowerCase().includes(q));
+  }, [chapterData?.videos, q]);
+
+  const lives = useMemo(() => {
+    const items = chapterData?.live_classes ?? [];
+    if (!q) return items;
+    return items.filter((item) => item.title.toLowerCase().includes(q));
+  }, [chapterData?.live_classes, q]);
+
+  const pdfs = useMemo(() => {
+    const items = chapterData?.pdfs ?? [];
+    if (!q) return items;
+    return items.filter((item) => item.title.toLowerCase().includes(q));
+  }, [chapterData?.pdfs, q]);
+
+  const notes = useMemo(() => {
+    const items = chapterData?.notes ?? [];
+    if (!q) return items;
+    return items.filter((item) => item.title.toLowerCase().includes(q));
+  }, [chapterData?.notes, q]);
+
+  const tests = useMemo(() => {
+    const items = testsQuery.data ?? [];
+    if (!q) return items;
+    return items.filter((item) => item.title.toLowerCase().includes(q));
+  }, [q, testsQuery.data]);
+
   if (contentQuery.isLoading && !contentQuery.data) {
     return (
-      <Screen>
-        <SkeletonBlock height={28} width="70%" />
-        <SkeletonBlock height={72} />
-        <SkeletonBlock height={72} />
+      <Screen canvasColor={folderTheme.canvas} style={styles.screen}>
+        <View style={styles.skeleton}>
+          <SkeletonBlock height={28} width="70%" />
+          <SkeletonBlock height={72} />
+          <SkeletonBlock height={72} />
+        </View>
       </Screen>
     );
   }
 
   if (contentQuery.isError || !contentQuery.data) {
     return (
-      <Screen>
+      <Screen canvasColor={folderTheme.canvas} style={styles.screen}>
         <ErrorState
           message={getApiErrorMessage(contentQuery.error, 'Chapter not found.')}
           onRetry={() => {
@@ -183,207 +243,152 @@ export function ChapterContentScreen({ navigation, route }: Props) {
   }
 
   const chapter = contentQuery.data;
-  const videos = chapter.videos ?? [];
-  const pdfs = chapter.pdfs ?? [];
-  const notes = chapter.notes ?? [];
-  const lives = chapter.live_classes ?? [];
-  const hasContent =
-    videos.length + pdfs.length + notes.length + lives.length > 0;
+  const videoEmpty = videos.length + lives.length === 0;
+  const pdfEmpty = pdfs.length + notes.length === 0;
+  const testEmpty = tests.length === 0;
 
   return (
-    <Screen style={styles.screen}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-          <Pressable onPress={() => navigation.goBack()} style={styles.backBtn}>
-            <Ionicons name="chevron-back" size={22} color={colors.surface} />
-          </Pressable>
-          <View style={styles.headerText}>
-            <Text style={styles.kicker}>
-              Chapter {chapter.chapter_number} · {formatDuration(chapter.duration_seconds)}
-            </Text>
-            <Text style={styles.title}>{chapter.title}</Text>
-            <Text style={styles.subtitle}>{chapter.course_title}</Text>
-          </View>
-        </View>
+    <Screen canvasColor={folderTheme.canvas} style={styles.screen}>
+      <FolderBrowserHeader
+        title={chapter.title}
+        search={search}
+        onSearchChange={setSearch}
+        onBack={() => navigation.goBack()}
+      />
 
-        <View style={styles.body}>
-          {chapter.description ? (
-            <Text style={styles.description}>{chapter.description}</Text>
-          ) : null}
-
-          {chapter.is_locked ? (
-            <View style={styles.lockBanner}>
-              <Ionicons name="lock-closed" size={18} color={colors.accent} />
-              <Text style={styles.lockBannerText}>
-                Course not purchased — free previews stay open; other items are locked.
-              </Text>
-              <AppButton
-                label="View course"
-                onPress={() => navigation.navigate('CourseDetail', { courseId })}
+      <View style={styles.tabs}>
+        {TABS.map((item) => {
+          const active = tab === item.key;
+          return (
+            <Pressable
+              key={item.key}
+              onPress={() => setTab(item.key)}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: active }}
+              style={[styles.tab, active ? styles.tabActive : styles.tabIdle]}
+            >
+              <Ionicons
+                name={item.icon}
+                size={16}
+                color={active ? folderTheme.tabActiveText : folderTheme.text}
               />
-            </View>
-          ) : null}
+              <Text style={[styles.tabLabel, active ? styles.tabLabelActive : null]}>
+                {item.label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
 
-          {!hasContent ? (
+      <ScrollView
+        contentContainerStyle={styles.list}
+        refreshControl={
+          <RefreshControl
+            refreshing={contentQuery.isRefetching || testsQuery.isRefetching}
+            onRefresh={() => {
+              void contentQuery.refetch();
+              void testsQuery.refetch();
+            }}
+            tintColor={folderTheme.border}
+          />
+        }
+      >
+        {tab === 'video' ? (
+          videoEmpty ? (
             <EmptyState
-              icon="folder-open-outline"
-              title="No content yet"
-              message="Videos, PDFs, notes, and live classes will appear here when published."
+              icon="play-circle-outline"
+              title="No videos yet"
+              message="Videos will appear here when published."
             />
-          ) : null}
-
-          {/* Order: Videos → PDFs → Notes → Live Classes */}
-          {videos.length ? (
-            <Section title="Videos" icon="play-circle">
+          ) : (
+            <View style={styles.stack}>
               {videos.map((video) => (
-                <ContentRow
+                <FolderRow
                   key={video.id}
                   kind="video"
                   title={video.title}
-                  meta={
-                    video.duration_seconds
-                      ? formatDuration(video.duration_seconds)
-                      : video.video_type === 'live'
-                        ? 'Live recording'
-                        : undefined
-                  }
-                  isFree={video.is_free}
-                  isLocked={video.is_locked}
+                  subtitle="Video"
                   onPress={() => openVideo(video)}
                 />
               ))}
-            </Section>
-          ) : null}
-
-          {pdfs.length ? (
-            <Section title="PDFs" icon="document-text">
-              {pdfs.map((pdf) => (
-                <ContentRow
-                  key={pdf.id}
-                  kind="pdf"
-                  title={pdf.title}
-                  meta={pdf.original_filename || undefined}
-                  isFree={pdf.is_free}
-                  isLocked={pdf.is_locked}
-                  onPress={() => openPdf(pdf)}
-                />
-              ))}
-            </Section>
-          ) : null}
-
-          {notes.length ? (
-            <Section title="Notes" icon="newspaper">
-              {notes.map((note) => (
-                <ContentRow
-                  key={note.id}
-                  kind="note"
-                  title={note.title}
-                  meta={note.description || undefined}
-                  isFree={note.is_free}
-                  isLocked={note.is_locked}
-                  onPress={() => openNote(note)}
-                />
-              ))}
-            </Section>
-          ) : null}
-
-          {lives.length ? (
-            <Section title="Live Classes" icon="radio">
               {lives.map((live) => (
-                <ContentRow
+                <FolderRow
                   key={live.id}
-                  kind="live"
+                  kind="video"
                   title={live.title}
-                  meta={`${live.status === 'live' ? 'LIVE NOW' : 'Upcoming'} · ${formatStartTime(live.start_time)}`}
-                  isFree
-                  isLocked={false}
-                  liveStatus={live.status}
+                  subtitle={live.status === 'live' ? 'LIVE NOW' : 'Video'}
                   onPress={() => {
                     void openLive(live);
                   }}
                 />
               ))}
-            </Section>
-          ) : null}
-        </View>
+            </View>
+          )
+        ) : null}
+
+        {tab === 'pdf' ? (
+          pdfEmpty ? (
+            <EmptyState
+              icon="document-text-outline"
+              title="No PDFs yet"
+              message="PDFs and notes will appear here when published."
+            />
+          ) : (
+            <View style={styles.stack}>
+              {pdfs.map((pdf) => (
+                <FolderRow
+                  key={pdf.id}
+                  kind="pdf"
+                  title={pdf.title}
+                  subtitle="PDF Document"
+                  onPress={() => openPdf(pdf)}
+                />
+              ))}
+              {notes.map((note) => (
+                <FolderRow
+                  key={note.id}
+                  kind="pdf"
+                  title={note.title}
+                  subtitle="PDF Document"
+                  onPress={() => openNote(note)}
+                />
+              ))}
+            </View>
+          )
+        ) : null}
+
+        {tab === 'test' ? (
+          testsQuery.isError && !testsQuery.data ? (
+            <ErrorState
+              message={getApiErrorMessage(testsQuery.error, 'Couldn’t load tests.')}
+              onRetry={() => {
+                void testsQuery.refetch();
+              }}
+            />
+          ) : testEmpty ? (
+            <EmptyState
+              icon="clipboard-outline"
+              title="No tests yet"
+              message="Chapter tests will appear here when published."
+            />
+          ) : (
+            <View style={styles.stack}>
+              {tests.map((test) => (
+                <FolderRow
+                  key={test.id}
+                  kind="test"
+                  title={test.title}
+                  subtitle={startingTestId === test.id ? 'Starting…' : 'Test'}
+                  onPress={() => {
+                    void openTest(test);
+                  }}
+                />
+              ))}
+            </View>
+          )
+        ) : null}
       </ScrollView>
     </Screen>
-  );
-}
-
-function Section({
-  title,
-  icon,
-  children,
-}: {
-  title: string;
-  icon: keyof typeof Ionicons.glyphMap;
-  children: ReactNode;
-}) {
-  return (
-    <View style={styles.section}>
-      <View style={styles.sectionHead}>
-        <Ionicons name={icon} size={20} color={colors.accent} />
-        <Text style={styles.sectionTitle}>{title}</Text>
-      </View>
-      {children}
-    </View>
-  );
-}
-
-function ContentRow({
-  kind,
-  title,
-  meta,
-  isFree,
-  isLocked,
-  liveStatus,
-  onPress,
-}: {
-  kind: ContentKind;
-  title: string;
-  meta?: string;
-  isFree: boolean;
-  isLocked: boolean;
-  liveStatus?: LiveClassPublic['status'];
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      style={[styles.item, isLocked ? styles.itemLocked : null]}
-      onPress={onPress}
-    >
-      <View style={styles.iconWrap}>
-        <Ionicons name={iconFor(kind)} size={22} color={colors.accent} />
-      </View>
-      <View style={styles.itemBody}>
-        <View style={styles.badgeRow}>
-          {liveStatus === 'live' ? (
-            <View style={[styles.badge, styles.badgeLive]}>
-              <Text style={styles.badgeLiveText}>LIVE NOW</Text>
-            </View>
-          ) : null}
-          {isFree && !isLocked ? (
-            <View style={[styles.badge, styles.badgeFree]}>
-              <Text style={styles.badgeFreeText}>Free preview</Text>
-            </View>
-          ) : null}
-          {isLocked ? (
-            <View style={[styles.badge, styles.badgeLock]}>
-              <Ionicons name="lock-closed" size={11} color="#F5C6C6" />
-              <Text style={styles.badgeLockText}>Locked</Text>
-            </View>
-          ) : null}
-        </View>
-        <Text style={styles.itemTitle}>{title}</Text>
-        {meta ? <Text style={styles.itemMeta} numberOfLines={2}>{meta}</Text> : null}
-      </View>
-      <Ionicons
-        name={isLocked ? 'lock-closed-outline' : kind === 'video' || kind === 'live' ? 'play' : 'chevron-forward'}
-        size={18}
-        color="#A8B3C5"
-      />
-    </Pressable>
   );
 }
 
@@ -391,149 +396,50 @@ const styles = StyleSheet.create({
   screen: {
     paddingHorizontal: 0,
     paddingVertical: 0,
+    backgroundColor: folderTheme.canvas,
   },
-  scroll: {
-    paddingBottom: spacing.xl * 2,
+  skeleton: {
+    padding: spacing.lg,
+    gap: spacing.md,
   },
-  header: {
+  tabs: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
     gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingBottom: spacing.md,
   },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  tab: {
+    flex: 1,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  headerText: {
-    flex: 1,
-    gap: 4,
-  },
-  kicker: {
-    color: colors.accent,
-    fontSize: typography.fontSize.sm,
-    fontWeight: '700',
-  },
-  title: {
-    color: colors.surface,
-    fontSize: typography.fontSize.xl,
-    fontWeight: '800',
-  },
-  subtitle: {
-    color: '#A8B3C5',
-    fontSize: typography.fontSize.sm,
-  },
-  body: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.lg,
-  },
-  description: {
-    color: '#A8B3C5',
-    fontSize: typography.fontSize.md,
-    lineHeight: 22,
-  },
-  lockBanner: {
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(201,162,39,0.35)',
-    backgroundColor: 'rgba(201,162,39,0.1)',
-  },
-  lockBannerText: {
-    color: '#E8D48A',
-    fontSize: typography.fontSize.md,
-    lineHeight: 20,
-  },
-  section: {
-    gap: spacing.sm,
-  },
-  sectionHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  sectionTitle: {
-    color: colors.surface,
-    fontSize: typography.fontSize.lg,
-    fontWeight: '700',
-  },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.md,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.08)',
-  },
-  itemLocked: {
-    opacity: 0.85,
-    borderColor: 'rgba(198,40,40,0.25)',
-  },
-  iconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(201,162,39,0.12)',
-  },
-  itemBody: {
-    flex: 1,
-    gap: 2,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 6,
-    marginBottom: 2,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1,
   },
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 999,
+  tabActive: {
+    backgroundColor: folderTheme.tabActiveBg,
+    borderColor: folderTheme.tabActiveBg,
   },
-  badgeFree: {
-    backgroundColor: 'rgba(46,125,50,0.25)',
+  tabIdle: {
+    backgroundColor: 'transparent',
+    borderColor: 'rgba(255,255,255,0.28)',
   },
-  badgeFreeText: {
-    color: '#A5D6A7',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  badgeLock: {
-    backgroundColor: 'rgba(198,40,40,0.22)',
-  },
-  badgeLockText: {
-    color: '#F5C6C6',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  badgeLive: {
-    backgroundColor: 'rgba(229,57,53,0.25)',
-  },
-  badgeLiveText: {
-    color: '#FF8A80',
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  itemTitle: {
-    color: colors.surface,
+  tabLabel: {
+    color: folderTheme.text,
     fontSize: typography.fontSize.md,
-    fontWeight: '600',
+    fontWeight: '700',
   },
-  itemMeta: {
-    color: '#A8B3C5',
-    fontSize: typography.fontSize.sm,
+  tabLabelActive: {
+    color: folderTheme.tabActiveText,
+  },
+  list: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.xl * 2,
+    flexGrow: 1,
+  },
+  stack: {
+    gap: spacing.md,
   },
 });

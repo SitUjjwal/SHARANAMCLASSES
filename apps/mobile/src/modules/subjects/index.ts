@@ -1,9 +1,10 @@
 /**
  * Subjects module public API.
  *
- * Batch → Subject → Chapter flow:
- *   CourseDetail → SubjectList { batchId, batchTitle }
- *                → ChapterList { courseId, batchSubjectId, subjectName }
+ * Batch → Subject folders → Chapter folders → Video/PDF/Test
+ *   Home / My Courses (purchased) → SubjectList { batchId, batchTitle }
+ *                                 → ChapterList { courseId, batchSubjectId, subjectName }
+ *                                 → ChapterContent
  *
  * API:
  *   GET /student/batches/:batchId/subjects

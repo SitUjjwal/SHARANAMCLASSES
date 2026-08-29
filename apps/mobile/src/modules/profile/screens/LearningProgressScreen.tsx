@@ -8,6 +8,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
 import { Screen } from '@/components/ui/Screen';
+import { openBatchContent } from '@/modules/courses/utils/openBatch';
 import { ContinueLearningCard } from '@/modules/profile/components/ContinueLearningCard';
 import { LearningProgressSummaryCard } from '@/modules/profile/components/LearningProgressSummaryCard';
 import { ProgressCard } from '@/modules/profile/components/ProgressCard';
@@ -97,9 +98,13 @@ export function LearningProgressScreen({ navigation }: Props) {
                 <ProgressCard
                   key={course.course_id}
                   course={course}
-                  onPress={() =>
-                    navigation.navigate('CourseDetail', { courseId: course.course_id })
-                  }
+                  onPress={() => {
+                    void openBatchContent(navigation, {
+                      courseId: course.course_id,
+                      title: course.title,
+                      isPurchased: true,
+                    });
+                  }}
                   onContinue={
                     course.last_watched_chapter_id
                       ? () =>

@@ -11,6 +11,7 @@ import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 
 import { AppButton } from '@/components/ui/AppButton';
 import { Screen } from '@/components/ui/Screen';
+import { openBatchContent } from '@/modules/courses/utils/openBatch';
 import type { AppStackParamList } from '@/types/navigation';
 import { colors, spacing, typography } from '@/theme';
 
@@ -40,7 +41,14 @@ export function PaymentSuccessScreen({ navigation, route }: Props) {
 
         <AppButton
           label="Go To Course"
-          onPress={() => navigation.replace('CourseDetail', { courseId })}
+          onPress={() => {
+            void openBatchContent(navigation, {
+              courseId,
+              title: courseTitle,
+              isPurchased: true,
+              replace: true,
+            });
+          }}
         />
       </View>
     </Screen>

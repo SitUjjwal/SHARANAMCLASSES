@@ -1,19 +1,17 @@
 /**
- * SubjectListScreen — subjects inside a purchased batch.
+ * SubjectListScreen — folders inside a purchased batch (Classplus-style).
  *
- * Flow (batch architecture):
- *   CourseDetail / My Courses → SubjectList { batchId, batchTitle }
- *                              → ChapterList { courseId, batchSubjectId, subjectName }
+ * Flow: Batch click → SubjectList { batchId, batchTitle } → ChapterList
  * Data: GET /student/batches/:batchId/subjects
- * Legacy courses (no subjects) never reach this screen.
  */
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { StudentBatchSubject } from '@sharanam/shared';
 
-import { SubjectCard } from '@/modules/subjects/components/SubjectCard';
+import { FolderBrowserHeader } from '@/modules/folders/components/FolderBrowserHeader';
+import { FolderRow } from '@/modules/folders/components/FolderRow';
+import { folderTheme } from '@/modules/folders/theme';
 import { useBatchSubjectsQuery } from '@/modules/subjects/hooks/useBatchSubjectsQuery';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
@@ -21,14 +19,21 @@ import { Screen } from '@/components/ui/Screen';
 import { SkeletonBlock } from '@/components/ui/SkeletonBlock';
 import type { AppStackParamList } from '@/types/navigation';
 import { getApiErrorMessage } from '@/utils/apiErrors';
-import { colors, spacing, typography } from '@/theme';
+import { spacing } from '@/theme';
 
 type Props = NativeStackScreenProps<AppStackParamList, 'SubjectList'>;
 
 export function SubjectListScreen({ navigation, route }: Props) {
   const { batchId, batchTitle } = route.params;
-  const insets = useSafeAreaInsets();
   const subjectsQuery = useBatchSubjectsQuery(batchId);
+  const [search, setSearch] = useState('');
+
+  const folders = useMemo(() => {
+    const items = subjectsQuery.data ?? [];
+    const q = search.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((item) => item.name.toLowerCase().includes(q));
+  }, [search, subjectsQuery.data]);
 
   function openSubject(subject: StudentBatchSubject) {
     navigation.navigate('ChapterList', {
@@ -40,31 +45,19 @@ export function SubjectListScreen({ navigation, route }: Props) {
   }
 
   return (
-    <Screen style={styles.screen}>
-      <View style={[styles.header, { paddingTop: insets.top + spacing.sm }]}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          style={styles.backBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={22} color={colors.surface} />
-        </Pressable>
-        <View style={styles.headerText}>
-          <Text style={styles.title}>Subjects</Text>
-          {batchTitle ? (
-            <Text style={styles.subtitle} numberOfLines={1}>
-              {batchTitle}
-            </Text>
-          ) : null}
-        </View>
-      </View>
+    <Screen style={styles.screen} canvasColor={folderTheme.canvas}>
+      <FolderBrowserHeader
+        title={batchTitle || 'Batch'}
+        search={search}
+        onSearchChange={setSearch}
+        onBack={() => navigation.goBack()}
+      />
 
       {subjectsQuery.isLoading && !subjectsQuery.data ? (
         <View style={styles.skeleton}>
-          <SkeletonBlock height={124} radius={16} />
-          <SkeletonBlock height={124} radius={16} />
-          <SkeletonBlock height={124} radius={16} />
+          <SkeletonBlock height={72} radius={16} />
+          <SkeletonBlock height={72} radius={16} />
+          <SkeletonBlock height={72} radius={16} />
         </View>
       ) : null}
 
@@ -79,16 +72,22 @@ export function SubjectListScreen({ navigation, route }: Props) {
 
       {subjectsQuery.data ? (
         <FlatList
-          data={subjectsQuery.data}
+          data={folders}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.list}
           ItemSeparatorComponent={() => <View style={styles.sep} />}
-          renderItem={({ item }) => <SubjectCard subject={item} onPress={openSubject} />}
+          renderItem={({ item }) => (
+            <FolderRow kind="folder" title={item.name} onPress={() => openSubject(item)} />
+          )}
           ListEmptyComponent={
             <EmptyState
-              icon="library-outline"
-              title="No subjects yet"
-              message="Subjects will appear here when published."
+              icon="folder-open-outline"
+              title={search.trim() ? 'No folders match' : 'No folders yet'}
+              message={
+                search.trim()
+                  ? 'Try a different search.'
+                  : 'Folders will appear here when published.'
+              }
             />
           }
           refreshControl={
@@ -97,7 +96,7 @@ export function SubjectListScreen({ navigation, route }: Props) {
               onRefresh={() => {
                 void subjectsQuery.refetch();
               }}
-              tintColor={colors.accent}
+              tintColor={folderTheme.border}
             />
           }
         />
@@ -110,44 +109,17 @@ const styles = StyleSheet.create({
   screen: {
     paddingHorizontal: 0,
     paddingVertical: 0,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-  },
-  backBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  headerText: {
-    flex: 1,
-    gap: 2,
-  },
-  title: {
-    color: colors.surface,
-    fontSize: typography.fontSize.xl,
-    fontWeight: '800',
-  },
-  subtitle: {
-    color: '#A8B3C5',
-    fontSize: typography.fontSize.sm,
+    backgroundColor: folderTheme.canvas,
   },
   list: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingBottom: spacing.xl * 2,
   },
   sep: {
     height: spacing.md,
   },
   skeleton: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     gap: spacing.md,
   },
 });

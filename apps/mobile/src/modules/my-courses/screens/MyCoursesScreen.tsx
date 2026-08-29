@@ -11,6 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { Screen } from '@/components/ui/Screen';
 import { SkeletonBlock } from '@/components/ui/SkeletonBlock';
+import { openBatchContent } from '@/modules/courses/utils/openBatch';
 import { MyCourseCard } from '@/modules/my-courses/components/MyCourseCard';
 import { useMyCoursesQuery } from '@/modules/my-courses/hooks/useMyCoursesQuery';
 import type { AppStackParamList, MainTabParamList } from '@/types/navigation';
@@ -32,7 +33,11 @@ export function MyCoursesScreen({ navigation }: Props) {
   const total = myCoursesQuery.data?.total ?? items.length;
 
   function openCourse(item: MyCourseItem) {
-    navigation.navigate('CourseDetail', { courseId: item.course_id });
+    void openBatchContent(navigation, {
+      courseId: item.course_id,
+      title: item.title,
+      isPurchased: true,
+    });
   }
 
   function continueLearning(item: MyCourseItem) {

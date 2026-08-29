@@ -25,6 +25,7 @@ import type { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import { CourseCard } from '@/modules/courses/components/CourseCard';
+import { openBatchContent } from '@/modules/courses/utils/openBatch';
 import {
   CourseListFilters,
   type CourseListFilterValues,
@@ -87,7 +88,11 @@ export function CourseListScreen({ navigation, route }: Props) {
   );
 
   function openCourse(course: CourseSummary) {
-    navigation.navigate('CourseDetail', { courseId: course.id });
+    void openBatchContent(navigation, {
+      courseId: course.id,
+      title: course.title,
+      isPurchased: course.is_purchased,
+    });
   }
 
   function clearCategory() {

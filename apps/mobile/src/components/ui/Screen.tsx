@@ -10,13 +10,15 @@ import { spacing } from '@/theme';
 
 type ScreenProps = ViewProps & {
   children: ReactNode;
+  /** Override the safe-area canvas (e.g. folder explorer always dark). */
+  canvasColor?: string;
 };
 
-export function Screen({ children, style, ...props }: ScreenProps) {
+export function Screen({ children, style, canvasColor, ...props }: ScreenProps) {
   const theme = useAppTheme();
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.canvas }]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: canvasColor ?? theme.canvas }]}>
       <View style={[styles.content, style]} {...props}>
         {children}
       </View>

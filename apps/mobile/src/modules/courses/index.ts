@@ -35,3 +35,4 @@ export { useCourseListInfiniteQuery } from './hooks/useCourseListInfiniteQuery';
 export { useCourseDetailQuery } from './hooks/useCourseDetailQuery';
 export { useEnrollCourseMutation } from './hooks/useEnrollCourseMutation';
 export { formatCoursePrice } from './utils/formatCoursePrice';
+export { openBatchContent } from './utils/openBatch';

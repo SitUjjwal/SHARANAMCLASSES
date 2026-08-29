@@ -22,7 +22,7 @@ registerDomainEventHandlers();
 
 const app = createApp();
 
-const server: Server = app.listen(env.PORT, () => {
+const server: Server = app.listen(env.PORT, '0.0.0.0', () => {
   logger.info(`SHARANAM CLASSES listening on :${env.PORT}`, {
     port: env.PORT,
     node_env: env.NODE_ENV,

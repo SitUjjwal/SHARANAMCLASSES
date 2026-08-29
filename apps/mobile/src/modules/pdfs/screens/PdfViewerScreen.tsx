@@ -184,9 +184,9 @@ export function PdfViewerScreen({ navigation, route }: Props) {
           />
         ) : null}
 
-        {!source.loading && !showError && source.viewerUri ? (
+        {!source.loading && !showError && source.localUri ? (
           <PdfWebView
-            uri={source.viewerUri}
+            localUri={source.localUri}
             onError={(message) => setWebError(message)}
           />
         ) : null}

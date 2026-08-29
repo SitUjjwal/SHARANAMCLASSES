@@ -6,7 +6,7 @@ Privacy URL (already live):
 Support URL:  
 **https://sharanam-legal.vercel.app/support/**
 
-Package: `com.sharanamclasses.app` · Version `1.0.0` · versionCode `1`
+Package: `com.sharanam.classes` · Version `1.2.0` · versionCode `5`
 
 ---
 
