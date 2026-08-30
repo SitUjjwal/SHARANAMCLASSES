@@ -10,12 +10,33 @@ import { env } from '../config/env';
 
 const allowlist = new Set(env.CORS_ORIGINS);
 
+const EXTRA_ADMIN_ORIGINS = new Set([
+  'https://sharanamclasses.com',
+  'https://www.sharanamclasses.com',
+  'https://admin.sharanamclasses.com',
+]);
+
 function isDevLocalhost(origin: string): boolean {
   if (env.NODE_ENV === 'production') return false;
   try {
     const { hostname, protocol } = new URL(origin);
     if (protocol !== 'http:' && protocol !== 'https:') return false;
     return hostname === 'localhost' || hostname === '127.0.0.1';
+  } catch {
+    return false;
+  }
+}
+
+/** Vercel admin SPA talking to Render API (origin must match exactly). */
+function isTrustedAdminOrigin(origin: string): boolean {
+  if (allowlist.has(origin) || EXTRA_ADMIN_ORIGINS.has(origin)) {
+    return true;
+  }
+  try {
+    const { hostname, protocol } = new URL(origin);
+    if (protocol !== 'https:') return false;
+    const host = hostname.toLowerCase();
+    return host.endsWith('.vercel.app') && host.includes('sharanam');
   } catch {
     return false;
   }
@@ -28,7 +49,7 @@ export const corsOptions: CorsOptions = {
       callback(null, true);
       return;
     }
-    if (allowlist.has(origin) || isDevLocalhost(origin)) {
+    if (isTrustedAdminOrigin(origin) || isDevLocalhost(origin)) {
       callback(null, true);
       return;
     }

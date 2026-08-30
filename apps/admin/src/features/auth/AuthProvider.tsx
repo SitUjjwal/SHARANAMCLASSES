@@ -59,14 +59,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Prefer API bootstrap (promotes ADMIN_EMAILS → super_admin)
-    try {
-      const data = await apiRequest<StaffContextResponse>('/auth/staff-context');
-      setProfileRole(data.profile_role);
-      setApiRole(data.role);
-      return;
-    } catch {
-      // fall through to direct profile read
+    // Prefer API bootstrap (promotes ADMIN_EMAILS → super_admin).
+    // Render free tier sleeps — retry while the instance wakes.
+    for (let attempt = 0; attempt < 4; attempt += 1) {
+      try {
+        const data = await apiRequest<StaffContextResponse>('/auth/staff-context');
+        setProfileRole(data.profile_role);
+        setApiRole(data.role);
+        return;
+      } catch {
+        if (attempt < 3) {
+          await new Promise((resolve) => {
+            setTimeout(resolve, 2500);
+          });
+        }
+      }
     }
 
     const { data } = await supabase

@@ -34,7 +34,7 @@ LOG_TO_CONSOLE=true
 LOG_LEVEL=info
 
 API_BASE_URL=https://sharanam-api.onrender.com
-CORS_ORIGINS=https://sharanamclasses.com
+CORS_ORIGINS=https://sharanamclasses.com,https://www.sharanamclasses.com,https://YOUR-ADMIN.vercel.app
 
 ADMIN_EMAILS=ujjwalsharan82@gmail.com
 JWT_SECRET=<from local .env, 32+ chars>
