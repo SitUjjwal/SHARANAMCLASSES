@@ -22,9 +22,9 @@ const googleServicesPath = path.resolve('google-services.json');
 const hasGoogleServices = fs.existsSync(googleServicesPath);
 
 /** User-facing marketing version */
-const APP_VERSION = '1.2.1';
+const APP_VERSION = '1.2.2';
 /** Android versionCode (Play Store build number) */
-const ANDROID_VERSION_CODE = 6;
+const ANDROID_VERSION_CODE = 7;
 /** iOS CFBundleVersion */
 const IOS_BUILD_NUMBER = '1';
 
@@ -80,8 +80,18 @@ const config = {
       'VIBRATE',
       'RECEIVE_BOOT_COMPLETED',
       'POST_NOTIFICATIONS',
-      'READ_MEDIA_IMAGES',
       'WAKE_LOCK',
+    ],
+    /**
+     * Google Play policy (Photo and Video Permissions): broad media permissions
+     * are not allowed for apps that only need occasional photo access.
+     * expo-image-picker uses the Android system Photo Picker on API 33+,
+     * which requires NO permission. Block any library from merging these in.
+     */
+    blockedPermissions: [
+      'android.permission.READ_MEDIA_IMAGES',
+      'android.permission.READ_MEDIA_VIDEO',
+      'android.permission.READ_EXTERNAL_STORAGE',
     ],
     ...(hasGoogleServices ? { googleServicesFile: './google-services.json' } : {}),
   },

@@ -25,11 +25,8 @@ export function AvatarPicker({
   disabled,
 }: Props) {
   async function pickImage() {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      return;
-    }
-
+    // No media permission needed — launchImageLibraryAsync uses the Android
+    // system Photo Picker (API 33+) / iOS PHPicker, per Google Play policy.
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       allowsEditing: true,

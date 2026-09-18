@@ -40,12 +40,8 @@ export function BugReportScreen({ navigation }: Props) {
   const [createdId, setCreatedId] = useState<string | null>(null);
 
   async function pickScreenshot() {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      setError('Photo library permission is required to attach a screenshot.');
-      return;
-    }
-
+    // No media permission needed — launchImageLibraryAsync uses the Android
+    // system Photo Picker (API 33+) / iOS PHPicker, per Google Play policy.
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
       quality: 0.85,
